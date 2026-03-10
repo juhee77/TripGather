@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, MapPin, Calendar as CalendarIcon, Users, Type, Camera } from 'lucide-react';
+import { X, MapPin, Calendar as CalendarIcon, Users, Type, Camera, Clock } from 'lucide-react';
 
 const CATEGORIES = [
   { label: '밥/카페', icon: '🍚' },
@@ -9,14 +9,13 @@ const CATEGORIES = [
   { label: '문화/취미', icon: '🎫' },
 ];
 
-const QUICK_DATES = ['오늘 저녁', '내일 낮', '이번 주말'];
-
 const CreateGatheringModal = ({ onClose, onCreated }) => {
   const [formData, setFormData] = useState({
     title: '',
     host: 'Jihyun (지현)', 
     location: '',
-    dates: '',
+    date: '',
+    time: '',
     maxJoining: 4,
     category: '밥/카페'
   });
@@ -57,6 +56,8 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
 
     const newGathering = {
       ...formData,
+      dates: `${formData.date} ${formData.time}`,
+      maxJoining: parseInt(formData.maxJoining, 10),
       currentJoining: 1,
       bgImageUrl: previewUrl || defaultBg
     };
@@ -74,9 +75,13 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
         const savedGathering = await response.json();
         onCreated(savedGathering); 
         onClose(); 
+      } else {
+        const errText = await response.text();
+        alert(`저장에 실패했습니다 (서버 오류 ${response.status}):\n${errText}`);
       }
     } catch (error) {
       console.error("Error creating gathering:", error);
+      alert(`네트워크 오류가 발생했습니다: ${error.message}`);
     }
   };
 
@@ -200,33 +205,28 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '15px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>
-                <span>언제 만나나요?</span>
-              </label>
-              
-              <div style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', gap: '16px', flexDirection: 'column' }}>
+            <label style={{ display: 'block', fontSize: '15px', fontWeight: 700, marginBottom: '-8px', color: 'var(--text-main)' }}>언제 만나나요?</label>
+            
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ flex: 1, position: 'relative' }}>
                 <CalendarIcon size={18} color="var(--text-sub)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
                 <input 
-                  required name="dates" value={formData.dates} onChange={handleChange}
-                  placeholder="예: 모레 저녁 7시" 
-                  style={inputStyle}
-                  onFocus={(e) => e.target.style.border = '1px solid var(--primary)'}
-                  onBlur={(e) => e.target.style.border = '1px solid var(--border)'}
+                  required type="date" name="date" value={formData.date} onChange={handleChange}
+                  style={{...inputStyle, paddingLeft: '44px', color: formData.date ? 'var(--text-main)' : 'transparent', textShadow: formData.date ? 'none' : '0 0 0 var(--text-sub)'}}
+                  onFocus={(e) => { e.target.style.border = '1px solid var(--primary)'; e.target.style.color = 'var(--text-main)'; e.target.style.textShadow = 'none'; }}
+                  onBlur={(e) => { e.target.style.border = '1px solid var(--border)'; if(!e.target.value) { e.target.style.color = 'transparent'; e.target.style.textShadow = '0 0 0 var(--text-sub)';} }}
                 />
               </div>
-              <div style={{ display: 'flex', gap: '6px', marginTop: '10px' }}>
-                {QUICK_DATES.map(qd => (
-                  <button
-                    key={qd} type="button"
-                    onClick={() => setFormData(p => ({...p, dates: qd}))}
-                    style={{
-                      padding: '6px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: 600,
-                      background: 'var(--bg-color)', color: 'var(--text-sub)', border: 'none'
-                    }}
-                  >{qd}</button>
-                ))}
+
+              <div style={{ flex: 1, position: 'relative' }}>
+                <Clock size={18} color="var(--text-sub)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
+                <input 
+                  required type="time" name="time" value={formData.time} onChange={handleChange}
+                  style={{...inputStyle, paddingLeft: '44px', color: formData.time ? 'var(--text-main)' : 'transparent', textShadow: formData.time ? 'none' : '0 0 0 var(--text-sub)'}}
+                  onFocus={(e) => { e.target.style.border = '1px solid var(--primary)'; e.target.style.color = 'var(--text-main)'; e.target.style.textShadow = 'none'; }}
+                  onBlur={(e) => { e.target.style.border = '1px solid var(--border)'; if(!e.target.value) { e.target.style.color = 'transparent'; e.target.style.textShadow = '0 0 0 var(--text-sub)';} }}
+                />
               </div>
             </div>
             

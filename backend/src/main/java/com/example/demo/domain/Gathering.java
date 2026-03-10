@@ -22,12 +22,15 @@ public class Gathering {
     @Column(nullable = false)
     private String location;
 
+    private String category;
+
     private String dates;
 
     private int currentJoining;
 
     private int maxJoining;
 
+    @Column(columnDefinition = "TEXT")
     private String bgImageUrl;
 
     @Column(updatable = false)
