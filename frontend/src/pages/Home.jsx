@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FeedCard from '../components/FeedCard';
 import CreateGatheringModal from '../components/CreateGatheringModal';
 import GatheringDetailModal from '../components/GatheringDetailModal';
+import TicketCard from '../components/TicketCard';
 import { Search, Map as MapIcon, Plus } from 'lucide-react';
 
 const Home = () => {
@@ -28,7 +29,7 @@ const Home = () => {
 
   useEffect(() => {
     fetchGatherings();
-      
+
     fetch('http://localhost:8080/api/itineraries')
       .then(res => res.json())
       .then(data => setItineraries(data))
@@ -62,13 +63,13 @@ const Home = () => {
       {/* Tabs Layout */}
       <div style={{ display: 'flex', gap: '20px', padding: '0 20px', marginBottom: '20px', borderBottom: '1px solid var(--border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
         {tabs.map(tab => (
-          <div 
+          <div
             key={tab}
             onClick={() => setActiveTab(tab)}
-            style={{ 
-              padding: '10px 0', 
-              borderBottom: activeTab === tab ? '3px solid var(--primary)' : '3px solid transparent', 
-              fontWeight: activeTab === tab ? 700 : 600, 
+            style={{
+              padding: '10px 0',
+              borderBottom: activeTab === tab ? '3px solid var(--primary)' : '3px solid transparent',
+              fontWeight: activeTab === tab ? 700 : 600,
               color: activeTab === tab ? 'var(--primary)' : 'var(--text-sub)',
               cursor: 'pointer',
               whiteSpace: 'nowrap'
@@ -84,7 +85,7 @@ const Home = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {gatherings.map(g => (
               <div key={g.id} onClick={() => setSelectedGathering(g)} style={{ cursor: 'pointer' }}>
-                <FeedCard 
+                <FeedCard
                   title={g.title}
                   host={g.host}
                   date={g.dates}
@@ -94,7 +95,7 @@ const Home = () => {
                 />
               </div>
             ))}
-            {gatherings.length === 0 && <p style={{textAlign: 'center', color: 'var(--text-sub)'}}>로딩 중...</p>}
+            {gatherings.length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>로딩 중...</p>}
           </div>
         )}
 
@@ -102,7 +103,7 @@ const Home = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {gatherings.filter(g => g.host === 'Jihyun (지현)' || myJoinedIds.includes(g.id)).map(g => (
               <div key={g.id} onClick={() => setSelectedGathering(g)} style={{ cursor: 'pointer' }}>
-                <FeedCard 
+                <FeedCard
                   title={g.title}
                   host={g.host}
                   date={g.dates}
@@ -124,18 +125,15 @@ const Home = () => {
         {activeTab === '일정' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {itineraries.map(it => (
-              <div key={it.id} style={{ background: 'var(--surface)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-                <h3 style={{ fontSize: '16px', marginBottom: '8px' }}>{it.title}</h3>
-                <p style={{ color: 'var(--text-sub)', fontSize: '14px', marginBottom: '12px' }}>By {it.author}</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontSize: '13px', fontWeight: 600 }}>
-                  <MapIcon size={14} /> 루트 미리보기
-                </div>
-                <div style={{ marginTop: '12px', padding: '12px', background: 'var(--bg-color)', borderRadius: '8px', fontSize: '13px', color: 'var(--text-main)' }}>
-                  {it.description}
-                </div>
-              </div>
+              <TicketCard
+                key={it.id}
+                title={it.title}
+                author={it.author}
+                date={it.createdAt ? new Date(it.createdAt).toLocaleDateString() : undefined}
+                description={it.description}
+              />
             ))}
-            {itineraries.length === 0 && <p style={{textAlign: 'center', color: 'var(--text-sub)'}}>일정을 불러오는 중입니다.</p>}
+            {itineraries.length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>일정을 불러오는 중입니다.</p>}
           </div>
         )}
 
@@ -148,7 +146,7 @@ const Home = () => {
 
       {/* Floating Action Button */}
       {activeTab === '발견' && (
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           style={{
             position: 'fixed',
@@ -172,14 +170,14 @@ const Home = () => {
 
       {/* Create Modal */}
       {isModalOpen && (
-        <CreateGatheringModal 
-          onClose={() => setIsModalOpen(false)} 
+        <CreateGatheringModal
+          onClose={() => setIsModalOpen(false)}
           onCreated={handleGatheringCreated}
         />
       )}
 
       {selectedGathering && (
-        <GatheringDetailModal 
+        <GatheringDetailModal
           gathering={selectedGathering}
           onClose={() => setSelectedGathering(null)}
           onJoin={(updatedGathering) => {
