@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, MapPin, Calendar, MessageCircle, Send } from 'lucide-react';
+import { X, Users, MapPin, Calendar, MessageCircle, Send, Plane } from 'lucide-react';
+import './FeedCard.css'; // Reuse some ticket styles
 
 const GatheringDetailModal = ({ gathering, onClose, onJoin }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+
+  const dtParts = gathering?.dates ? gathering.dates.split(' ') : ['TBD', ''];
+  const pDate = dtParts[0] || 'TBD';
+  const pTime = dtParts[1] || '';
 
   const fetchComments = async () => {
     try {
@@ -65,104 +70,151 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin }) => {
 
   return (
     <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-      backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, 
-      display: 'flex', justifyContent: 'center', alignItems: 'flex-end'
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000,
+      display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+      padding: '20px 0 0 0'
     }}>
       <div style={{
-        background: 'var(--surface)', width: '100%', maxWidth: '480px', height: '85vh', 
-        borderTopLeftRadius: '28px', borderTopRightRadius: '28px', 
+        background: '#e0e0e0', width: '100%', maxWidth: '480px', height: '90vh',
+        borderTopLeftRadius: '28px', borderTopRightRadius: '28px',
         display: 'flex', flexDirection: 'column',
-        animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-        boxShadow: '0 -10px 40px rgba(0,0,0,0.1)', overflow: 'hidden'
+        animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        overflow: 'hidden'
       }}>
-        {/* Header */}
-        <div style={{ padding: '20px 24px', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 800 }}>모임 상세 ✨</h2>
+        {/* Header Navigation */}
+        <div style={{ padding: '16px 24px', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Plane size={20} /> TRIP AIRLINES
+          </h2>
           <button onClick={onClose} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none' }}>
             <X size={20} color="var(--text-main)" />
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px 24px' }}>
-          {gathering.bgImageUrl && (
-            <div style={{ height: '200px', margin: '20px -24px', backgroundImage: `url(${gathering.bgImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-          )}
+        {/* Scrollable Content inside grey background to emulate holding a ticket */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-          <div style={{ marginTop: gathering.bgImageUrl ? '0' : '20px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 600, background: 'var(--bg-color)', padding: '4px 8px', borderRadius: '8px' }}>{gathering.category}</span>
-            <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '12px 0 8px 0', color: 'var(--text-main)' }}>{gathering.title}</h1>
-            <p style={{ color: 'var(--text-sub)', fontSize: '15px', fontWeight: 500 }}>Host: {gathering.host}</p>
+          {/* Main Boarding Pass Card */}
+          <div className="feed-card" style={{ marginBottom: 0 }}>
+            {gathering.bgImageUrl && (
+              <div style={{ height: '140px', background: `url(${gathering.bgImageUrl}) center/cover` }}></div>
+            )}
+
+            <div className="ticket-top" style={{ borderBottom: '2px dashed #e0e0e0', padding: '24px 20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#888', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>{gathering.category}</div>
+                  <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#222', lineHeight: '1.2', marginTop: '4px' }}>{gathering.title}</h1>
+                </div>
+              </div>
+
+              <div className="flight-info-grid">
+                <div className="info-block">
+                  <span className="info-label">Date</span>
+                  <span className="info-value">{pDate}</span>
+                </div>
+                <div className="info-block">
+                  <span className="info-label">Time</span>
+                  <span className="info-value">{pTime || 'TBD'}</span>
+                </div>
+                <div className="info-block">
+                  <span className="info-label">Location</span>
+                  <span className="info-value" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{gathering.location}</span>
+                </div>
+              </div>
+
+              <div className="flight-info-grid" style={{ marginBottom: 0, marginTop: '20px' }}>
+                <div className="info-block" style={{ gridColumn: 'span 2' }}>
+                  <span className="info-label">Passenger / Host</span>
+                  <div className="host-info" style={{ marginTop: 0, paddingTop: 4, borderTop: 'none' }}>
+                    <div className="host-avatar"></div>
+                    <span className="host-name">{gathering.host}</span>
+                  </div>
+                </div>
+                <div className="info-block">
+                  <span className="info-label">Status</span>
+                  <span className="info-value" style={{ color: gathering.currentJoining >= gathering.maxJoining ? '#F44336' : '#2196F3' }}>
+                    {gathering.currentJoining}/{gathering.maxJoining} Joined
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="ticket-bottom" style={{ padding: '20px', flexDirection: 'column', gap: '16px' }}>
+              <button
+                onClick={handleJoin}
+                className="btn-board"
+                disabled={gathering.currentJoining >= gathering.maxJoining}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background: gathering.currentJoining >= gathering.maxJoining ? '#ccc' : 'var(--primary)',
+                  boxShadow: gathering.currentJoining >= gathering.maxJoining ? 'none' : '0 8px 20px rgba(255, 123, 84, 0.4)',
+                  fontSize: '18px'
+                }}>
+                {gathering.currentJoining >= gathering.maxJoining ? 'FLIGHT FULL' : 'CONFIRM BOARDING'}
+              </button>
+
+              <div className="barcode-area" style={{ width: '100%', alignItems: 'center', marginTop: '8px' }}>
+                <div className="barcode-lines" style={{ width: '90%', height: '36px' }}></div>
+                <div className="barcode-text">TKT-{gathering.id?.toString().padStart(6, '0')}-AB</div>
+              </div>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px', padding: '16px', background: 'var(--bg-color)', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: 'var(--text-main)', fontWeight: 500 }}>
-              <Calendar size={18} color="var(--primary)" /> {gathering.dates}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: 'var(--text-main)', fontWeight: 500 }}>
-              <MapPin size={18} color="#FF6B6B" /> {gathering.location}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: 'var(--text-main)', fontWeight: 500 }}>
-              <Users size={18} color="#4DABF7" /> {gathering.currentJoining} / {gathering.maxJoining} 명 참여 중
-            </div>
-          </div>
-
-          <button onClick={handleJoin} disabled={gathering.currentJoining >= gathering.maxJoining} style={{
-            width: '100%', padding: '16px', background: gathering.currentJoining >= gathering.maxJoining ? 'var(--text-sub)' : 'var(--primary)', 
-            color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', fontWeight: 700, marginTop: '24px', cursor: 'pointer'
-          }}>
-            {gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참여하기'}
-          </button>
-
-          <div style={{ marginTop: '32px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <MessageCircle size={18} /> 질문/댓글 ({comments.length})
+          {/* Comments Section */}
+          <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', paddingBottom: '100px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <MessageCircle size={18} /> In-Flight Messages ({comments.length})
             </h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '80px' }}>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {comments.map(c => (
                 <div key={c.id} style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '16px', background: 'var(--border)', flexShrink: 0 }} />
+                  <div style={{ width: '36px', height: '36px', borderRadius: '18px', background: '#eee', flexShrink: 0 }} />
                   <div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)' }}>{c.author}</span>
-                      <span style={{ fontSize: '12px', color: 'var(--text-sub)' }}>{new Date(c.createdAt).toLocaleDateString()}</span>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#333' }}>{c.author}</span>
+                      <span style={{ fontSize: '11px', color: '#888' }}>{new Date(c.createdAt).toLocaleDateString()}</span>
                     </div>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '15px', color: 'var(--text-main)' }}>{c.content}</p>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '15px', color: '#444', lineHeight: '1.4' }}>{c.content}</p>
                   </div>
                 </div>
               ))}
-              {comments.length === 0 && <p style={{ fontSize: '14px', color: 'var(--text-sub)' }}>첫 번째 댓글을 남겨보세요!</p>}
+              {comments.length === 0 && <p style={{ fontSize: '14px', color: '#888', textAlign: 'center', padding: '20px 0' }}>Say hello to your fellow travelers!</p>}
             </div>
           </div>
         </div>
 
         {/* Comment Input */}
-        <div style={{ 
-          position: 'absolute', bottom: 0, left: 0, right: 0, 
-          padding: '12px 24px 24px 24px', background: 'var(--surface)', borderTop: '1px solid var(--border)',
-          display: 'flex', gap: '8px'
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          padding: '16px 20px 24px 20px', background: '#fff', borderTop: '1px solid #eee',
+          display: 'flex', gap: '10px', boxShadow: '0 -4px 20px rgba(0,0,0,0.05)'
         }}>
-          <input 
+          <input
             type="text" value={newComment} onChange={e => setNewComment(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') {
-                e.preventDefault(); // Prevent form submission if it's trapped somewhere
+                e.preventDefault();
                 handlePostComment();
               }
             }}
-            placeholder="댓글을 입력하세요..."
-            style={{ 
-              flex: 1, padding: '12px 16px', borderRadius: '20px', border: '1px solid var(--border)', 
-              background: 'var(--bg-color)', fontSize: '15px', outline: 'none' 
+            placeholder="Write a message..."
+            style={{
+              flex: 1, padding: '14px 20px', borderRadius: '24px', border: '1px solid #ddd',
+              background: '#f8f8f8', fontSize: '15px', outline: 'none'
             }}
+            onFocus={(e) => e.target.style.border = '1px solid var(--primary)'}
+            onBlur={(e) => e.target.style.border = '1px solid #ddd'}
           />
           <button onClick={handlePostComment} style={{
-            width: '44px', height: '44px', borderRadius: '22px', background: 'var(--primary)', color: 'white', 
-            border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            width: '48px', height: '48px', borderRadius: '24px', background: 'var(--primary)', color: 'white',
+            border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            boxShadow: '0 4px 10px rgba(255, 123, 84, 0.3)'
           }}>
-            <Send size={18} style={{ marginLeft: '2px' }}/>
+            <Send size={18} style={{ marginLeft: '2px' }} />
           </button>
         </div>
 
@@ -172,3 +224,4 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin }) => {
 };
 
 export default GatheringDetailModal;
+

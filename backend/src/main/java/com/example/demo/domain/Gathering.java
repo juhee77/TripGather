@@ -5,12 +5,15 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Gathering {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
@@ -21,6 +24,10 @@ public class Gathering {
 
     @Column(nullable = false)
     private String location;
+
+    private Double lat;
+
+    private Double lng;
 
     private String category;
 
@@ -45,7 +52,7 @@ public class Gathering {
 
     @PostLoad
     protected void onPostLoad() {
-        if(comments != null) {
+        if (comments != null) {
             this.commentCount = comments.size();
         }
     }

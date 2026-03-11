@@ -21,57 +21,61 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional // Rollback after tests
 class GatheringIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @Autowired
-    private GatheringRepository gatheringRepository;
+        @Autowired
+        private GatheringRepository gatheringRepository;
 
-    @Test
-    @DisplayName("모임 생성 API (정상 케이스) 테스트")
-    void createGatheringTest() throws Exception {
-        Gathering requestData = Gathering.builder()
-                .title("테스트 모임입니다")
-                .host("테스트 호스트")
-                .location("테스트 장소")
-                .dates("2026-03-10 18:00")
-                .category("테스트 카테고리")
-                .currentJoining(1)
-                .maxJoining(5)
-                .bgImageUrl("https://example.com/image.jpg")
-                .build();
+        @Test
+        @DisplayName("모임 생성 API (정상 케이스) 테스트")
+        void createGatheringTest() throws Exception {
+                Gathering requestData = Gathering.builder()
+                                .title("테스트 모임입니다")
+                                .host("테스트 호스트")
+                                .location("테스트 장소")
+                                .dates("2026-03-10 18:00")
+                                .category("테스트 카테고리")
+                                .currentJoining(1)
+                                .maxJoining(5)
+                                .bgImageUrl("https://example.com/image.jpg")
+                                .lat(37.5665)
+                                .lng(126.9780)
+                                .build();
 
-        mockMvc.perform(post("/api/gatherings")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestData)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("테스트 모임입니다"))
-                .andExpect(jsonPath("$.category").value("테스트 카테고리"));
-    }
+                mockMvc.perform(post("/api/gatherings")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(requestData)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.title").value("테스트 모임입니다"))
+                                .andExpect(jsonPath("$.category").value("테스트 카테고리"))
+                                .andExpect(jsonPath("$.lat").value(37.5665))
+                                .andExpect(jsonPath("$.lng").value(126.9780));
+        }
 
-    @Test
-    @DisplayName("이미지 텍스트 긴 경우 (Base64) 테스트")
-    void createGatheringWithLongImageTest() throws Exception {
-        // Base64 문자열이 255자를 넘을 때의 상황 모사
-        String longBase64 = "data:image/jpeg;base64," + "A".repeat(1000);
-        Gathering requestData = Gathering.builder()
-                .title("긴 이미지 테스트")
-                .host("테스트 호스트")
-                .location("테스트 장소")
-                .dates("2026-03-10 18:00")
-                .category("테스트 카테고리")
-                .currentJoining(1)
-                .maxJoining(5)
-                .bgImageUrl(longBase64)
-                .build();
+        @Test
+        @DisplayName("이미지 텍스트 긴 경우 (Base64) 테스트")
+        void createGatheringWithLongImageTest() throws Exception {
+                // Base64 문자열이 255자를 넘을 때의 상황 모사
+                String longBase64 = "data:image/jpeg;base64," + "A".repeat(1000);
+                Gathering requestData = Gathering.builder()
+                                .title("긴 이미지 테스트")
+                                .host("테스트 호스트")
+                                .location("테스트 장소")
+                                .dates("2026-03-10 18:00")
+                                .category("테스트 카테고리")
+                                .currentJoining(1)
+                                .maxJoining(5)
+                                .bgImageUrl(longBase64)
+                                .build();
 
-        mockMvc.perform(post("/api/gatherings")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(requestData)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("긴 이미지 테스트"));
-    }
+                mockMvc.perform(post("/api/gatherings")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(requestData)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.title").value("긴 이미지 테스트"));
+        }
 }
