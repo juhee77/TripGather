@@ -23,4 +23,15 @@ public class GatheringService {
     public Gathering createGathering(Gathering gathering) {
         return gatheringRepository.save(gathering);
     }
+
+    @Transactional
+    public Gathering joinGathering(Long id) {
+        Gathering gathering = gatheringRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid gathering ID"));
+        
+        if (gathering.getCurrentJoining() < gathering.getMaxJoining()) {
+            gathering.setCurrentJoining(gathering.getCurrentJoining() + 1);
+        }
+        return gathering;
+    }
 }

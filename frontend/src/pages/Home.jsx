@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FeedCard from '../components/FeedCard';
 import CreateGatheringModal from '../components/CreateGatheringModal';
+import GatheringDetailModal from '../components/GatheringDetailModal';
 import { Search, Map as MapIcon, Plus } from 'lucide-react';
 
 const Home = () => {
@@ -8,6 +9,15 @@ const Home = () => {
   const [itineraries, setItineraries] = useState([]);
   const [activeTab, setActiveTab] = useState('발견');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedGathering, setSelectedGathering] = useState(null);
+  const [myJoinedIds, setMyJoinedIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('myJoinedIds');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const fetchGatherings = () => {
     fetch('http://localhost:8080/api/gatherings')
@@ -71,26 +81,43 @@ const Home = () => {
 
       <div style={{ padding: '0 20px' }}>
         {activeTab === '발견' && (
-          <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {gatherings.map(g => (
-              <FeedCard 
-                key={g.id}
-                title={g.title}
-                host={g.host}
-                date={g.dates}
-                location={g.location}
-                joining={`${g.currentJoining}/${g.maxJoining}`}
-                bgImage={g.bgImageUrl}
-              />
+              <div key={g.id} onClick={() => setSelectedGathering(g)} style={{ cursor: 'pointer' }}>
+                <FeedCard 
+                  title={g.title}
+                  host={g.host}
+                  date={g.dates}
+                  location={g.location}
+                  joining={`${g.currentJoining}/${g.maxJoining}`}
+                  bgImage={g.bgImageUrl}
+                />
+              </div>
             ))}
             {gatherings.length === 0 && <p style={{textAlign: 'center', color: 'var(--text-sub)'}}>로딩 중...</p>}
-          </>
+          </div>
         )}
 
         {activeTab === '내 모임' && (
-          <div style={{ textAlign: 'center', color: 'var(--text-sub)', padding: '40px 0' }}>
-            <p>아직 참여 중인 모임이 없습니다.</p>
-            <button className="btn-primary" style={{ marginTop: '16px' }}>모임둘러보기</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {gatherings.filter(g => g.host === 'Jihyun (지현)' || myJoinedIds.includes(g.id)).map(g => (
+              <div key={g.id} onClick={() => setSelectedGathering(g)} style={{ cursor: 'pointer' }}>
+                <FeedCard 
+                  title={g.title}
+                  host={g.host}
+                  date={g.dates}
+                  location={g.location}
+                  joining={`${g.currentJoining}/${g.maxJoining}`}
+                  bgImage={g.bgImageUrl}
+                />
+              </div>
+            ))}
+            {gatherings.filter(g => g.host === 'Jihyun (지현)' || myJoinedIds.includes(g.id)).length === 0 && (
+              <div style={{ textAlign: 'center', color: 'var(--text-sub)', padding: '40px 0' }}>
+                <p>아직 기획했거나 참여 중인 모임이 없습니다.</p>
+                <button className="btn-primary" style={{ marginTop: '16px' }} onClick={() => setActiveTab('발견')}>모임 둘러보기</button>
+              </div>
+            )}
           </div>
         )}
 
@@ -148,6 +175,20 @@ const Home = () => {
         <CreateGatheringModal 
           onClose={() => setIsModalOpen(false)} 
           onCreated={handleGatheringCreated}
+        />
+      )}
+
+      {selectedGathering && (
+        <GatheringDetailModal 
+          gathering={selectedGathering}
+          onClose={() => setSelectedGathering(null)}
+          onJoin={(updatedGathering) => {
+            setSelectedGathering(updatedGathering);
+            fetchGatherings();
+            const newIds = [...new Set([...myJoinedIds, updatedGathering.id])];
+            setMyJoinedIds(newIds);
+            localStorage.setItem('myJoinedIds', JSON.stringify(newIds));
+          }}
         />
       )}
     </div>

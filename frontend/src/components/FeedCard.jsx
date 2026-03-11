@@ -2,7 +2,7 @@ import React from 'react';
 import { MapPin, Users, Calendar, MessageCircle, MoreHorizontal } from 'lucide-react';
 import './FeedCard.css';
 
-const FeedCard = ({ title, host, date, location, joining, bgImage }) => {
+const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount = 0 }) => {
   return (
     <div className="feed-card">
       {bgImage && (
@@ -31,9 +31,9 @@ const FeedCard = ({ title, host, date, location, joining, bgImage }) => {
         <div className="feed-actions">
           <div className="action-left">
             <button className="btn-circle"><MoreHorizontal size={16} /></button>
-            <button className="btn-pill"><MessageCircle size={16} /> 12</button>
+            <button className="btn-pill"><MessageCircle size={16} /> {commentCount || 0}</button>
           </div>
-          <button className="btn-primary">참여하기</button>
+          <button className="btn-primary" style={{ pointerEvents: 'none' }}>상세 보기</button>
         </div>
       </div>
     </div>

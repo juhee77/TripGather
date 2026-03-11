@@ -33,8 +33,22 @@ public class Gathering {
     @Column(columnDefinition = "TEXT")
     private String bgImageUrl;
 
+    @OneToMany(mappedBy = "gathering", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.util.List<Comment> comments = new java.util.ArrayList<>();
+
+    @Transient
+    private int commentCount;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    @PostLoad
+    protected void onPostLoad() {
+        if(comments != null) {
+            this.commentCount = comments.size();
+        }
+    }
 
     @PrePersist
     protected void onCreate() {

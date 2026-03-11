@@ -25,4 +25,9 @@ public class GatheringController {
     public ResponseEntity<Gathering> createGathering(@RequestBody Gathering gathering) {
         return ResponseEntity.ok(gatheringService.createGathering(gathering));
     }
+
+    @PostMapping("/{id}/join")
+    public ResponseEntity<Gathering> joinGathering(@PathVariable Long id) {
+        return ResponseEntity.ok(gatheringService.joinGathering(id));
+    }
 }
