@@ -3,11 +3,11 @@ import FeedCard from '../components/FeedCard';
 import CreateGatheringModal from '../components/CreateGatheringModal';
 import GatheringDetailModal from '../components/GatheringDetailModal';
 import TicketCard from '../components/TicketCard';
+import ItineraryTab from '../components/ItineraryTab';
 import { Search, Map as MapIcon, Plus } from 'lucide-react';
 
 const Home = () => {
   const [gatherings, setGatherings] = useState([]);
-  const [itineraries, setItineraries] = useState([]);
   const [activeTab, setActiveTab] = useState('발견');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGathering, setSelectedGathering] = useState(null);
@@ -29,11 +29,6 @@ const Home = () => {
 
   useEffect(() => {
     fetchGatherings();
-
-    fetch('http://localhost:8080/api/itineraries')
-      .then(res => res.json())
-      .then(data => setItineraries(data))
-      .catch(err => console.error("Error fetching itineraries:", err));
   }, []);
 
   const handleGatheringCreated = (newGathering) => {
@@ -123,18 +118,7 @@ const Home = () => {
         )}
 
         {activeTab === '일정' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {itineraries.map(it => (
-              <TicketCard
-                key={it.id}
-                title={it.title}
-                author={it.author}
-                date={it.createdAt ? new Date(it.createdAt).toLocaleDateString() : undefined}
-                description={it.description}
-              />
-            ))}
-            {itineraries.length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>일정을 불러오는 중입니다.</p>}
-          </div>
+          <ItineraryTab />
         )}
 
         {activeTab === '지도' && (

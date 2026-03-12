@@ -21,6 +21,9 @@ public class ItineraryService {
 
     @Transactional
     public Itinerary createItinerary(Itinerary itinerary) {
+        if (itinerary.getRoutePoints() != null) {
+            itinerary.getRoutePoints().forEach(rp -> rp.setItinerary(itinerary));
+        }
         return itineraryRepository.save(itinerary);
     }
 }

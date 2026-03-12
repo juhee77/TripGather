@@ -6,8 +6,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Itinerary {
 
@@ -16,10 +18,14 @@ public class Itinerary {
     private Long id;
 
     private String title;
-    
+
     private String author;
-    
+
     private String description;
+
+    @OneToMany(mappedBy = "itinerary", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<RoutePoint> routePoints = new java.util.ArrayList<>();
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
