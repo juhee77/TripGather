@@ -1,7 +1,10 @@
 import React from 'react';
 import { Plane, Calendar, MapPin } from 'lucide-react';
 
-const TicketCard = ({ title, author, description, date }) => {
+const TicketCard = ({ itinerary, onViewRoute }) => {
+    const { title, author, description, createdAt } = itinerary;
+    const date = createdAt ? new Date(createdAt).toLocaleDateString() : '2026-03-20';
+    
     return (
         <div style={{
             background: 'white',
@@ -22,8 +25,8 @@ const TicketCard = ({ title, author, description, date }) => {
                 position: 'relative'
             }}>
                 {/* Cutouts */}
-                <div style={{ position: 'absolute', bottom: '-10px', left: '-11px', width: '20px', height: '20px', backgroundColor: 'var(--bg-color)', borderRadius: '50%', border: '1px solid #eee', borderRightColor: 'transparent', borderTopColor: 'transparent', borderBottomColor: 'transparent', transform: 'rotate(45deg)' }} />
-                <div style={{ position: 'absolute', bottom: '-10px', right: '-11px', width: '20px', height: '20px', backgroundColor: 'var(--bg-color)', borderRadius: '50%', border: '1px solid #eee', borderLeftColor: 'transparent', borderTopColor: 'transparent', borderBottomColor: 'transparent', transform: 'rotate(-45deg)' }} />
+                <div style={{ position: 'absolute', bottom: '-10px', left: '-11px', width: '20px', height: '20px', backgroundColor: '#0B0B15', borderRadius: '50%', border: '1px solid #eee', borderRightColor: 'transparent', borderTopColor: 'transparent', borderBottomColor: 'transparent', transform: 'rotate(45deg)' }} />
+                <div style={{ position: 'absolute', bottom: '-10px', right: '-11px', width: '20px', height: '20px', backgroundColor: '#0B0B15', borderRadius: '50%', border: '1px solid #eee', borderLeftColor: 'transparent', borderTopColor: 'transparent', borderBottomColor: 'transparent', transform: 'rotate(-45deg)' }} />
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontSize: '12px', fontWeight: 800, color: 'var(--primary)', letterSpacing: '1px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -44,7 +47,7 @@ const TicketCard = ({ title, author, description, date }) => {
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: '10px', color: '#888', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Departure</span>
                         <span style={{ fontSize: '14px', fontWeight: 700, color: '#333', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Calendar size={12} color="#888" /> {date || '2026-03-20'}
+                            <Calendar size={12} color="#888" /> {date}
                         </span>
                     </div>
                 </div>
@@ -75,11 +78,14 @@ const TicketCard = ({ title, author, description, date }) => {
                         RT-8X9-{Math.floor(Math.random() * 9000) + 1000}
                     </div>
                 </div>
-                <button style={{
-                    background: 'var(--primary)', color: 'white', padding: '10px 20px',
-                    borderRadius: '8px', fontWeight: 800, fontSize: '13px', border: 'none', cursor: 'pointer',
-                    boxShadow: '0 4px 10px rgba(255, 123, 84, 0.3)'
-                }}>
+                <button 
+                    onClick={() => onViewRoute(itinerary)}
+                    style={{
+                        background: 'var(--primary)', color: 'white', padding: '10px 20px',
+                        borderRadius: '8px', fontWeight: 800, fontSize: '13px', border: 'none', cursor: 'pointer',
+                        boxShadow: '0 4px 10px rgba(255, 123, 84, 0.3)'
+                    }}
+                >
                     VIEW ROUTE
                 </button>
             </div>

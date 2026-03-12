@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import TicketCard from './TicketCard';
 import CreateItineraryModal from './CreateItineraryModal';
+import RouteDetailModal from './RouteDetailModal';
 import { Plus, RotateCcw } from 'lucide-react';
 
 const ItineraryTab = () => {
     const [itineraries, setItineraries] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [selectedItinerary, setSelectedItinerary] = useState(null);
 
     const fetchItineraries = () => {
         setLoading(true);
@@ -81,10 +83,8 @@ const ItineraryTab = () => {
                     {itineraries.map(it => (
                         <TicketCard
                             key={it.id}
-                            title={it.title}
-                            author={it.author}
-                            date={it.createdAt ? new Date(it.createdAt).toLocaleDateString() : undefined}
-                            description={it.description}
+                            itinerary={it}
+                            onViewRoute={(itinerary) => setSelectedItinerary(itinerary)}
                         />
                     ))}
                     {!loading && itineraries.length === 0 && (
@@ -97,7 +97,7 @@ const ItineraryTab = () => {
                         }}>
                             <p style={{ color: '#888', marginBottom: '16px' }}>저장된 일정이 없습니다.</p>
                             <button 
-                                onClick={() => setIsModalOpen(true)}
+                                onClick={() => setIsCreateModalOpen(true)}
                                 style={{ 
                                     padding: '10px 24px', 
                                     background: 'var(--primary)', 
@@ -122,7 +122,7 @@ const ItineraryTab = () => {
 
             {/* Floating Action Button inside Tab */}
             <button
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => setIsCreateModalOpen(true)}
                 style={{
                     position: 'fixed',
                     bottom: '100px',
@@ -145,10 +145,18 @@ const ItineraryTab = () => {
             </button>
 
             {/* Create Modal */}
-            {isModalOpen && (
+            {isCreateModalOpen && (
                 <CreateItineraryModal 
-                    onClose={() => setIsModalOpen(false)}
+                    onClose={() => setIsCreateModalOpen(false)}
                     onCreated={handleCreated}
+                />
+            )}
+
+            {/* Route Detail Modal */}
+            {selectedItinerary && (
+                <RouteDetailModal 
+                    itinerary={selectedItinerary}
+                    onClose={() => setSelectedItinerary(null)}
                 />
             )}
         </div>
