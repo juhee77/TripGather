@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { UserProvider } from './contexts/UserContext';
 import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import MapPage from './pages/MapPage';
@@ -8,8 +9,9 @@ import './index.css';
 
 function App() {
   return (
-    <Router>
-      <div className="app-container">
+    <UserProvider>
+      <Router>
+        <div className="app-container">
         <Routes>
           <Route path="/" element={<Navigate to="/gather" replace />} />
           <Route path="/gather" element={<Home />} />
@@ -18,8 +20,9 @@ function App() {
           <Route path="/mypage" element={<MyPage />} />
         </Routes>
         <BottomNav />
-      </div>
-    </Router>
+        </div>
+      </Router>
+    </UserProvider>
   );
 }
 
