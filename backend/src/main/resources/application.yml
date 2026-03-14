@@ -2,6 +2,15 @@ spring:
   profiles:
     active: local
 
+# API 문서 (Swagger UI) - 브라우저에서 http://localhost:8080/swagger-ui.html
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
 ---
 spring:
   config:

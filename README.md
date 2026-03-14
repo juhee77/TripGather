@@ -8,6 +8,7 @@
 ## 기술 스택
 ### Backend
 - **Language / Framework**: Java 17+, Spring Boot
+- **API 문서**: Springdoc OpenAPI (Swagger UI) — 서버 실행 후 [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) 에서 API 확인·테스트
 - **Database**: 
   - **Local/Test**: H2 Database (개발 및 빠른 로컬 테스트)
   - **Production/Main**: PostgreSQL (실제 데이터 및 위치 기반 데이터의 안정적 저장)

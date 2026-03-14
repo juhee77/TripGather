@@ -2,8 +2,10 @@ package com.example.demo;
 
 import com.example.demo.domain.Gathering;
 import com.example.demo.domain.Itinerary;
+import com.example.demo.domain.User;
 import com.example.demo.repository.GatheringRepository;
 import com.example.demo.repository.ItineraryRepository;
+import com.example.demo.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,8 +14,23 @@ import org.springframework.context.annotation.Configuration;
 public class DataInitializer {
 
     @Bean
-    public CommandLineRunner initData(GatheringRepository gatheringRepo, ItineraryRepository itineraryRepo) {
+    public CommandLineRunner initData(UserRepository userRepo, GatheringRepository gatheringRepo, ItineraryRepository itineraryRepo) {
         return args -> {
+            if (userRepo.count() == 0) {
+                userRepo.save(User.builder()
+                        .name("Jihyun (지현)")
+                        .bio("여행을 좋아하는 사람")
+                        .profileImageUrl(null)
+                        .points(1500)
+                        .build());
+                userRepo.save(User.builder()
+                        .name("Alex")
+                        .bio("러닝과 맛집 탐방을 좋아해요")
+                        .profileImageUrl(null)
+                        .points(800)
+                        .build());
+            }
+
             if(gatheringRepo.count() == 0) {
                 gatheringRepo.save(Gathering.builder()
                         .title("Weekend Trip to Busan! (부산 주말 여행! 🌊)")
