@@ -20,6 +20,14 @@ public class RoutePoint {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private Itinerary itinerary;
 
+    /** DAY 번호 (1, 2, 3...). 날짜별 그룹핑에 사용 */
+    @Builder.Default
+    private int dayNumber = 1;
+
+    /** DAY 라벨 (예: "Day 1", "2026-08-01", "첫째날") */
+    private String dayLabel;
+
+    /** DAY 내 순서 */
     private int sequenceOrder;
 
     private String label;

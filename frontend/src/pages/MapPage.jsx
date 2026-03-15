@@ -1,73 +1,111 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Map, MapMarker } from 'react-kakao-maps-sdk';
+import { Users } from 'lucide-react';
 
 const MapPage = () => {
-  const [info, setInfo] = useState(null);
+  const [gatherings, setGatherings] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [joining, setJoining] = useState(false);
 
-  const markers = [
-    {
-      position: { lat: 37.5665, lng: 126.9780 },
-      content: "이번 주말 서울 모임 (2/4 명)",
-    },
-    {
-      position: { lat: 37.5145, lng: 127.0495 },
-      content: "오늘 저녁 한강 러닝 🏃‍♂️",
-    },
-    {
-      position: { lat: 37.5211, lng: 126.9242 },
-      content: "여의도 맛집 탐방! 🍕",
+  useEffect(() => {
+    fetch('http://localhost:8080/api/gatherings')
+      .then(res => res.json())
+      .then(data => setGatherings(data.filter(g => g.lat && g.lng)))
+      .catch(err => console.error('Error fetching gatherings:', err));
+  }, []);
+
+  const handleJoin = async () => {
+    if (!selected) return;
+    setJoining(true);
+    try {
+      const res = await fetch(`http://localhost:8080/api/gatherings/${selected.id}/join`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setGatherings(prev => prev.map(g => g.id === updated.id ? updated : g));
+        setSelected(updated);
+      } else {
+        alert('참여에 실패했습니다.');
+      }
+    } catch (err) {
+      alert(`오류: ${err.message}`);
+    } finally {
+      setJoining(false);
     }
-  ];
+  };
+
+  // 마커가 있을 때 지도 중심: 모임 평균 좌표 or 서울 기본값
+  const center = gatherings.length > 0
+    ? { lat: gatherings[0].lat, lng: gatherings[0].lng }
+    : { lat: 37.5665, lng: 126.9780 };
 
   return (
     <div className="page" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <header className="page-header" style={{ borderBottom: 'none', background: 'var(--surface)', zIndex: 10 }}>
         <h1 className="page-title">지도 🗺️</h1>
-        <p className="page-subtitle" style={{ fontSize: '14px', color: 'var(--text-sub)' }}>내 주변 모임 탐색</p>
+        <p className="page-subtitle" style={{ fontSize: '14px', color: 'var(--text-sub)' }}>
+          내 주변 모임 탐색 ({gatherings.length}개)
+        </p>
       </header>
 
       <div style={{ flex: 1, position: 'relative' }}>
         <Map
-          center={{ lat: 37.5665, lng: 126.9780 }}
+          center={center}
           style={{ width: "100%", height: "100%" }}
           level={7}
         >
-          {markers.map((marker, index) => (
+          {gatherings.map(g => (
             <MapMarker
-              key={index}
-              position={marker.position}
-              onClick={() => setInfo(marker)}
+              key={g.id}
+              position={{ lat: g.lat, lng: g.lng }}
+              onClick={() => setSelected(g)}
             >
-              {info && info.content === marker.content && (
-                <div style={{ padding: "5px", color: "#000", fontSize: "12px", width: "150px", textAlign: "center" }}>
-                  {marker.content}
+              {selected?.id === g.id && (
+                <div style={{
+                  padding: '6px 10px', color: '#000', fontSize: '12px',
+                  fontWeight: 700, whiteSpace: 'nowrap',
+                  background: 'white', borderRadius: '8px'
+                }}>
+                  {g.title}
                 </div>
               )}
             </MapMarker>
           ))}
         </Map>
-        
-        {/* Floating action sheet / info box over the map */}
+
+        {/* Floating info sheet */}
         <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          left: '20px',
-          right: '20px',
-          background: 'var(--surface)',
-          padding: '20px',
-          borderRadius: '16px',
-          boxShadow: 'var(--shadow-md)',
-          zIndex: 10
+          position: 'absolute', bottom: '20px', left: '20px', right: '20px',
+          background: 'var(--surface)', padding: '20px', borderRadius: '16px',
+          boxShadow: 'var(--shadow-md)', zIndex: 10
         }}>
-          {info ? (
+          {selected ? (
             <div>
-              <h3 style={{ fontSize: '16px', marginBottom: '8px' }}>{info.content}</h3>
-              <p style={{ color: 'var(--text-sub)', fontSize: '13px', marginBottom: '16px' }}>현재 2명의 멤버가 참여 대기 중입니다.</p>
-              <button className="btn-primary" style={{ width: '100%' }}>참여하기</button>
+              <p style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700, marginBottom: '4px', letterSpacing: '1px' }}>
+                {selected.category || 'GATHERING'} • {selected.dates}
+              </p>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '6px' }}>{selected.title}</h3>
+              <p style={{ color: 'var(--text-sub)', fontSize: '13px', marginBottom: '4px' }}>📍 {selected.location}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-sub)', fontSize: '13px', marginBottom: '16px' }}>
+                <Users size={14} />
+                <span>{selected.currentJoining} / {selected.maxJoining}명 참여 중</span>
+              </div>
+              <button
+                className="btn-primary"
+                style={{ width: '100%', opacity: joining ? 0.7 : 1 }}
+                onClick={handleJoin}
+                disabled={joining || selected.currentJoining >= selected.maxJoining}
+              >
+                {joining ? '처리 중...' : selected.currentJoining >= selected.maxJoining ? '마감' : '참여하기'}
+              </button>
             </div>
           ) : (
             <div style={{ textAlign: 'center', color: 'var(--text-sub)' }}>
               <p>지도에서 핀을 선택해보세요!</p>
+              {gatherings.length === 0 && (
+                <p style={{ fontSize: '12px', marginTop: '8px' }}>모임을 불러오는 중...</p>
+              )}
             </div>
           )}
         </div>
@@ -77,3 +115,4 @@ const MapPage = () => {
 };
 
 export default MapPage;
+
