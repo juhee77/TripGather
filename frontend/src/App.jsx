@@ -7,6 +7,7 @@ import MapPage from './pages/MapPage';
 import ChatPage from './pages/ChatPage';
 import MyPage from './pages/MyPage';
 import LoginPage from './pages/LoginPage';
+import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import './index.css';
 
 /**
@@ -26,6 +27,7 @@ function AppContent() {
     <div className="app-container">
       <Routes>
         <Route path="/login" element={isAuthenticated ? <Navigate to="/gather" replace /> : <LoginPage />} />
+        <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
         
         <Route path="/" element={<Navigate to="/gather" replace />} />
         <Route path="/gather" element={<PrivateRoute><Home /></PrivateRoute>} />

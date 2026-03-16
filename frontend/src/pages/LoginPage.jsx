@@ -90,12 +90,18 @@ function LoginPage() {
         </form>
 
         <div className="sns-login-divider">
-          <span>또는 SNS 로그인 (준비 중)</span>
+          <span>또는 SNS 계정으로 시작하기</span>
         </div>
         
         <div className="sns-buttons">
-          <button className="sns-btn kakao" disabled>카카오로 시작하기</button>
-          <button className="sns-btn google" disabled>Google로 시작하기</button>
+          <button 
+            className="sns-btn kakao" 
+            onClick={() => window.location.href = 'http://localhost:8080/oauth2/authorization/kakao'}
+          >카카오로 시작하기</button>
+          <button 
+            className="sns-btn naver" 
+            onClick={() => window.location.href = 'http://localhost:8080/oauth2/authorization/naver'}
+          >네이버로 시작하기</button>
         </div>
       </div>
     </div>
