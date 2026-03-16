@@ -21,8 +21,24 @@ public class ItineraryController {
         return ResponseEntity.ok(itineraryService.getAllItineraries());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Itinerary> getItinerary(@PathVariable Long id) {
+        return ResponseEntity.ok(itineraryService.getById(id));
+    }
+
     @PostMapping
     public ResponseEntity<Itinerary> createItinerary(@RequestBody Itinerary itinerary) {
         return ResponseEntity.ok(itineraryService.createItinerary(itinerary));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Itinerary> updateItinerary(@PathVariable Long id, @RequestBody Itinerary update) {
+        return ResponseEntity.ok(itineraryService.updateItinerary(id, update));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteItinerary(@PathVariable Long id) {
+        itineraryService.deleteItinerary(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -3,15 +3,14 @@ package com.example.demo.service;
 import com.example.demo.domain.User;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
-
-    /** 로그인 미구현 시 기본으로 반환할 유저 ID */
-    private static final long DEFAULT_CURRENT_USER_ID = 1L;
 
     private final UserRepository userRepository;
 
@@ -23,12 +22,18 @@ public class UserService {
 
     /**
      * 현재 로그인한 유저 반환.
-     * 인증 미구현 시 ID=1 유저를 기본값으로 사용.
+     * SecurityContextHolder에서 인증 정보를 가져옵니다.
      */
     @Transactional(readOnly = true)
     public User getCurrentUser() {
-        return userRepository.findById(DEFAULT_CURRENT_USER_ID)
-                .orElseThrow(() -> new IllegalStateException("Default user (id=1) not found. Run DataInitializer."));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new IllegalStateException("Authentication is required");
+        }
+        
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found in database: " + email));
     }
 
     @Transactional(readOnly = true)
