@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { apiUrl } from '../api/client';
+import { authFetch } from '../api/client';
 
 const UserContext = createContext(null);
 
@@ -12,8 +12,11 @@ export function UserProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(apiUrl('/api/users/me'));
-      if (!res.ok) throw new Error(`서버 오류 ${res.status}`);
+      const res = await authFetch('/api/users/me');
+      if (!res.ok) {
+         if (res.status === 401) return null; // 미인증 시 에러 없이 null 반환
+         throw new Error(`서버 오류 ${res.status}`);
+      }
       const data = await res.json();
       setUser(data);
       return data;
@@ -33,9 +36,8 @@ export function UserProvider({ children }) {
 
   const updateProfile = useCallback(async (id, payload) => {
     try {
-      const res = await fetch(apiUrl(`/api/users/${id}`), {
+      const res = await authFetch(`/api/users/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`업데이트 실패 ${res.status}`);
@@ -68,3 +70,4 @@ export function useUser() {
   if (!ctx) throw new Error('useUser must be used within UserProvider');
   return ctx;
 }
+
