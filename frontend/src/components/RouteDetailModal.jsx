@@ -165,8 +165,32 @@ const RouteDetailModal = ({ itinerary, onClose }) => {
                     </div>
                 </div>
 
-                {/* Bottom CTA */}
-                <footer style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                {/* Bottom CTA & Actions */}
+                <footer style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        <button
+                            onClick={onEdit}
+                            style={{
+                                flex: 1, height: '56px', borderRadius: '16px',
+                                background: 'rgba(255,123,84,0.1)', color: 'var(--primary)', fontWeight: 800, fontSize: '15px',
+                                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
+                                border: '1px solid var(--primary)', cursor: 'pointer'
+                            }}
+                        >
+                            EDIT ITINERARY
+                        </button>
+                        <button
+                            onClick={onDelete}
+                            style={{
+                                width: '56px', height: '56px', borderRadius: '16px',
+                                background: 'rgba(255,75,75,0.1)', color: '#ff4b4b',
+                                display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                border: '1px solid #ff4b4b', cursor: 'pointer'
+                            }}
+                        >
+                            <Trash2 size={20} />
+                        </button>
+                    </div>
                     <button
                         onClick={onClose}
                         style={{

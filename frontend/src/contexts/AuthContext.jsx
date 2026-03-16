@@ -53,14 +53,26 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    if (token) {
-      // 토큰이 있으면 유저 정보 가져오기 (UserContext와 협력하도록 설계 가능)
-      // 여기서는 단순히 토큰 유무로 일단 처리
+    const fetchProfile = async () => {
+      if (token && !user) {
+        try {
+          const res = await fetch(apiUrl('/api/users/me'), {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const userData = await res.json();
+            setUser({ id: userData.id, name: userData.name, email: userData.email, profileImageUrl: userData.profileImageUrl });
+          } else if (res.status === 401) {
+            logout();
+          }
+        } catch (err) {
+          console.error('Auto-loading profile failed:', err);
+        }
+      }
       setLoading(false);
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
+    };
+    fetchProfile();
+  }, [token, user, logout]);
 
   const value = {
     token,

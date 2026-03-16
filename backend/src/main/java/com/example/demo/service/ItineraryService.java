@@ -19,11 +19,40 @@ public class ItineraryService {
         return itineraryRepository.findAllByOrderByCreatedAtDesc();
     }
 
+    @Transactional(readOnly = true)
+    public Itinerary getById(Long id) {
+        return itineraryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Itinerary not found: " + id));
+    }
+
     @Transactional
     public Itinerary createItinerary(Itinerary itinerary) {
         if (itinerary.getRoutePoints() != null) {
             itinerary.getRoutePoints().forEach(rp -> rp.setItinerary(itinerary));
         }
         return itineraryRepository.save(itinerary);
+    }
+
+    @Transactional
+    public Itinerary updateItinerary(Long id, Itinerary update) {
+        Itinerary itinerary = getById(id);
+        itinerary.setTitle(update.getTitle());
+        itinerary.setDescription(update.getDescription());
+        
+        // RoutePoints 업데이트 로직 (간단화를 위해 기존 삭제 후 재등록 패턴 또는 병합)
+        if (update.getRoutePoints() != null) {
+            itinerary.getRoutePoints().clear();
+            update.getRoutePoints().forEach(rp -> {
+                rp.setItinerary(itinerary);
+                itinerary.getRoutePoints().add(rp);
+            });
+        }
+        
+        return itineraryRepository.save(itinerary);
+    }
+
+    @Transactional
+    public void deleteItinerary(Long id) {
+        itineraryRepository.deleteById(id);
     }
 }
