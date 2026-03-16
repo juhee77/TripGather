@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Map, MapMarker } from 'react-kakao-maps-sdk';
 import { Users } from 'lucide-react';
+import { authFetch } from '../api/client';
 
 const MapPage = () => {
   const [gatherings, setGatherings] = useState([]);
@@ -8,7 +9,7 @@ const MapPage = () => {
   const [joining, setJoining] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/gatherings')
+    authFetch('/api/gatherings')
       .then(res => res.json())
       .then(data => setGatherings(data.filter(g => g.lat && g.lng)))
       .catch(err => console.error('Error fetching gatherings:', err));
@@ -18,7 +19,7 @@ const MapPage = () => {
     if (!selected) return;
     setJoining(true);
     try {
-      const res = await fetch(`http://localhost:8080/api/gatherings/${selected.id}/join`, {
+      const res = await authFetch(`/api/gatherings/${selected.id}/join`, {
         method: 'POST',
       });
       if (res.ok) {

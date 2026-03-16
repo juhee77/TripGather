@@ -31,9 +31,12 @@ public class User implements UserDetails {
 
     private String password;
 
-    /** SNS 연동 대비: "local" / "kakao" / "google" */
+    /** SNS 연동 대비: "local" / "kakao" / "naver" */
     @Builder.Default
     private String provider = "local";
+
+    /** SNS 제공 고유 ID */
+    private String providerId;
 
     /** 권한: "ROLE_USER" / "ROLE_ADMIN" */
     @Builder.Default
