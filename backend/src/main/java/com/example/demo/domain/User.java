@@ -2,8 +2,13 @@ package com.example.demo.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -12,7 +17,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,6 +25,19 @@ public class User {
 
     @Column(nullable = false)
     private String name;
+
+    @Column(unique = true)
+    private String email;
+
+    private String password;
+
+    /** SNS 연동 대비: "local" / "kakao" / "google" */
+    @Builder.Default
+    private String provider = "local";
+
+    /** 권한: "ROLE_USER" / "ROLE_ADMIN" */
+    @Builder.Default
+    private String role = "ROLE_USER";
 
     @Column(columnDefinition = "TEXT")
     private String bio;
@@ -45,4 +63,25 @@ public class User {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    // ── UserDetails 구현 ──────────────────────────────────────
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(role));
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired()    { return true; }
+    @Override
+    public boolean isAccountNonLocked()     { return true; }
+    @Override
+    public boolean isCredentialsNonExpired(){ return true; }
+    @Override
+    public boolean isEnabled()              { return true; }
 }
+

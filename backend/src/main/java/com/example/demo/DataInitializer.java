@@ -17,18 +17,26 @@ import java.util.List;
 public class DataInitializer {
 
     @Bean
-    public CommandLineRunner initData(UserRepository userRepo, GatheringRepository gatheringRepo, ItineraryRepository itineraryRepo) {
+    public CommandLineRunner initData(UserRepository userRepo, GatheringRepository gatheringRepo, ItineraryRepository itineraryRepo, org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         return args -> {
             if (userRepo.count() == 0) {
                 userRepo.save(User.builder()
                         .name("Jihyun (지현)")
-                        .bio("여행을 좋아하는 사람")
+                        .email("jihyun@test.com")
+                        .password(passwordEncoder.encode("pass1234"))
+                        .bio("여행을 좋아하는 person")
+                        .provider("local")
+                        .role("ROLE_USER")
                         .profileImageUrl(null)
                         .points(1500)
                         .build());
                 userRepo.save(User.builder()
                         .name("Alex")
+                        .email("alex@test.com")
+                        .password(passwordEncoder.encode("pass1234"))
                         .bio("러닝과 맛집 탐방을 좋아해요")
+                        .provider("local")
+                        .role("ROLE_USER")
                         .profileImageUrl(null)
                         .points(800)
                         .build());
