@@ -5,35 +5,60 @@ import './FeedCard.css';
 const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount = 0 }) => {
   return (
     <div className="feed-card">
-      {bgImage && (
-        <div className="feed-header" style={{ backgroundImage: `url(${bgImage})` }}>
+      <div 
+        className="feed-header" 
+        style={{ backgroundImage: bgImage ? `url(${bgImage})` : 'none' }}
+      >
+        <div className="feed-status-tag glass" style={{ color: 'var(--primary-orange)' }}>
+          모집 중
         </div>
-      )}
+      </div>
+      
       <div className="feed-content">
         <div className="feed-top-row">
-          <span className="feed-time">15h ago</span>
-          <span className="feed-location-tag">{location}</span>
+          <span className="feed-category">TRIP & GATHER</span>
+          <span className="text-s" style={{ fontSize: '11px' }}>15 hours ago</span>
         </div>
+        
         <h3 className="feed-title">{title}</h3>
         
-        <div className="feed-host">
+        <div className="feed-host-section">
           <div className="host-avatar"></div>
-          <span>Host: <strong>{host}</strong> ✨</span>
+          <div className="host-info">
+            <span>By <strong>{host}</strong></span>
+          </div>
         </div>
         
-        <div className="feed-details">
-          <div className="detail-item"><Calendar size={14} className="icon-orange" /> {date}</div>
-          <div className="detail-item"><MapPin size={14} className="icon-red" /> {location}</div>
-          <div className="detail-item"><Users size={14} className="icon-blue" /> {joining} joining</div>
-          <div className="detail-item">🔥 Lively trip!</div>
+        <div className="feed-details-grid">
+          <div className="detail-pill">
+            <Calendar size={16} color="var(--primary-orange)" strokeWidth={2.5} />
+            {date}
+          </div>
+          <div className="detail-pill">
+            <MapPin size={16} color="#EF4444" strokeWidth={2.5} />
+            {location}
+          </div>
+          <div className="detail-pill">
+            <Users size={16} color="var(--secondary-blue)" strokeWidth={2.5} />
+            {joining} participants
+          </div>
+          <div className="detail-pill">
+            <span style={{ fontSize: '16px' }}>🔥</span>
+            Lively crowd
+          </div>
         </div>
 
-        <div className="feed-actions">
-          <div className="action-left">
-            <button className="btn-circle"><MoreHorizontal size={16} /></button>
-            <button className="btn-pill"><MessageCircle size={16} /> {commentCount || 0}</button>
+        <div className="feed-footer">
+          <div className="social-stats">
+            <div className="stat-item">
+              <MessageCircle size={16} />
+              {commentCount}
+            </div>
+            <div className="stat-item">
+              <MoreHorizontal size={16} />
+            </div>
           </div>
-          <button className="btn-primary" style={{ pointerEvents: 'none' }}>상세 보기</button>
+          <button className="view-detail-btn">상세 보기</button>
         </div>
       </div>
     </div>
