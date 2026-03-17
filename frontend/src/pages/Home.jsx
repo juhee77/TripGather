@@ -4,7 +4,8 @@ import CreateGatheringModal from '../components/CreateGatheringModal';
 import GatheringDetailModal from '../components/GatheringDetailModal';
 import TicketCard from '../components/TicketCard';
 import ItineraryTab from '../components/ItineraryTab';
-import { Search, Map as MapIcon, Plus } from 'lucide-react';
+import ChatTab from '../components/ChatTab';
+import { Search, Map as MapIcon, Plus, MessageCircle } from 'lucide-react';
 
 const Home = () => {
   const [gatherings, setGatherings] = useState([]);
@@ -36,50 +37,96 @@ const Home = () => {
     fetchGatherings();
   };
 
-  const tabs = ['발견', '내 모임', '일정', '지도'];
+  const tabs = ['발견', '내 모임', '채팅', '일정', '지도'];
 
   return (
-    <div className="page" style={{ paddingBottom: '20px', position: 'relative', minHeight: '100%' }}>
-      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="app-container animate-fade">
+      {/* Premium Header with Glassmorphism */}
+      <header className="glass page-header" style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        padding: '24px 20px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        borderRadius: '0 0 var(--radius-lg) var(--radius-lg)'
+      }}>
         <div>
-          <h1 className="page-title">모임</h1>
-          <p className="page-subtitle" style={{ fontSize: '18px', color: 'var(--primary)', fontWeight: 700 }}>Gathering</p>
+          <h1 className="heading-l">모임</h1>
+          <p className="text-s" style={{ 
+            color: 'var(--primary-orange)', 
+            fontWeight: 800, 
+            textTransform: 'uppercase',
+            fontSize: '12px',
+            letterSpacing: '1px'
+          }}>Discover & Join</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <div style={{ background: 'var(--bg-color)', padding: '8px 12px', borderRadius: '20px', fontSize: '14px', fontWeight: 600 }}>
-            📍 강남구 ▾
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ 
+            background: 'var(--bg-color)', 
+            padding: '10px 16px', 
+            borderRadius: 'var(--radius-full)', 
+            fontSize: '14px', 
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+          }}>
+            <span style={{ fontSize: '16px' }}>📍</span> 강남구
           </div>
-          <button className="btn-circle" style={{ background: 'var(--bg-color)', width: '38px', height: '38px', borderRadius: '19px' }}>
-            <Search size={18} />
+          <button className="icon-circle glass" style={{ width: '44px', height: '44px' }}>
+            <Search size={20} color="var(--text-primary)" />
           </button>
         </div>
       </header>
 
-      {/* Tabs Layout */}
-      <div style={{ display: 'flex', gap: '20px', padding: '0 20px', marginBottom: '20px', borderBottom: '1px solid var(--border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
-        {tabs.map(tab => (
-          <div
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              padding: '10px 0',
-              borderBottom: activeTab === tab ? '3px solid var(--primary)' : '3px solid transparent',
-              fontWeight: activeTab === tab ? 700 : 600,
-              color: activeTab === tab ? 'var(--primary)' : 'var(--text-sub)',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {tab}
-          </div>
-        ))}
+      {/* Modern High-End Tabs */}
+      <div style={{ 
+        padding: '0 20px', 
+        marginTop: '20px',
+        marginBottom: '24px'
+      }}>
+        <div className="hide-scrollbar" style={{ 
+          display: 'flex', 
+          gap: '8px', 
+          overflowX: 'auto',
+          paddingBottom: '4px'
+        }}>
+          {tabs.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={activeTab === tab ? 'glass' : ''}
+              style={{
+                padding: '10px 20px',
+                borderRadius: 'var(--radius-full)',
+                background: activeTab === tab ? 'var(--primary-gradient)' : 'transparent',
+                color: activeTab === tab ? 'white' : 'var(--text-secondary)',
+                fontWeight: 700,
+                fontSize: '15px',
+                whiteSpace: 'nowrap',
+                border: activeTab === tab ? 'none' : '1px solid var(--border-color)',
+                boxShadow: activeTab === tab ? '0 10px 20px -5px rgba(255, 92, 0, 0.3)' : 'none'
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div style={{ padding: '0 20px' }}>
+      <div style={{ padding: '0 20px', flex: 1 }}>
         {activeTab === '발견' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {gatherings.map(g => (
-              <div key={g.id} onClick={() => setSelectedGathering(g)} style={{ cursor: 'pointer' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {gatherings.map((g, idx) => (
+              <div 
+                key={g.id} 
+                onClick={() => setSelectedGathering(g)} 
+                style={{ cursor: 'pointer', animationDelay: `${idx * 0.1}s` }}
+                className="animate-fade"
+              >
                 <FeedCard
                   title={g.title}
                   host={g.host}
@@ -90,14 +137,24 @@ const Home = () => {
                 />
               </div>
             ))}
-            {gatherings.length === 0 && <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>로딩 중...</p>}
+            {gatherings.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '100px 0' }}>
+                <div className="animate-spin" style={{ marginBottom: '12px' }}>🔄</div>
+                <p className="text-s">모임을 불러오는 중입니다...</p>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === '내 모임' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {gatherings.filter(g => g.host === 'Jihyun (지현)' || myJoinedIds.includes(g.id)).map(g => (
-              <div key={g.id} onClick={() => setSelectedGathering(g)} style={{ cursor: 'pointer' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {gatherings.filter(g => g.host === 'Jihyun (지현)' || myJoinedIds.includes(g.id)).map((g, idx) => (
+              <div 
+                key={g.id} 
+                onClick={() => setSelectedGathering(g)} 
+                style={{ cursor: 'pointer', animationDelay: `${idx * 0.1}s` }}
+                className="animate-fade"
+              >
                 <FeedCard
                   title={g.title}
                   host={g.host}
@@ -109,12 +166,28 @@ const Home = () => {
               </div>
             ))}
             {gatherings.filter(g => g.host === 'Jihyun (지현)' || myJoinedIds.includes(g.id)).length === 0 && (
-              <div style={{ textAlign: 'center', color: 'var(--text-sub)', padding: '40px 0' }}>
-                <p>아직 기획했거나 참여 중인 모임이 없습니다.</p>
-                <button className="btn-primary" style={{ marginTop: '16px' }} onClick={() => setActiveTab('발견')}>모임 둘러보기</button>
+              <div className="glass" style={{ 
+                textAlign: 'center', 
+                padding: '60px 24px',
+                borderRadius: 'var(--radius-lg)',
+                display: 'flex',
+                direction: 'column',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '16px'
+              }}>
+                <div style={{ fontSize: '48px' }}>🔍</div>
+                <p style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>아직 참여 중인 모임이 없습니다.</p>
+                <button className="primary-btn" onClick={() => setActiveTab('발견')}>모임 탐색하기</button>
               </div>
             )}
           </div>
+        )}
+
+        {activeTab === '채팅' && (
+          <ChatTab 
+            joinedGatherings={gatherings.filter(g => g.host === 'Jihyun (지현)' || myJoinedIds.includes(g.id))} 
+          />
         )}
 
         {activeTab === '일정' && (
@@ -122,37 +195,44 @@ const Home = () => {
         )}
 
         {activeTab === '지도' && (
-          <div style={{ textAlign: 'center', color: 'var(--text-sub)', padding: '40px 0' }}>
-            <p>내 주변 모임 지도는 <strong>하단 네비게이션의 [지도] 탭</strong>에서 더 크게 보실 수 있습니다! 🗺️</p>
+          <div className="glass" style={{ 
+            textAlign: 'center', 
+            padding: '80px 24px',
+            borderRadius: 'var(--radius-lg)',
+            background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+            border: 'none'
+          }}>
+            <div style={{ fontSize: '64px', marginBottom: '20px' }}>🗺️</div>
+            <h3 className="heading-m" style={{ marginBottom: '12px' }}>지도로 보기</h3>
+            <p className="text-s" style={{ color: 'var(--secondary-blue)', fontWeight: 600 }}>
+              내 주변 모임 지도는 하단 [지도] 버튼을 눌러<br/>더 크고 선명하게 확인하세요!
+            </p>
           </div>
         )}
       </div>
 
-      {/* Floating Action Button */}
+      {/* Floating Action Button - Enhanced */}
       {activeTab === '발견' && (
         <button
           onClick={() => setIsModalOpen(true)}
+          className="primary-btn"
           style={{
             position: 'fixed',
-            bottom: '90px', // Above bottom nav
-            right: 'calc(50% - 240px + 20px)', // adjust for max-width container
-            background: 'var(--primary)',
-            color: 'white',
-            width: '56px',
-            height: '56px',
-            borderRadius: '28px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            boxShadow: 'var(--shadow-md)',
-            zIndex: 90
+            bottom: '110px',
+            right: 'calc(50% - 240px + 24px)',
+            width: '64px',
+            height: '64px',
+            borderRadius: '50%',
+            padding: 0,
+            zIndex: 90,
+            boxShadow: '0 20px 40px rgba(255, 92, 0, 0.4)'
           }}
         >
-          <Plus size={28} strokeWidth={2.5} />
+          <Plus size={32} strokeWidth={3} />
         </button>
       )}
 
-      {/* Create Modal */}
+      {/* Modals remain the same but will eventually need updates */}
       {isModalOpen && (
         <CreateGatheringModal
           onClose={() => setIsModalOpen(false)}

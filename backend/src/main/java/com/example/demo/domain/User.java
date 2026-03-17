@@ -67,6 +67,16 @@ public class User implements UserDetails {
         this.updatedAt = LocalDateTime.now();
     }
 
+    @ManyToMany
+    @JoinTable(
+        name = "user_gatherings",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "gathering_id")
+    )
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Builder.Default
+    private List<Gathering> joinedGatherings = new java.util.ArrayList<>();
+
     // ── UserDetails 구현 ──────────────────────────────────────
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

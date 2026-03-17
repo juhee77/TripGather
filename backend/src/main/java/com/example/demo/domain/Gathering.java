@@ -42,10 +42,19 @@ public class Gathering {
 
     @OneToMany(mappedBy = "gathering", cascade = CascadeType.ALL, orphanRemoval = true)
     @com.fasterxml.jackson.annotation.JsonIgnore
+    @Builder.Default
     private java.util.List<Comment> comments = new java.util.ArrayList<>();
+
+    @ManyToMany(mappedBy = "joinedGatherings")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Builder.Default
+    private java.util.List<User> members = new java.util.ArrayList<>();
 
     @Transient
     private int commentCount;
+
+    @Transient
+    private int memberCount;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -54,6 +63,9 @@ public class Gathering {
     protected void onPostLoad() {
         if (comments != null) {
             this.commentCount = comments.size();
+        }
+        if (members != null) {
+            this.memberCount = members.size();
         }
     }
 
