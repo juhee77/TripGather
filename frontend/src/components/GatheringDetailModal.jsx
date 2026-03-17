@@ -1,9 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, MapPin, Calendar, MessageCircle, Send } from 'lucide-react';
+import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle } from 'lucide-react';
+import { useUser } from '../contexts/UserContext';
+import { authFetch } from '../api/client';
 
-const GatheringDetailModal = ({ gathering, onClose, onJoin }) => {
+const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }) => {
+  const { user: currentUser } = useUser();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ ...gathering });
+
+  const isHost = currentUser && gathering.host && (
+    (typeof gathering.host === 'string' && gathering.host === currentUser.name) ||
+    (gathering.host.email === currentUser.email)
+  );
+
+  const myStatus = gathering.members?.find(m => m.user.email === currentUser?.email)?.status;
 
   const fetchComments = async () => {
     try {
@@ -29,7 +41,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin }) => {
       const res = await fetch(`http://localhost:8080/api/gatherings/${gathering.id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newComment, author: "Jihyun (지현)" }),
+        body: JSON.stringify({ content: newComment, author: currentUser?.name || "익명" }),
       });
       if (res.ok) {
         setNewComment("");
@@ -46,18 +58,62 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin }) => {
 
   const handleJoin = async () => {
     try {
-      const res = await fetch(`http://localhost:8080/api/gatherings/${gathering.id}/join`, {
+      const res = await authFetch(`http://localhost:8080/api/gatherings/${gathering.id}/join`, {
         method: "POST"
       });
       if (res.ok) {
         const updatedGathering = await res.json();
         onJoin(updatedGathering);
-        alert("모임 참여가 완료되었습니다! 🎉");
+        alert("참여 신청을 보냈습니다. 호스트가 승인하면 확정됩니다! 📨");
       } else {
-        alert("원활하지 않은 요청입니다.");
+        alert("참여 신청에 실패했습니다.");
       }
     } catch (err) {
       console.error("Error joining gathering", err);
+    }
+  };
+
+  const handleApprove = async (userId) => {
+    try {
+      const res = await authFetch(`http://localhost:8080/api/gatherings/${gathering.id}/members/${userId}/approve`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        alert("멤버를 승인했습니다!");
+        onUpdate && onUpdate(); // Refresh gathering data
+      }
+    } catch (err) {
+      console.error("Error approving member", err);
+    }
+  };
+
+  const handleReject = async (userId) => {
+    try {
+      const res = await authFetch(`http://localhost:8080/api/gatherings/${gathering.id}/members/${userId}/reject`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        alert("멤버 신청을 거절했습니다.");
+        onUpdate && onUpdate();
+      }
+    } catch (err) {
+      console.error("Error rejecting member", err);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("정말로 이 모임을 삭제하시겠습니까?")) return;
+    try {
+      const res = await authFetch(`http://localhost:8080/api/gatherings/${gathering.id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        alert("모임이 삭제되었습니다.");
+        onDelete && onDelete(gathering.id);
+        onClose();
+      }
+    } catch (err) {
+      console.error("Error deleting gathering", err);
     }
   };
 
@@ -79,9 +135,21 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin }) => {
         {/* Header */}
         <div style={{ padding: '20px 24px', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 800 }}>모임 상세 ✨</h2>
-          <button onClick={onClose} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none' }}>
-            <X size={20} color="var(--text-main)" />
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {isHost && (
+              <>
+                <button onClick={() => setIsEditing(true)} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', border: 'none', cursor: 'pointer' }}>
+                  <Edit size={18} color="var(--primary)" />
+                </button>
+                <button onClick={handleDelete} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', border: 'none', cursor: 'pointer' }}>
+                  <Trash2 size={18} color="#FF6B6B" />
+                </button>
+              </>
+            )}
+            <button onClick={onClose} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
+              <X size={20} color="var(--text-main)" />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Content */}
@@ -93,7 +161,9 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin }) => {
           <div style={{ marginTop: gathering.bgImageUrl ? '0' : '20px' }}>
             <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 600, background: 'var(--bg-color)', padding: '4px 8px', borderRadius: '8px' }}>{gathering.category}</span>
             <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '12px 0 8px 0', color: 'var(--text-main)' }}>{gathering.title}</h1>
-            <p style={{ color: 'var(--text-sub)', fontSize: '15px', fontWeight: 500 }}>Host: {gathering.host}</p>
+            <p style={{ color: 'var(--text-sub)', fontSize: '15px', fontWeight: 500 }}>
+              Host: {typeof gathering.host === 'string' ? gathering.host : gathering.host?.name}
+            </p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px', padding: '16px', background: 'var(--bg-color)', borderRadius: '16px' }}>
@@ -108,12 +178,54 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin }) => {
             </div>
           </div>
 
-          <button onClick={handleJoin} disabled={gathering.currentJoining >= gathering.maxJoining} style={{
-            width: '100%', padding: '16px', background: gathering.currentJoining >= gathering.maxJoining ? 'var(--text-sub)' : 'var(--primary)', 
-            color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', fontWeight: 700, marginTop: '24px', cursor: 'pointer'
-          }}>
-            {gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참여하기'}
-          </button>
+          {!isHost && (
+            <button 
+              onClick={handleJoin} 
+              disabled={gathering.currentJoining >= gathering.maxJoining || myStatus} 
+              style={{
+                width: '100%', padding: '16px', 
+                background: (gathering.currentJoining >= gathering.maxJoining && !myStatus) ? 'var(--text-sub)' : myStatus === 'PENDING' ? '#FFD43B' : myStatus === 'APPROVED' ? '#51CF66' : 'var(--primary)', 
+                color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', fontWeight: 700, marginTop: '24px', cursor: 'pointer'
+              }}
+            >
+              {myStatus === 'PENDING' ? '신청 대기 중...' : 
+               myStatus === 'APPROVED' ? '참여 확정됨!' : 
+               myStatus === 'REJECTED' ? '거절된 모임입니다' :
+               gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참참여 신청하기'}
+            </button>
+          )}
+
+          {/* Member Management Section (Host Only) */}
+          {isHost && (
+            <div style={{ marginTop: '32px', padding: '20px', background: 'var(--bg-color)', borderRadius: '20px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Users size={18} color="var(--primary)" /> 참여 신청 관리
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {gathering.members?.filter(m => m.status === 'PENDING').map(req => (
+                  <div key={req.user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '18px', background: 'var(--border)' }}>
+                        {req.user.profileImageUrl && <img src={req.user.profileImageUrl} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />}
+                      </div>
+                      <span style={{ fontSize: '14px', fontWeight: 600 }}>{req.user.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button onClick={() => handleApprove(req.user.id)} style={{ padding: '6px', background: 'none', border: 'none', cursor: 'pointer' }}>
+                        <CheckCircle size={22} color="#51CF66" />
+                      </button>
+                      <button onClick={() => handleReject(req.user.id)} style={{ padding: '6px', background: 'none', border: 'none', cursor: 'pointer' }}>
+                        <XCircle size={22} color="#FF6B6B" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {gathering.members?.filter(m => m.status === 'PENDING').length === 0 && (
+                  <p style={{ fontSize: '13px', color: 'var(--text-sub)', textAlign: 'center' }}>새로운 참가 신청이 없습니다.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div style={{ marginTop: '32px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>

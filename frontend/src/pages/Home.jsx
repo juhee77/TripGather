@@ -5,9 +5,11 @@ import GatheringDetailModal from '../components/GatheringDetailModal';
 import TicketCard from '../components/TicketCard';
 import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
+import { useUser } from '../contexts/UserContext';
 import { Search, Map as MapIcon, Plus, MessageCircle } from 'lucide-react';
 
 const Home = () => {
+  const { user: currentUser } = useUser();
   const [gatherings, setGatherings] = useState([]);
   const [activeTab, setActiveTab] = useState('발견');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -129,7 +131,7 @@ const Home = () => {
               >
                 <FeedCard
                   title={g.title}
-                  host={g.host}
+                  host={typeof g.host === 'string' ? g.host : g.host?.name}
                   date={g.dates}
                   location={g.location}
                   joining={`${g.currentJoining}/${g.maxJoining}`}
@@ -148,7 +150,11 @@ const Home = () => {
 
         {activeTab === '내 모임' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {gatherings.filter(g => g.host === 'Jihyun (지현)' || myJoinedIds.includes(g.id)).map((g, idx) => (
+            {gatherings.filter(g => {
+              const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
+              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && m.status === 'APPROVED');
+              return isHost || isApproved;
+            }).map((g, idx) => (
               <div 
                 key={g.id} 
                 onClick={() => setSelectedGathering(g)} 
@@ -157,7 +163,7 @@ const Home = () => {
               >
                 <FeedCard
                   title={g.title}
-                  host={g.host}
+                  host={typeof g.host === 'string' ? g.host : g.host?.name}
                   date={g.dates}
                   location={g.location}
                   joining={`${g.currentJoining}/${g.maxJoining}`}
@@ -165,7 +171,11 @@ const Home = () => {
                 />
               </div>
             ))}
-            {gatherings.filter(g => g.host === 'Jihyun (지현)' || myJoinedIds.includes(g.id)).length === 0 && (
+            {gatherings.filter(g => {
+              const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
+              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && m.status === 'APPROVED');
+              return isHost || isApproved;
+            }).length === 0 && (
               <div className="glass" style={{ 
                 textAlign: 'center', 
                 padding: '60px 24px',
@@ -186,7 +196,11 @@ const Home = () => {
 
         {activeTab === '채팅' && (
           <ChatTab 
-            joinedGatherings={gatherings.filter(g => g.host === 'Jihyun (지현)' || myJoinedIds.includes(g.id))} 
+            joinedGatherings={gatherings.filter(g => {
+              const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
+              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && m.status === 'APPROVED');
+              return isHost || isApproved;
+            })} 
           />
         )}
 
@@ -244,12 +258,13 @@ const Home = () => {
         <GatheringDetailModal
           gathering={selectedGathering}
           onClose={() => setSelectedGathering(null)}
+          onUpdate={fetchGatherings}
+          onDelete={(id) => {
+            setGatherings(prev => prev.filter(g => g.id !== id));
+            setSelectedGathering(null);
+          }}
           onJoin={(updatedGathering) => {
-            setSelectedGathering(updatedGathering);
-            fetchGatherings();
-            const newIds = [...new Set([...myJoinedIds, updatedGathering.id])];
-            setMyJoinedIds(newIds);
-            localStorage.setItem('myJoinedIds', JSON.stringify(newIds));
+            fetchGatherings(); // Full refresh to get status
           }}
         />
       )}

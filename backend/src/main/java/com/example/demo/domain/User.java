@@ -67,15 +67,10 @@ public class User implements UserDetails {
         this.updatedAt = LocalDateTime.now();
     }
 
-    @ManyToMany
-    @JoinTable(
-        name = "user_gatherings",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "gathering_id")
-    )
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @com.fasterxml.jackson.annotation.JsonIgnore
     @Builder.Default
-    private List<Gathering> joinedGatherings = new java.util.ArrayList<>();
+    private List<GatheringMember> joinedGatherings = new java.util.ArrayList<>();
 
     // ── UserDetails 구현 ──────────────────────────────────────
     @Override

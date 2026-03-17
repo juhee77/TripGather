@@ -1,21 +1,23 @@
 # TripGather Project Roadmap - TODO List
 
 ## 1. Chat & Community Features
-- [ ] **Group Chat Rooms**: Implement real-time group chat for each gathering/moim.
-- [ ] **Chat Service**: Backend WebSocket support (Spring Message + STOMP).
-- [ ] **Chat UI**: Interactive chat window with message history and participant list.
+- [x] **Group Chat Rooms**: Implement real-time group chat for each gathering/moim.
+- [x] **Chat Service**: Backend WebSocket support (Spring Message + STOMP).
+- [x] **Chat UI**: Interactive chat window with message history.
+- [ ] **Participant List**: View members in the current chat room.
 - [ ] **Direct Messaging**: 1:1 chat between users.
+- [ ] **Read Receipts**: Simple status for read messages.
 
-## 2. Gathering (Moim) Enhancements
-- [ ] **Gathering CRUD Refactoring**: Align with the "Full CRUD" policy (Daily schedules, Participant management).
-- [ ] **Member Approval System**: Host can approve/reject join requests.
-- [ ] **Gathering Tags & Search**: Filter by categories and location.
-
-## 3. Infrastructure & Security
+## 2. Infrastructure & Security
+- [x] **Vite Bug Fix**: Solve `global is not defined` error for SockJS.
 - [ ] **Notification System**: SSE or Push notifications for chat and gathering updates.
 - [ ] **Media Upload**: Profile and gathering image uploads using S3 or local storage.
 
-## 4. Completed Tasks
+## 3. Completed Tasks
+- [x] **Gathering CRUD & Approval**: Full management for hosts and join requests.
+- [x] JWT Authentication & OAuth2 Integration
+- [x] Itinerary Management (Daily CRUD)
+- [x] Backend Integration Test (Given-When-Then)
 - [x] JWT Authentication & OAuth2 Integration
 - [x] Itinerary Management (Daily CRUD)
 - [x] Backend Integration Test (Given-When-Then)
