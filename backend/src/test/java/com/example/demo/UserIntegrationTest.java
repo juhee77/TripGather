@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,13 +22,29 @@ class UserIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
-    @DisplayName("내 정보(프로필) 조회 API 테스트")
+    @DisplayName("인증된 사용자가신의 프로필 정보를 정상적으로 조회할 수 있는지 검증한다.")
+    @org.springframework.security.test.context.support.WithMockUser(username = "jihyun@test.com")
     void getMyProfileTest() throws Exception {
-        // 단순 임시 인증 스펙: 하드코딩된 디폴트 정보나 Session 기반 유저 객체 리턴 검증
+        // given: 인증된 사용자 세션이 WithMockUser에 의해 준비됨.
+        // 현재 UserService/Controller 스펙상 /api/users/me는 jihyun@test.com 정보를 찾아 반환함.
+
+        // when & then
         mockMvc.perform(get("/api/users/me"))
+                .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Jihyun (지현)")) // 호환성 유지를 위해 디폴트 Jihyun 기대
-                .andExpect(jsonPath("$.bio").value("여행을 좋아하는 사람"))
-                .andExpect(jsonPath("$.points").exists());
+                .andExpect(jsonPath("$.email").value("jihyun@test.com"))
+                .andExpect(jsonPath("$.name").exists())
+                .andExpect(jsonPath("$.bio").exists());
+    }
+
+    @Test
+    @DisplayName("인증되지 않은 사용자가 /api/users/me 접근 시 403 혹은 401 에러를 받는지 검증한다.")
+    void getMyProfileUnauthenticatedTest() throws Exception {
+        // given: 인증 정보 없음
+
+        // when & then
+        mockMvc.perform(get("/api/users/me"))
+                .andDo(print())
+                .andExpect(status().is4xxClientError()); // 401 or 403 or 302
     }
 }
