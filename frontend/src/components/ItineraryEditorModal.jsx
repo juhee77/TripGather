@@ -70,16 +70,13 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
-
         try {
             const url = isEdit ? `/api/itineraries/${itinerary.id}` : '/api/itineraries';
             const method = isEdit ? 'PATCH' : 'POST';
-
             const response = await authFetch(url, {
                 method,
                 body: JSON.stringify(formData),
             });
-
             if (response.ok) {
                 const saved = await response.json();
                 onSaved(saved);
@@ -96,100 +93,138 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
         }
     };
 
-    // Grouping for UI
     const days = Array.from(new Set(formData.routePoints.map(p => p.dayNumber || 1))).sort((a, b) => a - b);
     if (days.length === 0) days.push(1);
-
-    const inputStyle = {
-        width: '100%', padding: '12px 12px 12px 40px', borderRadius: '12px',
-        border: '1px solid var(--border)', background: 'var(--bg-color)',
-        fontSize: '15px', fontWeight: 500, outline: 'none', color: 'var(--text-main)'
-    };
 
     return (
         <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', zIndex: 3000,
+            backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(25px)', zIndex: 3000,
             display: 'flex', justifyContent: 'center', alignItems: 'flex-end'
         }}>
-            <div style={{
-                background: 'var(--surface)', width: '100%', maxWidth: '500px', height: '92vh',
-                borderTopLeftRadius: '28px', borderTopRightRadius: '28px',
+            <div className="glass-dark" style={{
+                width: '100%', maxWidth: '500px', height: '94vh',
+                borderTopLeftRadius: '32px', borderTopRightRadius: '32px',
                 display: 'flex', flexDirection: 'column', overflow: 'hidden',
-                boxShadow: '0 -10px 40px rgba(0,0,0,0.3)',
-                animation: 'slideUp 0.3s ease-out'
+                boxShadow: '0 -20px 60px rgba(0,0,0,0.5)',
+                border: 'none',
+                animation: 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
             }}>
-                <header style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <header style={{ 
+                    padding: '24px 28px', 
+                    borderBottom: '1px solid rgba(255,255,255,0.1)', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    background: 'rgba(255,255,255,0.02)'
+                }}>
                     <div>
-                        <h2 style={{ fontSize: '20px', fontWeight: 800 }}>{isEdit ? '일정 수정하기 ✏️' : '새 일정 만들기 ✈️'}</h2>
-                        <p style={{ fontSize: '13px', color: 'var(--text-sub)' }}>나만의 일일 계획을 세워보세요.</p>
+                        <h2 className="heading-m" style={{ color: 'white', marginBottom: '4px' }}>
+                            {isEdit ? 'EDIT VOYAGE ✈️' : 'NEW CHECK-IN 🎫'}
+                        </h2>
+                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Configure your travel mission</p>
                     </div>
-                    <button onClick={onClose} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', border: 'none' }}>
-                        <X size={20} color="var(--text-main)" />
+                    <button onClick={onClose} className="icon-circle glass" style={{ width: '40px', height: '40px' }}>
+                        <X size={20} color="white" />
                     </button>
                 </header>
 
-                <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <form onSubmit={handleSubmit} className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         <div>
-                            <label style={{ display: 'block', fontSize: '14px', fontWeight: 700, marginBottom: '6px' }}>일정 제목</label>
+                            <label className="text-s" style={{ color: 'var(--primary-orange)', fontWeight: 900, marginBottom: '12px', display: 'block', letterSpacing: '1px' }}>VOYAGE TITLE</label>
                             <div style={{ position: 'relative' }}>
-                                <Type size={16} color="var(--text-sub)" style={{ position: 'absolute', top: '14px', left: '14px' }} />
-                                <input required name="title" value={formData.title} onChange={handleChange} placeholder="예: 도쿄 3박 4일 미식 여행" style={inputStyle} />
+                                <Type size={18} color="rgba(255,255,255,0.3)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
+                                <input 
+                                    required 
+                                    name="title" 
+                                    value={formData.title} 
+                                    onChange={handleChange} 
+                                    placeholder="Enter your trip title..." 
+                                    className="glass"
+                                    style={{ 
+                                        width: '100%', padding: '16px 16px 16px 48px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)',
+                                        color: 'white', fontSize: '16px', fontWeight: 600, outline: 'none'
+                                    }} 
+                                />
                             </div>
                         </div>
 
                         <div>
-                            <label style={{ display: 'block', fontSize: '14px', fontWeight: 700, marginBottom: '6px' }}>상세 설명</label>
+                            <label className="text-s" style={{ color: 'var(--primary-orange)', fontWeight: 900, marginBottom: '12px', display: 'block', letterSpacing: '1px' }}>INTEL & INTENTION</label>
                             <div style={{ position: 'relative' }}>
-                                <FileText size={16} color="var(--text-sub)" style={{ position: 'absolute', top: '14px', left: '14px' }} />
-                                <textarea name="description" value={formData.description} onChange={handleChange} placeholder="여행의 주요 테마를 설명해주세요." style={{ ...inputStyle, height: '80px', resize: 'none' }} />
+                                <FileText size={18} color="rgba(255,255,255,0.3)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
+                                <textarea 
+                                    name="description" 
+                                    value={formData.description} 
+                                    onChange={handleChange} 
+                                    placeholder="Briefly describe the journey..." 
+                                    className="glass"
+                                    style={{ 
+                                        width: '100%', padding: '16px 16px 16px 48px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)',
+                                        color: 'white', fontSize: '15px', fontWeight: 500, outline: 'none', height: '120px', resize: 'none', lineHeight: '1.6'
+                                    }} 
+                                />
                             </div>
                         </div>
                     </div>
 
-                    <div style={{ marginTop: '10px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                            <label style={{ fontSize: '15px', fontWeight: 800, color: 'var(--primary)' }}>데일리 스케줄</label>
-                            <button type="button" onClick={addDay} style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary)', background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <Plus size={14} /> DAY 추가
+                    <div style={{ marginTop: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <label className="text-s" style={{ color: 'var(--secondary-purple)', fontWeight: 900, letterSpacing: '1px' }}>FLIGHT PATH (STOPS)</label>
+                            <button 
+                                type="button" 
+                                onClick={addDay} 
+                                className="glass"
+                                style={{ 
+                                    fontSize: '11px', fontWeight: 800, color: 'white', padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid rgba(99, 102, 241, 0.4)',
+                                    display: 'flex', alignItems: 'center', gap: '6px'
+                                }}
+                            >
+                                <Plus size={14} color="var(--secondary-purple)" /> NEXT DAY
                             </button>
                         </div>
 
                         {days.map(dayNum => (
-                            <div key={dayNum} style={{ marginBottom: '24px', padding: '16px', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                    <h4 style={{ fontSize: '14px', fontWeight: 800 }}>DAY {dayNum}</h4>
-                                    <button type="button" onClick={() => addPoint(dayNum)} style={{ fontSize: '11px', fontWeight: 600, color: '#888', background: 'none', border: 'none' }}>
-                                        + 스팟 추가
+                            <div key={dayNum} className="glass" style={{ marginBottom: '24px', padding: '20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                    <h4 className="text-s" style={{ color: 'white', fontWeight: 900, letterSpacing: '0.5px' }}>DAY {dayNum}</h4>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => addPoint(dayNum)} 
+                                        style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}
+                                    >
+                                        + ADD TARGET
                                     </button>
                                 </div>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     {formData.routePoints.filter(p => (p.dayNumber || 1) === dayNum).map((point, idx) => {
                                         const globalIndex = formData.routePoints.indexOf(point);
                                         return (
-                                            <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                    <div style={{ position: 'relative' }}>
-                                                        <MapPin size={14} color="var(--primary)" style={{ position: 'absolute', top: '11px', left: '10px' }} />
-                                                        <input 
-                                                            required 
-                                                            value={point.label} 
-                                                            onChange={(e) => updatePoint(globalIndex, 'label', e.target.value)} 
-                                                            placeholder="어디를 방문하나요? (예: 도쿄역)" 
-                                                            style={{ ...inputStyle, paddingLeft: '32px', height: '36px', fontSize: '13px' }} 
-                                                        />
-                                                    </div>
+                                            <div key={idx} className="animate-fade" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                <div style={{ flex: 1, position: 'relative' }}>
+                                                    <MapPin size={16} color="var(--primary-orange)" style={{ position: 'absolute', top: '13px', left: '14px' }} />
+                                                    <input 
+                                                        required 
+                                                        value={point.label} 
+                                                        onChange={(e) => updatePoint(globalIndex, 'label', e.target.value)} 
+                                                        placeholder="Location target..." 
+                                                        className="glass"
+                                                        style={{ 
+                                                            width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)',
+                                                            color: 'white', fontSize: '14px', fontWeight: 600, outline: 'none'
+                                                        }} 
+                                                    />
                                                 </div>
-                                                <button type="button" onClick={() => removePoint(globalIndex)} style={{ padding: '8px', color: '#ff4b4b' }}>
-                                                    <Trash2 size={16} />
+                                                <button type="button" onClick={() => removePoint(globalIndex)} className="icon-circle" style={{ width: '36px', height: '36px', background: 'rgba(239, 68, 68, 0.1)' }}>
+                                                    <Trash2 size={16} color="#EF4444" />
                                                 </button>
                                             </div>
                                         );
                                     })}
                                     {formData.routePoints.filter(p => (p.dayNumber || 1) === dayNum).length === 0 && (
-                                        <p style={{ fontSize: '12px', color: '#666', textAlign: 'center', padding: '10px' }}>아직 등록된 스팟이 없습니다.</p>
+                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.2)', textAlign: 'center', padding: '12px', fontWeight: 600, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px' }}>No targets assigned for this day</p>
                                     )}
                                 </div>
                             </div>
@@ -197,23 +232,26 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
                     </div>
                 </form>
 
-                <footer style={{ padding: '20px', borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
+                <footer style={{ 
+                    padding: '28px', 
+                    borderTop: '1px solid rgba(255,255,255,0.1)', 
+                    background: 'rgba(13, 13, 25, 0.8)',
+                    backdropFilter: 'blur(10px)'
+                }}>
                     <button 
                         type="submit" 
                         onClick={handleSubmit}
                         disabled={saving}
+                        className="primary-btn"
                         style={{
-                            width: '100%', height: '56px', borderRadius: '16px', background: 'var(--primary)', 
-                            color: 'white', fontWeight: 800, fontSize: '17px', border: 'none', cursor: 'pointer',
-                            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
-                            boxShadow: '0 8px 16px rgba(255, 123, 84, 0.3)'
+                            width: '100%', height: '64px', borderRadius: '16px', fontSize: '18px'
                         }}
                     >
-                        {saving ? '저장 중...' : (isEdit ? '수정 완료' : '일정 발권하기')} <Send size={20} />
+                        {saving ? 'MISSION ENCRYPTING...' : (isEdit ? 'CONFIRM UPDATE' : 'BOARDING PASS ISSUED')} <Send size={20} />
                     </button>
                 </footer>
             </div>
-            <style>{`
+            <style jsx>{`
                 @keyframes slideUp {
                     from { transform: translateY(100%); }
                     to { transform: translateY(0); }
