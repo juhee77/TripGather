@@ -66,40 +66,76 @@ const ItineraryTab = () => {
     return (
         <div style={{
             background: '#0B0B15', // Night Flight dark theme
-            color: '#E0E0E0', minHeight: 'calc(100vh - 200px)', margin: '0 -20px', padding: '20px', position: 'relative', overflow: 'hidden'
+            color: 'white', 
+            minHeight: 'calc(100vh - 160px)', 
+            margin: '0 -20px', 
+            padding: '30px 20px', 
+            position: 'relative', 
+            overflow: 'hidden',
+            borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0'
         }}>
             {/* Ambient Background Glows */}
-            <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '150px', height: '150px', background: 'rgba(255, 123, 84, 0.1)', filter: 'blur(60px)', borderRadius: '50%', zIndex: 0 }} />
-            <div style={{ position: 'absolute', bottom: '100px', left: '-30px', width: '100px', height: '100px', background: 'rgba(100, 100, 255, 0.1)', filter: 'blur(50px)', borderRadius: '50%', zIndex: 0 }} />
+            <div style={{ position: 'absolute', top: '0', right: '-100px', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(255, 92, 0, 0.15) 0%, transparent 70%)', filter: 'blur(80px)', borderRadius: '50%', zIndex: 0 }} />
+            <div style={{ position: 'absolute', bottom: '100px', left: '-100px', width: '250px', height: '250px', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)', filter: 'blur(60px)', borderRadius: '50%', zIndex: 0 }} />
 
             <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h2 style={{ fontSize: '18px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ color: 'var(--primary)' }}>•</span> MY FLIGHTS
-                    </h2>
-                    <button onClick={fetchItineraries} style={{ color: '#888', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
+                    <div>
+                        <h2 className="heading-m" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white' }}>
+                            <span style={{ 
+                                width: '12px', 
+                                height: '12px', 
+                                borderRadius: '50%', 
+                                background: 'var(--primary-gradient)',
+                                boxShadow: '0 0 15px var(--primary-orange)'
+                            }}></span> 
+                            MY FLIGHTS
+                        </h2>
+                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '4px' }}>Upcoming & Past Itineraries</p>
+                    </div>
+                    <button onClick={fetchItineraries} style={{ 
+                        color: 'rgba(255,255,255,0.5)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        fontSize: '11px', 
+                        fontWeight: 700,
+                        background: 'rgba(255,255,255,0.05)', 
+                        padding: '8px 14px',
+                        borderRadius: 'var(--radius-full)',
+                        border: '1px solid rgba(255,255,255,0.1)'
+                    }}>
                         <RotateCcw size={14} /> REFRESH
                     </button>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {itineraries.map(it => (
-                        <TicketCard
-                            key={it.id}
-                            itinerary={it}
-                            onViewRoute={(itinerary) => setSelectedItinerary(itinerary)}
-                        />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {itineraries.map((it, idx) => (
+                        <div key={it.id} className="animate-fade" style={{ animationDelay: `${idx * 0.1}s` }}>
+                            <TicketCard
+                                itinerary={it}
+                                onViewRoute={(itinerary) => setSelectedItinerary(itinerary)}
+                            />
+                        </div>
                     ))}
                     {!loading && itineraries.length === 0 && (
-                        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-                            <p style={{ color: '#888', marginBottom: '16px' }}>저장된 일정이 없습니다.</p>
-                            <button onClick={() => openEditor()} style={{ padding: '10px 24px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>
-                                첫 일정 만들기
+                        <div className="glass-dark animate-fade" style={{ 
+                            textAlign: 'center', 
+                            padding: '80px 30px', 
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px dashed rgba(255, 255, 255, 0.15)'
+                        }}>
+                            <div style={{ fontSize: '56px', marginBottom: '20px' }}>✈️</div>
+                            <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '24px', fontWeight: 600 }}>아직 등록된 여행 항공권이 없습니다.</p>
+                            <button className="primary-btn" onClick={() => openEditor()}>
+                                첫 비행기표 발권하기
                             </button>
                         </div>
                     )}
                     {loading && (
-                        <div style={{ textAlign: 'center', padding: '40px 0', color: '#888' }}>Fetching flight data...</div>
+                        <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+                            <span className="animate-pulse">Loading Flight Data...</span>
+                        </div>
                     )}
                 </div>
             </div>
@@ -107,13 +143,19 @@ const ItineraryTab = () => {
             {/* Floating Action Button inside Tab */}
             <button
                 onClick={() => openEditor()}
+                className="primary-btn"
                 style={{
-                    position: 'fixed', bottom: '100px', right: 'calc(50% - 240px + 24px)', background: 'var(--primary)', color: 'white',
-                    width: '56px', height: '56px', borderRadius: '28px', display: 'flex', justifyContent: 'center', alignItems: 'center',
-                    boxShadow: '0 8px 16px rgba(255, 123, 84, 0.4)', zIndex: 100, border: 'none', cursor: 'pointer'
+                    position: 'fixed', 
+                    bottom: '110px', 
+                    right: 'calc(50% - 240px + 24px)',
+                    width: '64px', 
+                    height: '64px', 
+                    borderRadius: '50%', 
+                    zIndex: 100,
+                    boxShadow: '0 15px 30px rgba(255, 92, 0, 0.4)'
                 }}
             >
-                <Plus size={28} strokeWidth={2.5} />
+                <Plus size={32} strokeWidth={3} />
             </button>
 
             {/* Editor Modal (Create/Edit) */}
