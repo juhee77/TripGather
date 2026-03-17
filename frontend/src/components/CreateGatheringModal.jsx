@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, MapPin, Calendar as CalendarIcon, Users, Type, Camera, Clock } from 'lucide-react';
+import { authFetch } from '../api/client';
+import { useUser } from '../contexts/UserContext';
 
 const CATEGORIES = [
   { label: '밥/카페', icon: '🍚' },
@@ -10,9 +12,9 @@ const CATEGORIES = [
 ];
 
 const CreateGatheringModal = ({ onClose, onCreated }) => {
+  const { user: currentUser } = useUser();
   const [formData, setFormData] = useState({
     title: '',
-    host: 'Jihyun (지현)', 
     location: '',
     date: '',
     time: '',
@@ -63,7 +65,7 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
     };
 
     try {
-      const response = await fetch('http://localhost:8080/api/gatherings', {
+      const response = await authFetch('http://localhost:8080/api/gatherings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

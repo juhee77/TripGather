@@ -19,8 +19,9 @@ public class Gathering {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false)
-    private String host;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "host_id")
+    private User host;
 
     @Column(nullable = false)
     private String location;
@@ -45,10 +46,10 @@ public class Gathering {
     @Builder.Default
     private java.util.List<Comment> comments = new java.util.ArrayList<>();
 
-    @ManyToMany(mappedBy = "joinedGatherings")
+    @OneToMany(mappedBy = "gathering", cascade = CascadeType.ALL, orphanRemoval = true)
     @com.fasterxml.jackson.annotation.JsonIgnore
     @Builder.Default
-    private java.util.List<User> members = new java.util.ArrayList<>();
+    private java.util.List<GatheringMember> members = new java.util.ArrayList<>();
 
     @Transient
     private int commentCount;
@@ -65,7 +66,9 @@ public class Gathering {
             this.commentCount = comments.size();
         }
         if (members != null) {
-            this.memberCount = members.size();
+            this.memberCount = (int) members.stream()
+                    .filter(m -> m.getStatus() == MemberStatus.APPROVED)
+                    .count();
         }
     }
 

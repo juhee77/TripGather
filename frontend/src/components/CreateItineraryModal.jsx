@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { X, Type, FileText, Send } from 'lucide-react';
+import { useUser } from '../contexts/UserContext';
+import { authFetch } from '../api/client';
 
 const CreateItineraryModal = ({ onClose, onCreated }) => {
+    const { user: currentUser } = useUser();
     const [formData, setFormData] = useState({
         title: '',
-        author: 'Jihyun (지현)',
+        author: currentUser?.name || '익명',
         description: ''
     });
 
@@ -22,7 +25,7 @@ const CreateItineraryModal = ({ onClose, onCreated }) => {
         };
 
         try {
-            const response = await fetch('http://localhost:8080/api/itineraries', {
+            const response = await authFetch('http://localhost:8080/api/itineraries', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -30,4 +30,27 @@ public class GatheringController {
     public ResponseEntity<Gathering> joinGathering(@PathVariable Long id) {
         return ResponseEntity.ok(gatheringService.joinGathering(id));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Gathering> updateGathering(@PathVariable Long id, @RequestBody Gathering gathering) {
+        return ResponseEntity.ok(gatheringService.updateGathering(id, gathering));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteGathering(@PathVariable Long id) {
+        gatheringService.deleteGathering(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/members/{userId}/approve")
+    public ResponseEntity<Void> approveMember(@PathVariable Long id, @PathVariable Long userId) {
+        gatheringService.approveMember(id, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/members/{userId}/reject")
+    public ResponseEntity<Void> rejectMember(@PathVariable Long id, @PathVariable Long userId) {
+        gatheringService.rejectMember(id, userId);
+        return ResponseEntity.ok().build();
+    }
 }

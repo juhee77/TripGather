@@ -2,18 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Send, Users, Shield, MoreHorizontal } from 'lucide-react';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
+import { useUser } from '../contexts/UserContext';
 
 const ChatRoom = ({ gathering, onBack }) => {
+    const { user: currentUser } = useUser();
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [stompClient, setStompClient] = useState(null);
     const scrollRef = useRef(null);
-    
-    // 현재 유저 정보 (Context에서 가져와야 하지만 여기서는 임시 테스트용)
-    const currentUser = {
-        email: 'juhee@gmail.com', // 실제로는 UserContext 등에서 가져와야 함
-        name: 'Jihyun (지현)'
-    };
 
     useEffect(() => {
         // 채팅 내역 불러오기

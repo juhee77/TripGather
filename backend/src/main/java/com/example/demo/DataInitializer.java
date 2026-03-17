@@ -42,44 +42,46 @@ public class DataInitializer {
                         .build());
             }
 
-            if (gatheringRepo.count() == 0) {
-                gatheringRepo.save(Gathering.builder()
+                User jihyun = userRepo.findByEmail("jihyun@test.com").get();
+                User alex = userRepo.findByEmail("alex@test.com").get();
+
+                Gathering g1 = gatheringRepo.save(Gathering.builder()
                         .title("Weekend Trip to Busan! (부산 주말 여행! 🌊)")
-                        .host("Jihyun (지현)")
+                        .host(jihyun)
                         .location("Busan Station (부산역)")
-                        .lat(35.1154)   // 부산역
+                        .lat(35.1154)
                         .lng(129.0422)
                         .dates("Aug 17-18")
-                        .currentJoining(4)
                         .maxJoining(6)
                         .bgImageUrl("https://images.unsplash.com/photo-1546872957-3f746681498b?auto=format&fit=crop&q=80&w=600")
                         .build());
 
-                gatheringRepo.save(Gathering.builder()
+                Gathering g2 = gatheringRepo.save(Gathering.builder()
                         .title("오늘 저녁 한강 러닝 뛸 사람~ 🏃‍♂️")
-                        .host("Alex")
+                        .host(alex)
                         .location("Banpo Hangang Park (반포 한강공원)")
-                        .lat(37.5122)   // 반포 한강공원
+                        .lat(37.5122)
                         .lng(126.9970)
                         .dates("Today 20:00")
-                        .currentJoining(2)
                         .maxJoining(4)
                         .bgImageUrl("")
                         .build());
 
-                gatheringRepo.save(Gathering.builder()
+                Gathering g3 = gatheringRepo.save(Gathering.builder()
                         .title("강남 맛집 탐방 🍜")
-                        .host("Alex")
+                        .host(alex)
                         .location("Gangnam Station (강남역)")
-                        .lat(37.4979)   // 강남역
+                        .lat(37.4979)
                         .lng(127.0276)
                         .dates("Sat 18:00")
-                        .currentJoining(1)
                         .maxJoining(5)
                         .category("밥/카페")
                         .bgImageUrl("https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&q=80&w=600")
                         .build());
-            }
+                
+                // 멤버 관계 추가 (호스트는 승인된 상태로 시작)
+                userRepo.save(jihyun); // Ensure managed
+                userRepo.save(alex);
 
             if (itineraryRepo.count() == 0) {
                 // 서울 2박 3일 여행 — DAY별 여러 경유지
