@@ -4,6 +4,7 @@ import com.example.demo.domain.DirectMessage;
 import com.example.demo.domain.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.DirectMessageService;
+import com.example.demo.service.NotificationService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,7 @@ public class DirectMessageController {
     private final DirectMessageService dmService;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @MessageMapping("/dm/send")
     public void sendDM(DMRequest request) {
@@ -41,6 +43,9 @@ public class DirectMessageController {
         // 발신자와 수신자 모두에게 메시지 전송 (실시간 반영)
         messagingTemplate.convertAndSend("/topic/dm/" + saved.getReceiver().getEmail(), response);
         messagingTemplate.convertAndSend("/topic/dm/" + saved.getSender().getEmail(), response);
+
+        // 실시간 알림 전송 (SSE)
+        notificationService.send(saved.getReceiver().getEmail(), "dm-received", response);
     }
 
     @GetMapping("/history/{otherUserEmail}")
