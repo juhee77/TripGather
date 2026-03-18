@@ -10,7 +10,7 @@
 
 ## 2. Infrastructure & Security
 - [x] **Vite Bug Fix**: Solve `global is not defined` error for SockJS.
-- [ ] **Notification System**: SSE or Push notifications for chat and gathering updates.
+- [x] **Notification System**: SSE or Push notifications for chat and gathering updates.
 - [ ] **Media Upload**: Profile and gathering image uploads using S3 or local storage.
 
 ## 3. Completed Tasks

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { UserProvider } from './contexts/UserContext';
+ import { UserProvider } from './contexts/UserContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import MapPage from './pages/MapPage';
@@ -44,9 +45,11 @@ function App() {
   return (
     <AuthProvider>
       <UserProvider>
-        <Router>
-          <AppContent />
-        </Router>
+        <NotificationProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </NotificationProvider>
       </UserProvider>
     </AuthProvider>
   );
