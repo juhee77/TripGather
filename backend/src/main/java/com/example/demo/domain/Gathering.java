@@ -42,12 +42,12 @@ public class Gathering {
     private String bgImageUrl;
 
     @OneToMany(mappedBy = "gathering", cascade = CascadeType.ALL, orphanRemoval = true)
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"gathering"})
     @Builder.Default
     private java.util.List<Comment> comments = new java.util.ArrayList<>();
 
     @OneToMany(mappedBy = "gathering", cascade = CascadeType.ALL, orphanRemoval = true)
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"gathering"})
     @Builder.Default
     private java.util.List<GatheringMember> members = new java.util.ArrayList<>();
 
