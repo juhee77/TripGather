@@ -4,7 +4,7 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { useUser } from '../contexts/UserContext';
 
-const ChatRoom = ({ gathering, onBack }) => {
+const ChatRoom = ({ gathering, onBack, onStartDM }) => {
     const { user: currentUser } = useUser();
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
@@ -199,6 +199,15 @@ const ChatRoom = ({ gathering, onBack }) => {
                                     </div>
                                     <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 600 }}>Host</span>
                                 </div>
+                                {currentUser.email !== (typeof gathering.host === 'string' ? gathering.host : gathering.host?.email) && (
+                                    <button 
+                                        onClick={() => onStartDM(typeof gathering.host === 'string' ? { email: gathering.host, name: gathering.host } : gathering.host)}
+                                        className="glass" 
+                                        style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '11px', color: 'var(--primary-orange)', fontWeight: 800, border: '1px solid rgba(255, 92, 0, 0.2)' }}
+                                    >
+                                        DM
+                                    </button>
+                                )}
                             </div>
 
                             {/* Members */}
@@ -219,6 +228,15 @@ const ChatRoom = ({ gathering, onBack }) => {
                                             <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 600 }}>Active</span>
                                         </div>
                                     </div>
+                                    {currentUser.email !== m.user.email && (
+                                        <button 
+                                            onClick={() => onStartDM(m.user)}
+                                            className="glass" 
+                                            style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '11px', color: 'var(--primary-orange)', fontWeight: 800, border: '1px solid rgba(255, 92, 0, 0.2)' }}
+                                        >
+                                            DM
+                                        </button>
+                                    )}
                                 </div>
                             ))}
                         </div>
