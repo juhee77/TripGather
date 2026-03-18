@@ -47,4 +47,19 @@ public class DirectMessageService {
     public void markAsRead(Long dmId) {
         dmRepository.findById(dmId).ifPresent(dm -> dm.setRead(true));
     }
+
+    @Transactional
+    public void markMessagesAsRead(String myEmail, String otherUserEmail) {
+        User me = userRepository.findByEmail(myEmail)
+                .orElseThrow(() -> new RuntimeException("User not found: " + myEmail));
+        User other = userRepository.findByEmail(otherUserEmail)
+                .orElseThrow(() -> new RuntimeException("User not found: " + otherUserEmail));
+
+        List<DirectMessage> unreadMessages = dmRepository.findByReceiverAndIsReadFalse(me);
+        unreadMessages.forEach(dm -> {
+            if (dm.getSender().equals(other)) {
+                dm.setRead(true);
+            }
+        });
+    }
 }
