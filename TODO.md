@@ -4,7 +4,7 @@
 - [x] **Group Chat Rooms**: Implement real-time group chat for each gathering/moim.
 - [x] **Chat Service**: Backend WebSocket support (Spring Message + STOMP).
 - [x] **Chat UI**: Interactive chat window with message history.
-- [ ] **Participant List**: View members in the current chat room.
+- [x] **Participant List**: View members in the current chat room.
 - [ ] **Direct Messaging**: 1:1 chat between users.
 - [ ] **Read Receipts**: Simple status for read messages.
 

@@ -18,10 +18,12 @@ public class GatheringMember {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gathering_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"members", "comments"})
     private Gathering gathering;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"joinedGatherings", "password"})
     private User user;
 
     @Enumerated(EnumType.STRING)
