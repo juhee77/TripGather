@@ -6,7 +6,7 @@
 - [x] **Chat UI**: Interactive chat window with message history.
 - [x] **Participant List**: View members in the current chat room.
 - [x] **Direct Messaging**: 1:1 chat between users.
-- [ ] **Read Receipts**: Simple status for read messages.
+- [x] **Read Receipts**: Simple status for read messages.
 
 ## 2. Infrastructure & Security
 - [x] **Vite Bug Fix**: Solve `global is not defined` error for SockJS.

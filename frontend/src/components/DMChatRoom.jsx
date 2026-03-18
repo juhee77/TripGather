@@ -23,10 +23,22 @@ const DMChatRoom = ({ otherUser, onBack }) => {
 
     useEffect(() => {
         // DM 내역 불러오기
-        fetch(`http://localhost:8080/api/dm/history/${otherUser.email}`)
+        fetch(`http://localhost:8080/api/dm/history/${otherUser.email}`, {
+            headers: { 'Authorization': localStorage.getItem('token') } // token이 있다고 가정
+        })
             .then(res => res.json())
             .then(data => setMessages(data))
             .catch(err => console.error("DM History fetch error:", err));
+
+        // 읽음 처리 API 호출
+        const markAsRead = () => {
+            fetch(`http://localhost:8080/api/dm/read/${otherUser.email}`, {
+                method: 'PUT',
+                headers: { 'Authorization': localStorage.getItem('token') }
+            }).catch(err => console.error("Mark as read error:", err));
+        };
+
+        markAsRead();
 
         // WebSocket 연결
         const socket = new SockJS('http://localhost:8080/ws-stomp');
@@ -38,9 +50,22 @@ const DMChatRoom = ({ otherUser, onBack }) => {
                 // 나에게 오는 DM 구독
                 client.subscribe(`/topic/dm/${currentUser.email}`, (message) => {
                     const newMessage = JSON.parse(message.body);
-                    // 현재 대화 상대와의 메시지만 추가
                     if (newMessage.senderEmail === otherUser.email || newMessage.senderEmail === currentUser.email) {
                         setMessages(prev => [...prev, newMessage]);
+                        // 내가 받은 메시지라면 즉시 읽음 처리
+                        if (newMessage.receiverEmail === currentUser.email) {
+                            markAsRead();
+                        }
+                    }
+                });
+
+                // 상대방이 내 메시지를 읽었을 때 알림 구독
+                client.subscribe(`/topic/dm/read/${currentUser.email}`, (message) => {
+                    const notification = JSON.parse(message.body);
+                    if (notification.readerEmail === otherUser.email) {
+                        setMessages(prev => prev.map(m => 
+                            m.senderEmail === currentUser.email ? { ...m, isRead: true } : m
+                        ));
                     }
                 });
             },
@@ -136,9 +161,14 @@ const DMChatRoom = ({ otherUser, onBack }) => {
                                 }}>
                                     <p style={{ fontSize: '14px', color: 'white', margin: 0, lineHeight: '1.5' }}>{m.content}</p>
                                 </div>
-                                <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 600, marginBottom: '4px' }}>
-                                    {formatTime(m.sentAt)}
-                                </span>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', gap: '2px' }}>
+                                    {isMe && m.isRead && (
+                                        <span style={{ fontSize: '10px', color: 'var(--primary-orange)', fontWeight: 800 }}>읽음</span>
+                                    )}
+                                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                                        {formatTime(m.sentAt)}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     );

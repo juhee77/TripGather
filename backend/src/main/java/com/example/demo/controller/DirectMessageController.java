@@ -34,7 +34,8 @@ public class DirectMessageController {
                 saved.getSender().getName(),
                 saved.getSender().getEmail(),
                 saved.getReceiver().getEmail(),
-                saved.getSentAt().toString()
+                saved.getSentAt().toString(),
+                false
         );
 
         // 발신자와 수신자 모두에게 메시지 전송 (실시간 반영)
@@ -52,8 +53,25 @@ public class DirectMessageController {
                         dm.getSender().getName(),
                         dm.getSender().getEmail(),
                         dm.getReceiver().getEmail(),
-                        dm.getSentAt().toString()
+                        dm.getSentAt().toString(),
+                        dm.isRead()
                 )).toList();
+    }
+
+    @PutMapping("/read/{otherUserEmail}")
+    public void markAsRead(@PathVariable String otherUserEmail, Principal principal) {
+        String myEmail = principal.getName();
+        dmService.markMessagesAsRead(myEmail, otherUserEmail);
+        
+        // 상대방(메시지 발신자)에게 내가 읽었음을 알림
+        messagingTemplate.convertAndSend("/topic/dm/read/" + otherUserEmail, new ReadNotification(myEmail));
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReadNotification {
+        private String readerEmail;
     }
 
     @Data
@@ -74,5 +92,6 @@ public class DirectMessageController {
         private String senderEmail;
         private String receiverEmail;
         private String sentAt;
+        private boolean isRead;
     }
 }
