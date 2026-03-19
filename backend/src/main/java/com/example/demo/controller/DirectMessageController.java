@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.domain.DirectMessage;
 import com.example.demo.domain.User;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.dto.DMResponse;
 import com.example.demo.service.DirectMessageService;
 import com.example.demo.service.NotificationService;
 import lombok.AllArgsConstructor;
@@ -30,15 +31,7 @@ public class DirectMessageController {
     public void sendDM(DMRequest request) {
         DirectMessage saved = dmService.sendDM(request.getSenderEmail(), request.getReceiverEmail(), request.getContent());
         
-        DMResponse response = new DMResponse(
-                saved.getId(),
-                saved.getContent(),
-                saved.getSender().getName(),
-                saved.getSender().getEmail(),
-                saved.getReceiver().getEmail(),
-                saved.getSentAt().toString(),
-                false
-        );
+        DMResponse response = DMResponse.from(saved);
 
         // 발신자와 수신자 모두에게 메시지 전송 (실시간 반영)
         messagingTemplate.convertAndSend("/topic/dm/" + saved.getReceiver().getEmail(), response);
@@ -52,15 +45,8 @@ public class DirectMessageController {
     public List<DMResponse> getChatHistory(@PathVariable String otherUserEmail, Principal principal) {
         String myEmail = principal.getName();
         return dmService.getChatHistory(myEmail, otherUserEmail).stream()
-                .map(dm -> new DMResponse(
-                        dm.getId(),
-                        dm.getContent(),
-                        dm.getSender().getName(),
-                        dm.getSender().getEmail(),
-                        dm.getReceiver().getEmail(),
-                        dm.getSentAt().toString(),
-                        dm.isRead()
-                )).toList();
+                .map(DMResponse::from)
+                .toList();
     }
 
     @PutMapping("/read/{otherUserEmail}")
@@ -86,17 +72,5 @@ public class DirectMessageController {
         private String senderEmail;
         private String receiverEmail;
         private String content;
-    }
-
-    @Data
-    @AllArgsConstructor
-    public static class DMResponse {
-        private Long id;
-        private String content;
-        private String senderName;
-        private String senderEmail;
-        private String receiverEmail;
-        private String sentAt;
-        private boolean isRead;
     }
 }

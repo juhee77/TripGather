@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.domain.Comment;
 import com.example.demo.domain.Gathering;
+import com.example.demo.dto.CommentResponse;
 import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.GatheringRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +21,14 @@ public class CommentController {
     private final GatheringRepository gatheringRepository;
 
     @GetMapping
-    public ResponseEntity<List<Comment>> getComments(@PathVariable Long gatheringId) {
-        return ResponseEntity.ok(commentRepository.findAllByGatheringIdOrderByCreatedAtAsc(gatheringId));
+    public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long gatheringId) {
+        return ResponseEntity.ok(commentRepository.findAllByGatheringIdOrderByCreatedAtAsc(gatheringId).stream()
+                .map(CommentResponse::from)
+                .toList());
     }
 
     @PostMapping
-    public ResponseEntity<Comment> addComment(@PathVariable Long gatheringId, @RequestBody Comment comment) {
+    public ResponseEntity<CommentResponse> addComment(@PathVariable Long gatheringId, @RequestBody Comment comment) {
         Gathering gathering = gatheringRepository.findById(gatheringId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid gathering ID"));
         
@@ -35,6 +38,6 @@ public class CommentController {
             comment.setAuthor("Jihyun (지현)");
         }
         
-        return ResponseEntity.ok(commentRepository.save(comment));
+        return ResponseEntity.ok(CommentResponse.from(commentRepository.save(comment)));
     }
 }

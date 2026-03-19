@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.User;
+import com.example.demo.dto.UserResponse;
 import com.example.demo.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,27 +21,29 @@ public class UserController {
      * 현재 로그인한 유저 정보. 인증 미구현 시 기본 유저(id=1) 반환.
      */
     @GetMapping("/me")
-    public ResponseEntity<User> getMyProfile() {
-        return ResponseEntity.ok(userService.getCurrentUser());
+    public ResponseEntity<UserResponse> getMyProfile() {
+        return ResponseEntity.ok(UserResponse.from(userService.getCurrentUser()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUser(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getById(id));
+    public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
+        return ResponseEntity.ok(UserResponse.from(userService.getById(id)));
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers().stream()
+                .map(UserResponse::from)
+                .collect(java.util.stream.Collectors.toList()));
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        return ResponseEntity.ok(userService.createUser(user));
+    public ResponseEntity<UserResponse> createUser(@RequestBody User user) {
+        return ResponseEntity.ok(UserResponse.from(userService.createUser(user)));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<User> updateProfile(@PathVariable Long id, @RequestBody User update) {
-        return ResponseEntity.ok(userService.updateProfile(id, update));
+    public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @RequestBody User update) {
+        return ResponseEntity.ok(UserResponse.from(userService.updateProfile(id, update)));
     }
 }
