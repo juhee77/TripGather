@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface GatheringRepository extends JpaRepository<Gathering, Long> {
     List<Gathering> findAllByOrderByCreatedAtDesc();
+    List<Gathering> findAllByLocationContainingIgnoreCaseOrderByCreatedAtDesc(String location);
 }

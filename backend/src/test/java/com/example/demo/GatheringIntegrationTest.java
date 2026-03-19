@@ -35,7 +35,6 @@ class GatheringIntegrationTest {
         void createGatheringTest() throws Exception {
                 Gathering requestData = Gathering.builder()
                                 .title("테스트 모임입니다")
-                                .host("테스트 호스트")
                                 .location("테스트 장소")
                                 .dates("2026-03-10 18:00")
                                 .category("테스트 카테고리")
@@ -63,7 +62,6 @@ class GatheringIntegrationTest {
                 String longBase64 = "data:image/jpeg;base64," + "A".repeat(1000);
                 Gathering requestData = Gathering.builder()
                                 .title("긴 이미지 테스트")
-                                .host("테스트 호스트")
                                 .location("테스트 장소")
                                 .dates("2026-03-10 18:00")
                                 .category("테스트 카테고리")

@@ -18,8 +18,8 @@ public class GatheringController {
     private final GatheringService gatheringService;
 
     @GetMapping
-    public ResponseEntity<List<GatheringResponse>> getAllGatherings() {
-        return ResponseEntity.ok(gatheringService.getAllGatherings().stream()
+    public ResponseEntity<List<GatheringResponse>> getAllGatherings(@RequestParam(required = false) String location) {
+        return ResponseEntity.ok(gatheringService.getAllGatherings(location).stream()
                 .map(GatheringResponse::from)
                 .collect(java.util.stream.Collectors.toList()));
     }

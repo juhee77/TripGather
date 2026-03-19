@@ -22,7 +22,11 @@ public class UserController {
      */
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getMyProfile() {
-        return ResponseEntity.ok(UserResponse.from(userService.getCurrentUser()));
+        try {
+            return ResponseEntity.ok(UserResponse.from(userService.getCurrentUser()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(401).build();
+        }
     }
 
     @GetMapping("/{id}")
