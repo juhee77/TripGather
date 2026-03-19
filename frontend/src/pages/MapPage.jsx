@@ -93,7 +93,7 @@ const MapPage = () => {
                 <span>{selected.currentJoining} / {selected.maxJoining}명 참여 중</span>
               </div>
               <button
-                className="btn-primary"
+                className="primary-btn"
                 style={{ width: '100%', opacity: joining ? 0.7 : 1 }}
                 onClick={handleJoin}
                 disabled={joining || selected.currentJoining >= selected.maxJoining}

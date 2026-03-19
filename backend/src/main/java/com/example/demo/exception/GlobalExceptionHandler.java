@@ -12,6 +12,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(404).body(e.getMessage());
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<String> handleIllegalStateException(IllegalStateException e) {
+        if (e.getMessage().contains("Authentication")) {
+            return ResponseEntity.status(401).body(e.getMessage());
+        }
+        return ResponseEntity.status(400).body(e.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleAllExceptions(Exception e) {
         return ResponseEntity.status(500).body("An unexpected error occurred: " + e.getMessage());

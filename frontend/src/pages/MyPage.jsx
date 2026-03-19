@@ -54,7 +54,7 @@ const MyPage = () => {
         </header>
         <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-sub)' }}>
           <p>프로필을 불러올 수 없습니다.</p>
-          <button type="button" className="btn-primary" style={{ marginTop: '12px' }} onClick={refetch}>
+          <button type="button" className="primary-btn" style={{ marginTop: '12px' }} onClick={refetch}>
             다시 시도
           </button>
         </div>
@@ -198,7 +198,7 @@ const MyPage = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className="btn-primary"
+                className="primary-btn"
                 style={{ width: '100%', height: '48px', fontSize: '16px', fontWeight: 700 }}
               >
                 {saving ? '저장 중...' : '저장'}

@@ -23,7 +23,10 @@ public class GatheringService {
     private final com.example.demo.repository.GatheringMemberRepository gatheringMemberRepository;
 
     @Transactional(readOnly = true)
-    public List<Gathering> getAllGatherings() {
+    public List<Gathering> getAllGatherings(String location) {
+        if (location != null && !location.trim().isEmpty() && !location.equals("전체")) {
+            return gatheringRepository.findAllByLocationContainingIgnoreCaseOrderByCreatedAtDesc(location.trim());
+        }
         return gatheringRepository.findAllByOrderByCreatedAtDesc();
     }
 

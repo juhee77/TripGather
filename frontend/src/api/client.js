@@ -21,9 +21,7 @@ export async function authFetch(url, options = {}) {
   });
 
   if (res.status === 401) {
-    // 토큰 만료 시 로그아웃 처리 가능 (여기선 단순히 에러 던짐)
     localStorage.removeItem('token');
-    window.location.href = '/login';
   }
 
   return res;

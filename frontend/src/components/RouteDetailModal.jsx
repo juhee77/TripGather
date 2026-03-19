@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { X, MapPin, ChevronRight, Share2, Heart, MessageCircle, Trash2, Edit3, Navigation } from 'lucide-react';
 
 const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {

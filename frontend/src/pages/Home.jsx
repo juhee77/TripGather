@@ -39,7 +39,7 @@ const Home = () => {
     fetchGatherings();
   };
 
-  const tabs = ['발견', '내 모임', '채팅', '일정', '지도'];
+  const tabs = ['발견', '내 모임', '일정'];
 
   return (
     <div className="app-container animate-fade">
@@ -152,7 +152,7 @@ const Home = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {gatherings.filter(g => {
               const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
-              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && m.status === 'APPROVED');
+              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === 'APPROVED' || m.status === 'PENDING'));
               return isHost || isApproved;
             }).map((g, idx) => (
               <div 
@@ -173,7 +173,7 @@ const Home = () => {
             ))}
             {gatherings.filter(g => {
               const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
-              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && m.status === 'APPROVED');
+              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === 'APPROVED' || m.status === 'PENDING'));
               return isHost || isApproved;
             }).length === 0 && (
               <div className="glass" style={{ 
@@ -194,34 +194,8 @@ const Home = () => {
           </div>
         )}
 
-        {activeTab === '채팅' && (
-          <ChatTab 
-            joinedGatherings={gatherings.filter(g => {
-              const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
-              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && m.status === 'APPROVED');
-              return isHost || isApproved;
-            })} 
-          />
-        )}
-
         {activeTab === '일정' && (
           <ItineraryTab />
-        )}
-
-        {activeTab === '지도' && (
-          <div className="glass" style={{ 
-            textAlign: 'center', 
-            padding: '80px 24px',
-            borderRadius: 'var(--radius-lg)',
-            background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
-            border: 'none'
-          }}>
-            <div style={{ fontSize: '64px', marginBottom: '20px' }}>🗺️</div>
-            <h3 className="heading-m" style={{ marginBottom: '12px' }}>지도로 보기</h3>
-            <p className="text-s" style={{ color: 'var(--secondary-blue)', fontWeight: 600 }}>
-              내 주변 모임 지도는 하단 [지도] 버튼을 눌러<br/>더 크고 선명하게 확인하세요!
-            </p>
-          </div>
         )}
       </div>
 
