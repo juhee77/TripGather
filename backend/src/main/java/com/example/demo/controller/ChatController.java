@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.dto.ChatMessageResponse;
 import com.example.demo.service.ChatService;
 import com.example.demo.service.NotificationService;
 import lombok.AllArgsConstructor;
@@ -27,16 +28,10 @@ public class ChatController {
     // 클라이언트가 /app/chat/{gatheringId}/send 로 메시지를 보내면 호출됨
     @MessageMapping("/chat/{gatheringId}/send")
     @SendTo("/topic/chat/{gatheringId}")
-    public ChatMessageDTO sendMessage(@DestinationVariable Long gatheringId, ChatMessageRequest request) {
+    public ChatMessageResponse sendMessage(@DestinationVariable Long gatheringId, ChatMessageRequest request) {
         com.example.demo.domain.ChatMessage saved = chatService.saveMessage(gatheringId, request.getSenderEmail(), request.getContent());
         
-        ChatMessageDTO response = new ChatMessageDTO(
-                saved.getId(),
-                saved.getContent(),
-                saved.getSender().getName(),
-                saved.getSender().getEmail(),
-                saved.getSentAt().toString()
-        );
+        ChatMessageResponse response = ChatMessageResponse.from(saved);
 
         // 실시간 알림 전송 (참여자들에게)
         Gathering gathering = saved.getGathering();
@@ -60,30 +55,15 @@ public class ChatController {
 
     @GetMapping("/api/chat/{gatheringId}/history")
     @ResponseBody
-    public List<ChatMessageDTO> getChatHistory(@PathVariable Long gatheringId) {
+    public List<ChatMessageResponse> getChatHistory(@PathVariable Long gatheringId) {
         return chatService.getChatHistory(gatheringId).stream()
-                .map(m -> new ChatMessageDTO(
-                        m.getId(),
-                        m.getContent(),
-                        m.getSender().getName(),
-                        m.getSender().getEmail(),
-                        m.getSentAt().toString()
-                )).toList();
+                .map(ChatMessageResponse::from)
+                .toList();
     }
 
     @Data
     public static class ChatMessageRequest {
         private String content;
         private String senderEmail;
-    }
-
-    @Data
-    @lombok.AllArgsConstructor
-    public static class ChatMessageDTO {
-        private Long id;
-        private String content;
-        private String senderName;
-        private String senderEmail;
-        private String sentAt;
     }
 }

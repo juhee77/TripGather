@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.Itinerary;
+import com.example.demo.dto.ItineraryResponse;
 import com.example.demo.service.ItineraryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,23 +18,25 @@ public class ItineraryController {
     private final ItineraryService itineraryService;
 
     @GetMapping
-    public ResponseEntity<List<Itinerary>> getAllItineraries() {
-        return ResponseEntity.ok(itineraryService.getAllItineraries());
+    public ResponseEntity<List<ItineraryResponse>> getAllItineraries() {
+        return ResponseEntity.ok(itineraryService.getAllItineraries().stream()
+                .map(ItineraryResponse::from)
+                .toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Itinerary> getItinerary(@PathVariable Long id) {
-        return ResponseEntity.ok(itineraryService.getById(id));
+    public ResponseEntity<ItineraryResponse> getItinerary(@PathVariable Long id) {
+        return ResponseEntity.ok(ItineraryResponse.from(itineraryService.getById(id)));
     }
 
     @PostMapping
-    public ResponseEntity<Itinerary> createItinerary(@RequestBody Itinerary itinerary) {
-        return ResponseEntity.ok(itineraryService.createItinerary(itinerary));
+    public ResponseEntity<ItineraryResponse> createItinerary(@RequestBody Itinerary itinerary) {
+        return ResponseEntity.ok(ItineraryResponse.from(itineraryService.createItinerary(itinerary)));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Itinerary> updateItinerary(@PathVariable Long id, @RequestBody Itinerary update) {
-        return ResponseEntity.ok(itineraryService.updateItinerary(id, update));
+    public ResponseEntity<ItineraryResponse> updateItinerary(@PathVariable Long id, @RequestBody Itinerary update) {
+        return ResponseEntity.ok(ItineraryResponse.from(itineraryService.updateItinerary(id, update)));
     }
 
     @DeleteMapping("/{id}")

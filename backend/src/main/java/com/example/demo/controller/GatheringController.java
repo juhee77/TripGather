@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.domain.Gathering;
+import com.example.demo.dto.GatheringResponse;
 import com.example.demo.service.GatheringService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,23 +18,25 @@ public class GatheringController {
     private final GatheringService gatheringService;
 
     @GetMapping
-    public ResponseEntity<List<Gathering>> getAllGatherings() {
-        return ResponseEntity.ok(gatheringService.getAllGatherings());
+    public ResponseEntity<List<GatheringResponse>> getAllGatherings() {
+        return ResponseEntity.ok(gatheringService.getAllGatherings().stream()
+                .map(GatheringResponse::from)
+                .collect(java.util.stream.Collectors.toList()));
     }
 
     @PostMapping
-    public ResponseEntity<Gathering> createGathering(@RequestBody Gathering gathering) {
-        return ResponseEntity.ok(gatheringService.createGathering(gathering));
+    public ResponseEntity<GatheringResponse> createGathering(@RequestBody Gathering gathering) {
+        return ResponseEntity.ok(GatheringResponse.from(gatheringService.createGathering(gathering)));
     }
 
     @PostMapping("/{id}/join")
-    public ResponseEntity<Gathering> joinGathering(@PathVariable Long id) {
-        return ResponseEntity.ok(gatheringService.joinGathering(id));
+    public ResponseEntity<GatheringResponse> joinGathering(@PathVariable Long id) {
+        return ResponseEntity.ok(GatheringResponse.from(gatheringService.joinGathering(id)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Gathering> updateGathering(@PathVariable Long id, @RequestBody Gathering gathering) {
-        return ResponseEntity.ok(gatheringService.updateGathering(id, gathering));
+    public ResponseEntity<GatheringResponse> updateGathering(@PathVariable Long id, @RequestBody Gathering gathering) {
+        return ResponseEntity.ok(GatheringResponse.from(gatheringService.updateGathering(id, gathering)));
     }
 
     @DeleteMapping("/{id}")
