@@ -56,7 +56,7 @@ public class GatheringService {
         }
 
         boolean alreadyApplied = gathering.getMembers().stream()
-                .anyMatch(m -> m.getUser().equals(user));
+                .anyMatch(m -> m.getUser().getId().equals(user.getId()));
 
         if (!alreadyApplied) {
             if (gathering.getMembers().size() < gathering.getMaxJoining()) {
@@ -66,12 +66,13 @@ public class GatheringService {
                         .status(MemberStatus.PENDING)
                         .build();
                 gathering.getMembers().add(member);
+                gatheringMemberRepository.save(member);
             } else {
                 throw new IllegalStateException("모임 정원이 초과되었습니다.");
             }
         }
         
-        return gathering;
+        return gatheringRepository.save(gathering);
     }
 
     @Transactional
