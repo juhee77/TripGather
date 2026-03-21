@@ -21,7 +21,7 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
     maxJoining: 4,
     category: '밥/카페'
   });
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleChange = (e) => {
@@ -36,6 +36,7 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result);
@@ -47,21 +48,33 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // 모임 피드가 다채롭게 보이도록 샘플 그림 무작위 배정 (이미지 업로드 안 한 경우)
-    const bgImages = [
-      'https://images.unsplash.com/photo-1546872957-3f746681498b?auto=format&fit=crop&q=80&w=600',
-      'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=600',
-      'https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&q=80&w=600',
-      'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&q=80&w=600',
-    ];
-    const defaultBg = bgImages[Math.floor(Math.random() * bgImages.length)];
+    let finalBgImageUrl = null;
+
+    if (selectedFile) {
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', selectedFile);
+      try {
+        const uploadRes = await authFetch('http://localhost:8080/api/files/upload', {
+          method: 'POST',
+          body: formDataUpload,
+        });
+        if (uploadRes.ok) {
+          const { url } = await uploadRes.json();
+          finalBgImageUrl = url;
+        } else {
+          console.error("Upload failed");
+        }
+      } catch (err) {
+        console.error("Upload error", err);
+      }
+    }
 
     const newGathering = {
       ...formData,
       dates: `${formData.date} ${formData.time}`,
       maxJoining: parseInt(formData.maxJoining, 10),
       currentJoining: 1,
-      bgImageUrl: previewUrl || defaultBg
+      bgImageUrl: finalBgImageUrl || defaultBg
     };
 
     try {

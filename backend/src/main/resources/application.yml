@@ -45,6 +45,9 @@ springdoc:
 jwt:
   secret: "vms7065vms7065vms7065vms7065vms7065vms7065vms7065vms7065vms7065vms7065" # 32자 이상의 보안 비밀키
 
+file:
+  upload-dir: uploads
+
 
 ---
 spring:
