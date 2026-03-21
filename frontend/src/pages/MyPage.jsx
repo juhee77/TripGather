@@ -7,13 +7,32 @@ const MyPage = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editBio, setEditBio] = useState('');
+  const [editProfileImageUrl, setEditProfileImageUrl] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [saving, setSaving] = useState(false);
+  const fileInputRef = React.useRef(null);
 
   const openEdit = () => {
     if (user) {
       setEditName(user.name ?? '');
       setEditBio(user.bio ?? '');
+      setEditProfileImageUrl(user.profileImageUrl ?? '');
+      setPreviewUrl(user.profileImageUrl ?? '');
+      setSelectedFile(null);
       setIsEditOpen(true);
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -21,8 +40,32 @@ const MyPage = () => {
     e.preventDefault();
     if (!user?.id) return;
     setSaving(true);
+    
+    let finalImageUrl = editProfileImageUrl;
+
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      try {
+        const uploadRes = await authFetch('http://localhost:8080/api/files/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        if (uploadRes.ok) {
+          const { url } = await uploadRes.json();
+          finalImageUrl = url;
+        }
+      } catch (err) {
+        console.error("Profile image upload failed", err);
+      }
+    }
+
     try {
-      await updateProfile(user.id, { name: editName.trim(), bio: editBio.trim() });
+      await updateProfile(user.id, { 
+        name: editName.trim(), 
+        bio: editBio.trim(),
+        profileImageUrl: finalImageUrl
+      });
       setIsEditOpen(false);
     } catch (err) {
       alert(`프로필 수정 실패: ${err.message}`);
@@ -155,6 +198,50 @@ const MyPage = () => {
                 <X size={20} color="var(--text-main)" />
               </button>
             </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <div 
+                onClick={() => fileInputRef.current.click()}
+                style={{
+                  width: '100px',
+                  height: '100px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--bg-color)',
+                  backgroundImage: previewUrl ? `url(${previewUrl})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  border: '2px solid var(--primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden'
+                }}
+              >
+                {!previewUrl && <Pencil size={24} color="var(--text-sub)" />}
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  width: '100%',
+                  background: 'rgba(0,0,0,0.5)',
+                  color: 'white',
+                  fontSize: '11px',
+                  textAlign: 'center',
+                  padding: '4px 0',
+                  fontWeight: 600
+                }}>
+                  변경
+                </div>
+              </div>
+              <input 
+                type="file" 
+                accept="image/*" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                onChange={handleImageChange} 
+              />
+            </div>
+
             <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)' }}>
