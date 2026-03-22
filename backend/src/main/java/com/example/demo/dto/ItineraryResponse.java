@@ -19,8 +19,7 @@ public class ItineraryResponse {
     private String author;
     private String description;
     private LocalDateTime createdAt;
-    // Map RoutePoints logic can be added if needed on frontend, 
-    // but for now let's focus on the fields from Itinerary entity.
+    private List<RoutePointResponse> routePoints;
 
     public static ItineraryResponse from(Itinerary itinerary) {
         if (itinerary == null) return null;
@@ -30,6 +29,10 @@ public class ItineraryResponse {
                 .author(itinerary.getAuthor())
                 .description(itinerary.getDescription())
                 .createdAt(itinerary.getCreatedAt())
+                .routePoints(itinerary.getRoutePoints() != null ? 
+                        itinerary.getRoutePoints().stream()
+                                .map(RoutePointResponse::from)
+                                .toList() : null)
                 .build();
     }
 }

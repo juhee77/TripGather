@@ -37,9 +37,23 @@ public class GatheringService {
                 .orElseThrow(() -> new IllegalArgumentException("Host user not found"));
         
         gathering.setHost(host);
-        gathering.setCurrentJoining(1); // Host is the first member (though not in GatheringMember list yet, but visually 1)
+        // Save the gathering first to get the ID
+        Gathering savedGathering = gatheringRepository.save(gathering);
         
-        return gatheringRepository.save(gathering);
+        // Add host as an APPROVED member
+        GatheringMember hostMember = GatheringMember.builder()
+                .gathering(savedGathering)
+                .user(host)
+                .status(MemberStatus.APPROVED)
+                .build();
+        
+        savedGathering.getMembers().add(hostMember);
+        gatheringMemberRepository.save(hostMember);
+        
+        // Host is the first member
+        savedGathering.setCurrentJoining(1); 
+        
+        return gatheringRepository.save(savedGathering);
     }
 
     @Transactional
