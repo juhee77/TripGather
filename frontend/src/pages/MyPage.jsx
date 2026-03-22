@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
-import { Pencil, X, MapPin, CheckCircle, Clock } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { Pencil, X, MapPin, CheckCircle, Clock, LogOut } from 'lucide-react';
 import { authFetch } from '../api/client';
+import RouteDetailModal from '../components/RouteDetailModal';
 
 const MyPage = () => {
+  const { logout } = useAuth();
   const { user, loading, error, refetch, updateProfile } = useUser();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editName, setEditName] = useState('');
@@ -16,6 +19,7 @@ const MyPage = () => {
   
   const [myMissions, setMyMissions] = useState([]);
   const [missionsLoading, setMissionsLoading] = useState(false);
+  const [selectedMission, setSelectedMission] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -150,24 +154,44 @@ const MyPage = () => {
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={openEdit}
-            style={{
-              padding: '12px',
-              background: 'white',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-              zIndex: 5,
-              cursor: 'pointer'
-            }}
-            aria-label="프로필 수정"
-          >
-            <Pencil size={18} color="var(--primary-orange)" />
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={openEdit}
+              style={{
+                padding: '12px',
+                background: 'white',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                zIndex: 5,
+                cursor: 'pointer'
+              }}
+              title="프로필 수정"
+            >
+              <Pencil size={18} color="var(--primary-orange)" />
+            </button>
+            <button
+              type="button"
+              onClick={logout}
+              style={{
+                padding: '12px',
+                background: 'white',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                zIndex: 5,
+                cursor: 'pointer'
+              }}
+              title="로그아웃"
+            >
+              <LogOut size={18} color="var(--text-sub)" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -184,7 +208,7 @@ const MyPage = () => {
         ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {myMissions.map((m, idx) => (
-                <div key={m.id} className="glass animate-fade" style={{ background: 'white', padding: '20px', borderRadius: 'var(--radius-lg)', animationDelay: `${idx * 0.1}s`, border: '1px solid var(--border-color)' }}>
+                <div key={m.id} onClick={() => setSelectedMission(m)} style={{ cursor: 'pointer', background: 'white', padding: '20px', borderRadius: 'var(--radius-lg)', animationDelay: `${idx * 0.1}s`, border: '1px solid var(--border-color)' }} className="glass animate-fade">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{m.itineraryTitle}</h4>
                     <span style={{ 
@@ -204,6 +228,19 @@ const MyPage = () => {
                   </p>
                 </div>
               ))}
+              {selectedMission && (
+                <RouteDetailModal
+                  itinerary={{
+                      id: selectedMission.itineraryId,
+                      title: selectedMission.itineraryTitle,
+                      author: selectedMission.itineraryAuthor,
+                      description: 'Mission Details & Log',
+                      createdAt: selectedMission.startedAt,
+                      steps: selectedMission.steps
+                  }}
+                  onClose={() => setSelectedMission(null)}
+                />
+              )}
             </div>
         )}
       </div>

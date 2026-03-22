@@ -16,6 +16,7 @@ public class UserMissionResponse {
     private String status;
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
+    private java.util.List<UserMissionStepResponse> steps;
 
     public static UserMissionResponse from(UserMission mission) {
         if (mission == null) return null;
@@ -27,6 +28,7 @@ public class UserMissionResponse {
                 .status(mission.getStatus())
                 .startedAt(mission.getStartedAt())
                 .completedAt(mission.getCompletedAt())
+                // Only populated if steps are fetched/provided by service normally, otherwise handled outside
                 .build();
     }
 }
