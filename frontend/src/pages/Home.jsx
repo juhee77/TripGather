@@ -154,6 +154,12 @@ const Home = () => {
                   location={g.location}
                   joining={`${g.currentJoining}/${g.maxJoining}`}
                   bgImage={g.bgImageUrl}
+                  pendingCount={
+                    (currentUser && g.host && (
+                      (typeof g.host === 'string' && g.host === currentUser.name) ||
+                      (g.host.email === currentUser.email)
+                    )) ? g.members?.filter(m => m.status === 'PENDING').length || 0 : 0
+                  }
                 />
               </div>
             ))}
@@ -222,6 +228,12 @@ const Home = () => {
                   location={g.location}
                   joining={`${g.currentJoining}/${g.maxJoining}`}
                   bgImage={g.bgImageUrl}
+                  pendingCount={
+                    (currentUser && g.host && (
+                      (typeof g.host === 'string' && g.host === currentUser.name) ||
+                      (g.host.email === currentUser.email)
+                    )) ? g.members?.filter(m => m.status === 'PENDING').length || 0 : 0
+                  }
                 />
               </div>
             ))}

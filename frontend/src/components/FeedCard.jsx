@@ -2,7 +2,7 @@ import React from 'react';
 import { MapPin, Users, Calendar, MessageCircle, MoreHorizontal } from 'lucide-react';
 import './FeedCard.css';
 
-const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount = 0 }) => {
+const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount = 0, pendingCount = 0 }) => {
   return (
     <div className="feed-card">
       <div 
@@ -12,6 +12,18 @@ const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount 
         <div className="feed-status-tag glass" style={{ color: 'var(--primary-orange)' }}>
           모집 중
         </div>
+        {pendingCount > 0 && (
+          <div className="feed-status-tag glass" style={{ 
+            color: 'white', 
+            background: 'var(--primary-orange)', 
+            right: '20px', 
+            left: 'auto',
+            border: 'none',
+            boxShadow: '0 4px 12px rgba(255, 92, 0, 0.3)'
+          }}>
+            참여 대기 {pendingCount}
+          </div>
+        )}
       </div>
       
       <div className="feed-content">
