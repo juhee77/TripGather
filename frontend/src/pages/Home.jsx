@@ -14,6 +14,8 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState('발견');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGathering, setSelectedGathering] = useState(null);
+  const [selectedRegion, setSelectedRegion] = useState('전체');
+  const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
   const [myJoinedIds, setMyJoinedIds] = useState(() => {
     try {
       const saved = localStorage.getItem('myJoinedIds');
@@ -65,19 +67,27 @@ const Home = () => {
           }}>Discover & Join</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <div style={{ 
-            background: 'var(--bg-color)', 
-            padding: '10px 16px', 
-            borderRadius: 'var(--radius-full)', 
-            fontSize: '14px', 
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-          }}>
-            <span style={{ fontSize: '16px' }}>📍</span> 강남구
-          </div>
+          <select 
+            value={selectedRegion} 
+            onChange={(e) => setSelectedRegion(e.target.value)}
+            style={{ 
+              background: 'var(--bg-color)', 
+              padding: '10px 16px', 
+              borderRadius: 'var(--radius-full)', 
+              fontSize: '14px', 
+              fontWeight: 600,
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+              appearance: 'none',
+              cursor: 'pointer',
+              outline: 'none',
+              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+            }}
+          >
+            {regions.map(r => (
+              <option key={r} value={r}>{r === '전체' ? '📍 전체 지역' : r}</option>
+            ))}
+          </select>
           <button className="icon-circle glass" style={{ width: '44px', height: '44px' }}>
             <Search size={20} color="var(--text-primary)" />
           </button>
@@ -122,7 +132,7 @@ const Home = () => {
       <div style={{ padding: '0 20px', flex: 1 }}>
         {activeTab === '발견' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {gatherings.map((g, idx) => (
+            {gatherings.filter(g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))).map((g, idx) => (
               <div 
                 key={g.id} 
                 onClick={() => setSelectedGathering(g)} 
@@ -139,10 +149,10 @@ const Home = () => {
                 />
               </div>
             ))}
-            {gatherings.length === 0 && (
+            {gatherings.filter(g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))).length === 0 && (
               <div style={{ textAlign: 'center', padding: '100px 0' }}>
-                <div className="animate-spin" style={{ marginBottom: '12px' }}>🔄</div>
-                <p className="text-s">모임을 불러오는 중입니다...</p>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏜️</div>
+                <p className="text-s" style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>선택하신 지역에 모임이 없습니다.</p>
               </div>
             )}
           </div>
@@ -181,13 +191,14 @@ const Home = () => {
                 padding: '60px 24px',
                 borderRadius: 'var(--radius-lg)',
                 display: 'flex',
-                direction: 'column',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: '16px'
+                gap: '16px',
+                background: 'white',
+                border: '1px solid var(--border-color)'
               }}>
                 <div style={{ fontSize: '48px' }}>🔍</div>
-                <p style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>아직 참여 중인 모임이 없습니다.</p>
+                <p style={{ fontWeight: 700, color: 'var(--text-primary)' }}>아직 참여 중인 모임이 없습니다.</p>
                 <button className="primary-btn" onClick={() => setActiveTab('발견')}>모임 탐색하기</button>
               </div>
             )}

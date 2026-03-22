@@ -184,14 +184,15 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
               disabled={gathering.currentJoining >= gathering.maxJoining || myStatus} 
               style={{
                 width: '100%', padding: '16px', 
-                background: (gathering.currentJoining >= gathering.maxJoining && !myStatus) ? 'var(--text-sub)' : myStatus === 'PENDING' ? '#FFD43B' : myStatus === 'APPROVED' ? '#51CF66' : 'var(--primary)', 
-                color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', fontWeight: 700, marginTop: '24px', cursor: 'pointer'
+                background: (gathering.currentJoining >= gathering.maxJoining && !myStatus) ? 'var(--text-muted)' : myStatus === 'PENDING' ? '#FFD43B' : myStatus === 'APPROVED' ? '#51CF66' : 'var(--primary-orange)', 
+                color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', fontWeight: 700, marginTop: '24px', cursor: 'pointer',
+                boxShadow: (gathering.currentJoining < gathering.maxJoining && !myStatus) ? '0 4px 12px rgba(255, 92, 0, 0.3)' : 'none'
               }}
             >
               {myStatus === 'PENDING' ? '신청 대기 중...' : 
                myStatus === 'APPROVED' ? '참여 확정됨!' : 
                myStatus === 'REJECTED' ? '거절된 모임입니다' :
-               gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참참여 신청하기'}
+               gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참여 신청하기'}
             </button>
           )}
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Plane, Calendar, MapPin } from 'lucide-react';
+import { authFetch } from '../api/client';
 
 const TicketCard = ({ itinerary, onViewRoute }) => {
     const { title, author, description, createdAt } = itinerary;
@@ -96,7 +97,12 @@ const TicketCard = ({ itinerary, onViewRoute }) => {
                         </p>
                     </div>
                     <button 
-                        onClick={() => onViewRoute(itinerary)}
+                        onClick={async () => {
+                            try {
+                                await authFetch(`http://localhost:8080/api/missions/start/${itinerary.id}`, { method: 'POST' });
+                            } catch (e) { console.error("Could not start mission:", e); }
+                            onViewRoute(itinerary);
+                        }}
                         className="primary-btn"
                         style={{ padding: '12px 24px', fontSize: '14px' }}
                     >
