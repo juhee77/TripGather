@@ -22,8 +22,14 @@ export function AuthProvider({ children }) {
     });
 
     if (!res.ok) {
-      const errData = await res.json();
-      throw new Error(errData.message || '로그인 실패');
+      let errorMessage = '로그인 실패';
+      try {
+        const errData = await res.json();
+        errorMessage = errData.message || errorMessage;
+      } catch (e) {
+        errorMessage = res.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await res.json();
@@ -41,8 +47,14 @@ export function AuthProvider({ children }) {
     });
 
     if (!res.ok) {
-      const errData = await res.json();
-      throw new Error(errData.message || '회원가입 실패');
+      let errorMessage = '회원가입 실패';
+      try {
+        const errData = await res.json();
+        errorMessage = errData.message || errorMessage;
+      } catch (e) {
+        errorMessage = res.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await res.json();
