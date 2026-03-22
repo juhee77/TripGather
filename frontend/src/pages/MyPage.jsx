@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
-import { Pencil, X } from 'lucide-react';
+import { Pencil, X, MapPin, CheckCircle, Clock } from 'lucide-react';
+import { authFetch } from '../api/client';
 
 const MyPage = () => {
   const { user, loading, error, refetch, updateProfile } = useUser();
@@ -12,6 +13,20 @@ const MyPage = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [saving, setSaving] = useState(false);
   const fileInputRef = React.useRef(null);
+  
+  const [myMissions, setMyMissions] = useState([]);
+  const [missionsLoading, setMissionsLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setMissionsLoading(true);
+      authFetch('http://localhost:8080/api/missions/me')
+        .then(res => res.json())
+        .then(data => setMyMissions(data))
+        .catch(err => console.error("Failed to load missions:", err))
+        .finally(() => setMissionsLoading(false));
+    }
+  }, [user]);
 
   const openEdit = () => {
     if (user) {
@@ -106,8 +121,8 @@ const MyPage = () => {
   }
 
   return (
-    <div className="page">
-      <header className="page-header">
+    <div className="app-container animate-fade" style={{ background: 'var(--bg-color)', minHeight: '100vh', paddingBottom: '100px' }}>
+      <header className="page-header glass" style={{ padding: '24px 20px', position: 'sticky', top: 0, zIndex: 10, borderRadius: '0 0 var(--radius-lg) var(--radius-lg)' }}>
         <h1 className="page-title">마이페이지 👤</h1>
         <p className="page-subtitle">나의 프로필 및 설정</p>
       </header>
@@ -139,18 +154,58 @@ const MyPage = () => {
             type="button"
             onClick={openEdit}
             style={{
-              padding: '10px',
-              background: 'var(--bg-color)',
+              padding: '12px',
+              background: 'white',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+              zIndex: 5,
+              cursor: 'pointer'
             }}
             aria-label="프로필 수정"
           >
-            <Pencil size={18} color="var(--text-main)" />
+            <Pencil size={18} color="var(--primary-orange)" />
           </button>
         </div>
+      </div>
+
+      <div style={{ padding: '0 20px', marginTop: '20px' }}>
+        <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px' }}>나의 미션 히스토리 🗺️</h3>
+        
+        {missionsLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>가져오는 중...</div>
+        ) : myMissions.length === 0 ? (
+            <div className="glass" style={{ textAlign: 'center', padding: '40px 20px', borderRadius: 'var(--radius-lg)', background: 'white' }}>
+              <MapPin size={32} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
+              <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>아직 참여한 미션이 없습니다.</p>
+            </div>
+        ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {myMissions.map((m, idx) => (
+                <div key={m.id} className="glass animate-fade" style={{ background: 'white', padding: '20px', borderRadius: 'var(--radius-lg)', animationDelay: `${idx * 0.1}s`, border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{m.itineraryTitle}</h4>
+                    <span style={{ 
+                      fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: 'var(--radius-full)',
+                      background: m.status === 'COMPLETED' ? 'rgba(81, 207, 102, 0.1)' : 'rgba(255, 92, 0, 0.1)',
+                      color: m.status === 'COMPLETED' ? '#2B8A3E' : 'var(--primary-orange)',
+                      display: 'flex', alignItems: 'center', gap: '4px'
+                    }}>
+                      {m.status === 'COMPLETED' ? <CheckCircle size={12} /> : <Clock size={12} />}
+                      {m.status === 'COMPLETED' ? 'COMPLETED' : 'ACTIVE'}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>By {m.itineraryAuthor}</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    시작일: {new Date(m.startedAt).toLocaleDateString()}
+                    {m.completedAt && ` • 완료일: ${new Date(m.completedAt).toLocaleDateString()}`}
+                  </p>
+                </div>
+              ))}
+            </div>
+        )}
       </div>
 
       {/* Edit Profile Modal */}

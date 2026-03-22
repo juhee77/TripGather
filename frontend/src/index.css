@@ -7,16 +7,16 @@
   --secondary-purple: #6366F1;
   --secondary-blue: #3B82F6;
   
-  --bg-color: #F6F7F9;
-  --surface: rgba(255, 255, 255, 0.85); /* For Glassmorphism */
+  --bg-color: #F8F9FA;
+  --surface: rgba(255, 255, 255, 0.95); /* Better opacity for visibility */
   --surface-solid: #FFFFFF;
   
-  --text-primary: #0F172A;
-  --text-secondary: #64748B;
-  --text-muted: #94A3B8;
+  --text-primary: #212529; /* Darker for better contrast */
+  --text-secondary: #495057; /* Darker than before */
+  --text-muted: #868E96;
   
-  --border-color: rgba(226, 232, 240, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.3);
+  --border-color: rgba(206, 212, 218, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.5);
   
   /* Shadows & Radius */
   --shadow-premium: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 4px 12px -2px rgba(0, 0, 0, 0.02);

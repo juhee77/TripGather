@@ -251,7 +251,7 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
                     </button>
                 </footer>
             </div>
-            <style jsx>{`
+            <style>{`
                 @keyframes slideUp {
                     from { transform: translateY(100%); }
                     to { transform: translateY(0); }

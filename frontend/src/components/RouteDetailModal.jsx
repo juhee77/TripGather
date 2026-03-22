@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, ChevronRight, Share2, Heart, MessageCircle, Trash2, Edit3, Navigation } from 'lucide-react';
+import { useUser } from '../contexts/UserContext';
+import { authFetch } from '../api/client';
 
 const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
     const [isVisible, setIsVisible] = useState(false);
+    const { user: currentUser } = useUser();
+
+    // Check if the current user is the author
+    const isAuthor = currentUser && (currentUser.name === itinerary.author);
 
     useEffect(() => {
         setIsVisible(true);
@@ -169,34 +175,46 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                     gap: '16px',
                     background: 'rgba(13, 13, 25, 0.8)'
                 }}>
-                    <div style={{ display: 'flex', gap: '14px' }}>
-                        <button
-                            onClick={onEdit}
-                            className="glass"
-                            style={{
-                                flex: 1, height: '60px', borderRadius: 'var(--radius-md)',
-                                color: 'white', fontWeight: 800, fontSize: '15px',
-                                display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
-                                border: '1px solid rgba(255,255,255,0.2)'
-                            }}
-                        >
-                            <Edit3 size={18} /> EDIT JOURNEY
-                        </button>
-                        <button
-                            onClick={onDelete}
-                            className="glass"
-                            style={{
-                                width: '60px', height: '60px', borderRadius: 'var(--radius-md)',
-                                display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                border: '1px solid rgba(239, 68, 68, 0.2)',
-                                background: 'rgba(239, 68, 68, 0.05)'
-                            }}
-                        >
-                            <Trash2 size={20} color="#EF4444" />
-                        </button>
-                    </div>
+                    {isAuthor && (
+                        <div style={{ display: 'flex', gap: '14px' }}>
+                            <button
+                                onClick={onEdit}
+                                className="glass"
+                                style={{
+                                    flex: 1, height: '60px', borderRadius: 'var(--radius-md)',
+                                    color: 'white', fontWeight: 800, fontSize: '15px',
+                                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
+                                    border: '1px solid rgba(255,255,255,0.2)'
+                                }}
+                            >
+                                <Edit3 size={18} /> EDIT JOURNEY
+                            </button>
+                            <button
+                                onClick={onDelete}
+                                className="glass"
+                                style={{
+                                    width: '60px', height: '60px', borderRadius: 'var(--radius-md)',
+                                    display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                                    background: 'rgba(239, 68, 68, 0.05)'
+                                }}
+                            >
+                                <Trash2 size={20} color="#EF4444" />
+                            </button>
+                        </div>
+                    )}
                     <button
-                        onClick={onClose}
+                        onClick={async () => {
+                            try {
+                                const res = await authFetch(`http://localhost:8080/api/missions/complete/${itinerary.id}`, { method: 'POST' });
+                                if (res.ok) {
+                                    alert("Mission Completed! You can view your history in MyPage.");
+                                }
+                            } catch (e) {
+                                console.error("Could not complete mission:", e);
+                            }
+                            onClose();
+                        }}
                         className="primary-btn"
                         style={{
                             width: '100%', height: '60px', borderRadius: 'var(--radius-md)',
