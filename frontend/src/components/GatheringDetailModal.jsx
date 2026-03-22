@@ -38,7 +38,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
     try {
-      const res = await fetch(`http://localhost:8080/api/gatherings/${gathering.id}/comments`, {
+      const res = await authFetch(`http://localhost:8080/api/gatherings/${gathering.id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newComment, author: currentUser?.name || "익명" }),
