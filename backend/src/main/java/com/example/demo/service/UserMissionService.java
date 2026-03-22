@@ -13,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
+import com.example.demo.repository.UserMissionStepRepository;
+import com.example.demo.dto.UserMissionStepResponse;
+import com.example.demo.domain.UserMissionStep;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +25,7 @@ public class UserMissionService {
     private final UserMissionRepository missionRepository;
     private final UserRepository userRepository;
     private final ItineraryRepository itineraryRepository;
+    private final UserMissionStepRepository stepRepository;
 
     @Transactional
     public UserMissionResponse startMission(Long itineraryId, String email) {
@@ -32,7 +37,12 @@ public class UserMissionService {
 
         // 이미 미션이 존재하는지 확인
         return missionRepository.findByUserIdAndItineraryId(user.getId(), itineraryId)
-                .map(UserMissionResponse::from)
+                .map(mission -> {
+                    UserMissionResponse res = UserMissionResponse.from(mission);
+                    res.setSteps(stepRepository.findByUserMissionId(mission.getId()).stream()
+                            .map(UserMissionStepResponse::from).collect(Collectors.toList()));
+                    return res;
+                })
                 .orElseGet(() -> {
                     UserMission mission = UserMission.builder()
                             .user(user)
@@ -40,7 +50,20 @@ public class UserMissionService {
                             .status("ACTIVE")
                             .startedAt(LocalDateTime.now())
                             .build();
-                    return UserMissionResponse.from(missionRepository.save(mission));
+                    UserMission savedMission = missionRepository.save(mission);
+                    
+                    List<UserMissionStep> steps = itinerary.getRoutePoints().stream().map(rp -> 
+                        UserMissionStep.builder()
+                            .userMission(savedMission)
+                            .routePoint(rp)
+                            .isCompleted(false)
+                            .build()
+                    ).collect(Collectors.toList());
+                    stepRepository.saveAll(steps);
+                    
+                    UserMissionResponse res = UserMissionResponse.from(savedMission);
+                    res.setSteps(steps.stream().map(UserMissionStepResponse::from).collect(Collectors.toList()));
+                    return res;
                 });
     }
 
@@ -58,7 +81,37 @@ public class UserMissionService {
             missionRepository.save(mission);
         }
 
-        return UserMissionResponse.from(mission);
+        UserMissionResponse res = UserMissionResponse.from(mission);
+        res.setSteps(stepRepository.findByUserMissionId(mission.getId()).stream()
+                .map(UserMissionStepResponse::from).collect(Collectors.toList()));
+        return res;
+    }
+
+    @Transactional
+    public UserMissionStepResponse completeStep(Long missionId, Long stepId, String memo, String photoUrl, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+
+        UserMission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new IllegalArgumentException("Mission not found"));
+
+        if (!mission.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Not your mission");
+        }
+
+        UserMissionStep step = stepRepository.findById(stepId)
+                .orElseThrow(() -> new IllegalArgumentException("Step not found"));
+
+        if (!step.getUserMission().getId().equals(mission.getId())) {
+            throw new IllegalArgumentException("Step does not belong to this mission");
+        }
+
+        step.setCompleted(true);
+        step.setMemo(memo);
+        step.setPhotoUrl(photoUrl);
+        step.setCompletedAt(LocalDateTime.now());
+        
+        return UserMissionStepResponse.from(stepRepository.save(step));
     }
 
     @Transactional(readOnly = true)
@@ -67,7 +120,12 @@ public class UserMissionService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
 
         return missionRepository.findByUserId(user.getId()).stream()
-                .map(UserMissionResponse::from)
+                .map(mission -> {
+                    UserMissionResponse res = UserMissionResponse.from(mission);
+                    res.setSteps(stepRepository.findByUserMissionId(mission.getId()).stream()
+                            .map(UserMissionStepResponse::from).collect(Collectors.toList()));
+                    return res;
+                })
                 .toList();
     }
 }

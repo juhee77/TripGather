@@ -5,8 +5,10 @@ import GatheringDetailModal from '../components/GatheringDetailModal';
 import TicketCard from '../components/TicketCard';
 import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
+import RouteDetailModal from '../components/RouteDetailModal'; // Added
 import { useUser } from '../contexts/UserContext';
 import { Search, Map as MapIcon, Plus, MessageCircle } from 'lucide-react';
+import { authFetch } from '../api/client'; // Added
 
 const Home = () => {
   const { user: currentUser } = useUser();
@@ -24,6 +26,8 @@ const Home = () => {
       return [];
     }
   });
+  const [activeMissions, setActiveMissions] = useState([]);
+  const [selectedMission, setSelectedMission] = useState(null);
 
   const fetchGatherings = () => {
     fetch('http://localhost:8080/api/gatherings')
@@ -36,12 +40,21 @@ const Home = () => {
     fetchGatherings();
   }, []);
 
+  useEffect(() => {
+    if (currentUser) { // Changed from `user` to `currentUser` to match context variable
+      authFetch('/api/missions/me')
+        .then(res => res.json())
+        .then(data => setActiveMissions(data.filter(m => m.status === 'ACTIVE')))
+        .catch(err => console.error(err));
+    }
+  }, [currentUser]); // Dependency changed to `currentUser`
+
   const handleGatheringCreated = (newGathering) => {
     // Optionally prepend to list or refetch
     fetchGatherings();
   };
 
-  const tabs = ['발견', '내 모임', '일정'];
+  const tabs = ['발견', '내 모임', '일정']; // This line will be replaced by the new nav structure
 
   return (
     <div className="app-container animate-fade">
@@ -100,13 +113,8 @@ const Home = () => {
         marginTop: '20px',
         marginBottom: '24px'
       }}>
-        <div className="hide-scrollbar" style={{ 
-          display: 'flex', 
-          gap: '8px', 
-          overflowX: 'auto',
-          paddingBottom: '4px'
-        }}>
-          {tabs.map(tab => (
+        <nav style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '10px' }} className="hide-scrollbar">
+          {['발견', '일정', '나의 미션', '내 모임'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -126,7 +134,7 @@ const Home = () => {
               {tab}
             </button>
           ))}
-        </div>
+        </nav>
       </div>
 
       <div style={{ padding: '0 20px', flex: 1 }}>
@@ -154,6 +162,42 @@ const Home = () => {
                 <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏜️</div>
                 <p className="text-s" style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>선택하신 지역에 모임이 없습니다.</p>
               </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === '나의 미션' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {activeMissions.length === 0 ? (
+              <div className="glass" style={{ textAlign: 'center', padding: '60px 24px', borderRadius: 'var(--radius-lg)', background: 'white' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🚀</div>
+                <p style={{ fontWeight: 700, color: 'var(--text-primary)' }}>현재 진행 중인 ми션이 없습니다.</p>
+                <button className="primary-btn" onClick={() => setActiveTab('일정')} style={{marginTop: '16px'}}>일정 보러가기</button>
+              </div>
+            ) : (
+              activeMissions.map((m, idx) => (
+                <div key={m.id} className="animate-fade" style={{ animationDelay: `${idx * 0.1}s` }}>
+                  <TicketCard
+                    itinerary={{
+                      id: m.itineraryId,
+                      title: m.itineraryTitle,
+                      author: m.itineraryAuthor,
+                      description: 'Proceed with this active mission!',
+                      createdAt: m.startedAt,
+                      steps: m.steps
+                    }}
+                    onViewRoute={(itinerary) => setSelectedMission(itinerary)}
+                  />
+                </div>
+              ))
+            )}
+            {selectedMission && (
+                <RouteDetailModal 
+                    itinerary={selectedMission}
+                    onClose={() => setSelectedMission(null)}
+                    onEdit={() => {}} 
+                    onDelete={() => {}}
+                />
             )}
           </div>
         )}
