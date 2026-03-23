@@ -156,13 +156,21 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                     </div>
 
                     {isMission && (
-                        <div style={{ marginBottom: '40px', background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <span style={{ fontWeight: 800, color: 'var(--primary-orange)', fontSize: '14px' }}>MISSION PROGRESS</span>
-                                <span style={{ fontWeight: 800, color: 'white', fontSize: '14px' }}>{progressPercent}%</span>
-                            </div>
-                            <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                                <div style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--primary-gradient)', transition: 'width 0.5s ease-out' }} />
+                        <div style={{ marginBottom: '40px', background: 'rgba(255,255,255,0.03)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(255, 92, 0, 0.2)', position: 'relative', overflow: 'hidden' }}>
+                            {/* Background glow for progress bar component */}
+                            <div style={{ position: 'absolute', top: 0, left: '-50%', width: '200%', height: '100%', background: 'radial-gradient(circle at top right, rgba(255, 92, 0, 0.1) 0%, transparent 60%)', zIndex: 0 }} />
+                            
+                            <div style={{ position: 'relative', zIndex: 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'flex-end' }}>
+                                    <div>
+                                        <h3 style={{ fontWeight: 900, color: 'var(--primary-orange)', fontSize: '16px', letterSpacing: '1px', marginBottom: '4px' }}>MISSION PROGRESS</h3>
+                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{completedSteps} / {totalSteps} Stops Completed</p>
+                                    </div>
+                                    <span style={{ fontWeight: 900, color: 'white', fontSize: '24px' }}>{progressPercent}%</span>
+                                </div>
+                                <div style={{ width: '100%', height: '10px', background: 'rgba(0,0,0,0.5)', borderRadius: '5px', overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <div style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--primary-gradient)', transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)', boxShadow: '0 0 10px rgba(255, 92, 0, 0.5)' }} />
+                                </div>
                             </div>
                         </div>
                     )}
@@ -204,16 +212,36 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
 
                                         <div className="glass-dark" style={{
                                             padding: '20px', borderRadius: 'var(--radius-md)',
-                                            border: isStepCompleted ? '1px solid rgba(81, 207, 102, 0.3)' : '1px solid rgba(255,255,255,0.08)',
-                                            background: isStepCompleted ? 'rgba(81, 207, 102, 0.05)' : 'rgba(255,255,255,0.03)'
+                                            border: isStepCompleted ? '2px solid rgba(81, 207, 102, 0.4)' : '1px solid rgba(255,255,255,0.08)',
+                                            background: isStepCompleted ? 'linear-gradient(145deg, rgba(81, 207, 102, 0.05) 0%, rgba(255,255,255,0.02) 100%)' : 'rgba(255,255,255,0.03)',
+                                            position: 'relative',
+                                            overflow: 'hidden'
                                         }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                <span style={{ fontSize: '10px', color: isStepCompleted ? '#51CF66' : 'var(--primary-orange)', fontWeight: 900, letterSpacing: '1px' }}>
-                                                    {isStepCompleted ? `CHECKED IN AT ${new Date(point.completedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : `STOP ${point.sequenceOrder}`}
+                                            {/* Stamp Overlay */}
+                                            {isStepCompleted && (
+                                                <div style={{
+                                                    position: 'absolute', top: '10px', right: '10px', 
+                                                    width: '80px', height: '80px', 
+                                                    border: '4px solid rgba(81, 207, 102, 0.2)', borderRadius: '50%',
+                                                    display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                                    transform: 'rotate(-15deg)', zIndex: 5, pointerEvents: 'none'
+                                                }}>
+                                                    <div style={{
+                                                        color: 'rgba(81, 207, 102, 0.4)', fontWeight: 900, fontSize: '14px', 
+                                                        letterSpacing: '2px', transform: 'rotate(-10deg)'
+                                                    }}>
+                                                        CLEAR
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', position: 'relative', zIndex: 10 }}>
+                                                <span style={{ fontSize: '11px', color: isStepCompleted ? '#51CF66' : 'var(--primary-orange)', fontWeight: 900, letterSpacing: '1px' }}>
+                                                    {isStepCompleted ? `MISSION ACCOMPLISHED` : `STOP ${point.sequenceOrder}`}
                                                 </span>
-                                                {isStepCompleted ? <CheckCircle size={14} color="#51CF66" /> : <Navigation size={14} color="rgba(255,255,255,0.3)" />}
+                                                {isStepCompleted ? <CheckCircle size={16} color="#51CF66" /> : <Navigation size={14} color="rgba(255,255,255,0.3)" />}
                                             </div>
-                                            <h4 style={{ fontSize: '17px', fontWeight: 700, color: 'white', marginBottom: '6px' }}>
+                                            <h4 style={{ fontSize: '17px', fontWeight: 800, color: 'white', marginBottom: '6px', position: 'relative', zIndex: 10 }}>
                                                 {point.label}
                                             </h4>
                                             
@@ -266,7 +294,7 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                 </div>
 
                 <footer className="glass" style={{ padding: '24px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '16px', background: 'rgba(13, 13, 25, 0.8)' }}>
-                    {isAuthor && !isMission && (
+                    {isAuthor && !isMission ? (
                         <div style={{ display: 'flex', gap: '14px' }}>
                             <button onClick={onEdit} className="glass" style={{ flex: 1, height: '60px', borderRadius: 'var(--radius-md)', color: 'white', fontWeight: 800, fontSize: '15px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', border: '1px solid rgba(255,255,255,0.2)' }}>
                                 <Edit3 size={18} /> EDIT JOURNEY
@@ -275,24 +303,46 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                                 <Trash2 size={20} color="#EF4444" />
                             </button>
                         </div>
-                    )}
-                    {(isMission && progressPercent < 100) ? (
-                        <button disabled className="primary-btn" style={{ width: '100%', height: '60px', borderRadius: 'var(--radius-md)', fontSize: '15px', gap: '12px', background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', boxShadow: 'none' }}>
-                            COMPLETE ALL STOPS FIRST
-                        </button>
                     ) : isMission ? (
-                        <button onClick={async () => {
-                            try {
-                                const res = await authFetch(`http://localhost:8080/api/missions/complete/${localItinerary.id}`, { method: 'POST' });
-                                if (res.ok) alert("Mission Completed! You can view your history in MyPage.");
-                            } catch (e) {
-                                console.error("Could not complete mission:", e);
-                            }
-                            onClose();
-                        }} className="primary-btn" style={{ width: '100%', height: '60px', borderRadius: 'var(--radius-md)', fontSize: '17px', gap: '12px' }}>
-                            FINALIZE MISSION <ChevronRight size={20} />
+                        progressPercent < 100 ? (
+                            <button disabled className="primary-btn" style={{ width: '100%', height: '60px', borderRadius: 'var(--radius-md)', fontSize: '15px', gap: '12px', background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', boxShadow: 'none' }}>
+                                COMPLETE ALL STOPS FIRST
+                            </button>
+                        ) : (
+                            <button onClick={async () => {
+                                try {
+                                    const res = await authFetch(`http://localhost:8080/api/missions/complete/${localItinerary.id}`, { method: 'POST' });
+                                    if (res.ok) alert("Mission Completed! You can view your history in MyPage.");
+                                } catch (e) {
+                                    console.error("Could not complete mission:", e);
+                                }
+                                onClose();
+                            }} className="primary-btn" style={{ width: '100%', height: '60px', borderRadius: 'var(--radius-md)', fontSize: '17px', gap: '12px' }}>
+                                FINALIZE MISSION <ChevronRight size={20} />
+                            </button>
+                        )
+                    ) : (
+                        <button 
+                            onClick={async () => {
+                                try {
+                                    const res = await authFetch(`http://localhost:8080/api/missions/start/${localItinerary.id}`, { method: 'POST' });
+                                    if (res.ok) {
+                                        const missionData = await res.json();
+                                        setLocalItinerary(missionData);
+                                    }
+                                } catch (e) {
+                                    console.error("Could not start mission from modal:", e);
+                                }
+                            }}
+                            className="primary-btn" 
+                            style={{ 
+                                width: '100%', height: '60px', borderRadius: 'var(--radius-md)', fontSize: '17px', gap: '12px',
+                                boxShadow: '0 15px 30px rgba(255, 92, 0, 0.4)'
+                            }}
+                        >
+                            🚀 이 챌린지에 참여하기
                         </button>
-                    ) : null}
+                    )}
                 </footer>
             </div>
         </div>

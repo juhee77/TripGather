@@ -199,10 +199,10 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                    {formData.routePoints.filter(p => (p.dayNumber || 1) === dayNum).map((point, idx) => {
-                                        const globalIndex = formData.routePoints.indexOf(point);
+                                    {formData.routePoints.map((point, globalIndex) => {
+                                        if ((point.dayNumber || 1) !== dayNum) return null;
                                         return (
-                                            <div key={idx} className="animate-fade" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                            <div key={globalIndex} className="animate-fade" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                                 <div style={{ flex: 1, position: 'relative' }}>
                                                     <MapPin size={16} color="var(--primary-orange)" style={{ position: 'absolute', top: '13px', left: '14px' }} />
                                                     <input 

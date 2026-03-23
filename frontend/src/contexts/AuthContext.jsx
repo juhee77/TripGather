@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+    window.location.href = '/login'; // Force app reload to clear UserContext and other transient state
   }, []);
 
   const login = async (email, password) => {
