@@ -72,7 +72,8 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                 }
             }
 
-            const res = await authFetch(`http://localhost:8080/api/missions/${localItinerary.id}/steps/${stepId}/complete`, {
+            const targetMissionId = localItinerary.missionId || localItinerary.id;
+            const res = await authFetch(`http://localhost:8080/api/missions/${targetMissionId}/steps/${stepId}/complete`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ memo, photoUrl: finalPhotoUrl })
