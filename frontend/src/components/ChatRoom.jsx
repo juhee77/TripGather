@@ -90,24 +90,24 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
     return (
         <div className="animate-fade" style={{ 
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-            background: 'var(--bg-dark)', zIndex: 200, display: 'flex', flexDirection: 'column',
+            background: 'var(--bg-color)', zIndex: 200, display: 'flex', flexDirection: 'column',
             overflow: 'hidden'
         }}>
             {/* Room Header */}
             <header className="glass" style={{ 
                 padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                borderBottom: '1px solid var(--border-color)',
                 borderRadius: '0 0 24px 24px',
-                zIndex: 210
+                zIndex: 210, background: 'var(--surface)'
             }}>
                 <button onClick={onBack} className="icon-circle glass" style={{ width: '40px', height: '40px' }}>
-                    <ArrowLeft size={20} color="white" />
+                    <ArrowLeft size={20} color="var(--text-primary)" />
                 </button>
                 <div style={{ flex: 1 }}>
-                    <h3 className="text-s" style={{ color: 'white', fontWeight: 900, marginBottom: '2px' }}>{gathering.title}</h3>
+                    <h3 className="text-s" style={{ color: 'var(--text-primary)', fontWeight: 900, marginBottom: '2px', fontSize: '15px' }}>{gathering.title}</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ADE80' }}></span>
-                        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
                             {(gathering.members?.filter(m => m.status === 'APPROVED').length || 0) + 1} agents active
                         </span>
                     </div>
@@ -118,10 +118,10 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                         className="icon-circle glass" 
                         style={{ width: '40px', height: '40px', background: isDrawerOpen ? 'var(--primary-orange)' : '' }}
                     >
-                        <Users size={20} color="white" />
+                        <Users size={20} color={isDrawerOpen ? "white" : "var(--text-primary)"} />
                     </button>
                     <button className="icon-circle glass" style={{ width: '40px', height: '40px' }}>
-                        <MoreHorizontal size={20} color="white" />
+                        <MoreHorizontal size={20} color="var(--text-primary)" />
                     </button>
                 </div>
             </header>
@@ -147,7 +147,7 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                             }}>
                                 {showName && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px', marginLeft: '12px' }}>
-                                        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
+                                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
                                             {m.senderName}
                                         </span>
                                         {isHost(m.senderEmail) && <Shield size={10} color="var(--primary-orange)" />}
@@ -158,13 +158,13 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                                         padding: '12px 18px', 
                                         borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
                                         maxWidth: '100%',
-                                        background: isMe ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.05)',
-                                        border: isMe ? 'none' : '1px solid rgba(255,255,255,0.05)',
-                                        boxShadow: isMe ? '0 8px 20px rgba(255, 92, 0, 0.2)' : 'none'
+                                        background: isMe ? 'var(--primary-gradient)' : 'var(--surface)',
+                                        border: isMe ? 'none' : '1px solid var(--border-color)',
+                                        boxShadow: isMe ? '0 8px 20px rgba(255, 92, 0, 0.2)' : '0 2px 8px rgba(0,0,0,0.03)'
                                     }}>
-                                        <p style={{ fontSize: '14px', color: 'white', margin: 0, lineHeight: '1.5', fontWeight: 500 }}>{m.content}</p>
+                                        <p style={{ fontSize: '14px', color: isMe ? 'white' : 'var(--text-primary)', margin: 0, lineHeight: '1.5', fontWeight: 500 }}>{m.content}</p>
                                     </div>
-                                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 600, marginBottom: '4px' }}>
+                                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>
                                         {formatTime(m.sentAt)}
                                     </span>
                                 </div>
@@ -176,9 +176,9 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                 {/* Participant Drawer */}
                 <aside style={{
                     width: isDrawerOpen ? '260px' : '0',
-                    background: 'rgba(20, 20, 35, 0.95)',
+                    background: 'var(--surface)',
                     backdropFilter: 'blur(30px)',
-                    borderLeft: '1px solid rgba(255,255,255,0.05)',
+                    borderLeft: '1px solid var(--border-color)',
                     transition: 'width 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                     display: 'flex',
                     flexDirection: 'column',
@@ -186,7 +186,7 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                     zIndex: 205
                 }}>
                     <div style={{ padding: '24px 20px', minWidth: '260px' }}>
-                        <h4 style={{ color: 'white', fontSize: '15px', fontWeight: 800, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h4 style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 800, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             참여자 <span style={{ color: 'var(--primary-orange)' }}>{gathering.members?.filter(m => m.status === 'APPROVED').length + 1}</span>
                         </h4>
                         
@@ -198,10 +198,10 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <span style={{ color: 'white', fontSize: '14px', fontWeight: 700 }}>{typeof gathering.host === 'string' ? gathering.host : gathering.host?.name}</span>
+                                        <span style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 700 }}>{typeof gathering.host === 'string' ? gathering.host : gathering.host?.name}</span>
                                         <span title="Host">👑</span>
                                     </div>
-                                    <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 600 }}>Host</span>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600 }}>Host</span>
                                 </div>
                                 {currentUser.email !== (typeof gathering.host === 'string' ? gathering.host : gathering.host?.email) && (
                                     <button 
@@ -219,17 +219,17 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                     <div style={{ 
                                         width: '40px', height: '40px', borderRadius: '14px', 
-                                        background: m.user.profileImageUrl ? `url(${m.user.profileImageUrl}) center/cover` : 'rgba(255,255,255,0.05)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'white', fontSize: '14px',
-                                        border: '1px solid rgba(255,255,255,0.1)'
+                                        background: m.user.profileImageUrl ? `url(${m.user.profileImageUrl}) center/cover` : 'var(--bg-color)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--text-secondary)', fontSize: '14px',
+                                        border: '1px solid var(--border-color)'
                                     }}>
                                         {!m.user.profileImageUrl && m.user.name[0]}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <span style={{ color: 'white', fontSize: '14px', fontWeight: 600 }}>{m.user.name}</span>
+                                        <span style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600 }}>{m.user.name}</span>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                             <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#4ADE80' }}></span>
-                                            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '11px', fontWeight: 600 }}>Active</span>
+                                            <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600 }}>Active</span>
                                         </div>
                                     </div>
                                     {currentUser.email !== m.user.email && (
@@ -249,7 +249,7 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
             </div>
 
             {/* Input Area */}
-            <footer style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(13, 13, 25, 0.8)', backdropFilter: 'blur(20px)', zIndex: 210 }}>
+            <footer style={{ padding: '20px', borderTop: '1px solid var(--border-color)', background: 'var(--surface)', backdropFilter: 'blur(20px)', zIndex: 210 }}>
                 <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px' }}>
                     <div style={{ flex: 1, position: 'relative' }}>
                         <input 
@@ -258,8 +258,9 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                             placeholder="메시지를 입력하세요..."
                             className="glass"
                             style={{ 
-                                width: '100%', padding: '16px 20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)',
-                                background: 'rgba(255,255,255,0.02)', color: 'white', outline: 'none', fontSize: '15px' 
+                                width: '100%', padding: '16px 20px', borderRadius: '16px', border: '1px solid var(--border-color)',
+                                background: 'white', color: 'var(--text-primary)', outline: 'none', fontSize: '15px',
+                                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
                             }}
                         />
                     </div>
