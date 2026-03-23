@@ -34,10 +34,14 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
             .then(data => setMessages(data))
             .catch(err => console.error("History fetch error:", err));
 
+        // Get token if it's stored locally
+        const token = localStorage.getItem('token'); 
+        
         // WebSocket 연결
         const socket = new SockJS('http://localhost:8080/ws-stomp');
         const client = new Client({
             webSocketFactory: () => socket,
+            connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
             debug: (str) => console.log(str),
             onConnect: () => {
                 console.log('Connected to WebSocket');

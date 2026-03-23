@@ -82,32 +82,66 @@ const TicketCard = ({ itinerary, onViewRoute }) => {
                     padding: '20px 24px',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    gap: '12px'
                 }}>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, display: 'none' }}> {/* Hide barcode for more button space */}
                         <div style={{
                             height: '30px', 
-                            width: '100px', 
+                            width: '80px', 
                             marginBottom: '6px',
                             background: 'repeating-linear-gradient(90deg, #1A1A1E, #1A1A1E 2px, transparent 2px, transparent 4px, #1A1A1E 4px, #1A1A1E 5px, transparent 5px, transparent 8px)',
                             opacity: 0.8
                         }}></div>
-                        <p style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '2px' }}>
-                            TG-{itinerary.id || 'BOARD'}-2026
-                        </p>
                     </div>
-                    <button 
-                        onClick={async () => {
-                            try {
-                                await authFetch(`http://localhost:8080/api/missions/start/${itinerary.id}`, { method: 'POST' });
-                            } catch (e) { console.error("Could not start mission:", e); }
-                            onViewRoute(itinerary);
-                        }}
-                        className="primary-btn"
-                        style={{ padding: '12px 24px', fontSize: '14px' }}
-                    >
-                        BOARDING NOW
-                    </button>
+                    
+                    <div style={{ display: 'flex', gap: '10px', width: '100%', justifyContent: 'flex-end' }}>
+                        <button 
+                            onClick={() => onViewRoute(itinerary)}
+                            className="glass"
+                            style={{ 
+                                padding: '12px 20px', 
+                                fontSize: '14px', 
+                                fontWeight: 700,
+                                color: 'var(--text-primary)',
+                                borderRadius: 'var(--radius-md)',
+                                background: 'white',
+                                border: '1px solid var(--border-color)',
+                                flex: 1
+                            }}
+                        >
+                            상세 보기
+                        </button>
+                        <button 
+                            onClick={async () => {
+                                if (itinerary.steps) {
+                                    onViewRoute(itinerary);
+                                    return;
+                                }
+                                try {
+                                    const res = await authFetch(`http://localhost:8080/api/missions/start/${itinerary.id}`, { method: 'POST' });
+                                    if (res.ok) {
+                                        const missionData = await res.json();
+                                        onViewRoute(missionData);
+                                    } else {
+                                        onViewRoute(itinerary);
+                                    }
+                                } catch (e) { 
+                                    console.error("Could not start mission:", e); 
+                                    onViewRoute(itinerary);
+                                }
+                            }}
+                            className="primary-btn"
+                            style={{ 
+                                padding: '12px 20px', 
+                                fontSize: '14px', 
+                                flex: 1.5,
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            {itinerary.steps ? '미션 계속하기' : '챌린지 참여하기'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
