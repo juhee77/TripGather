@@ -186,6 +186,7 @@ const Home = () => {
                   <TicketCard
                     itinerary={{
                       id: m.itineraryId,
+                      missionId: m.id,
                       title: m.itineraryTitle,
                       author: m.itineraryAuthor,
                       description: 'Proceed with this active mission!',

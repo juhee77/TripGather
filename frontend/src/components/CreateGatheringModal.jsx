@@ -22,6 +22,7 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
     category: '밥/카페'
   });
   const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleChange = (e) => {
