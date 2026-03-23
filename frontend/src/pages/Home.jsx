@@ -40,14 +40,18 @@ const Home = () => {
     fetchGatherings();
   }, []);
 
-  useEffect(() => {
-    if (currentUser) { // Changed from `user` to `currentUser` to match context variable
+  const fetchMissions = () => {
+    if (currentUser) {
       authFetch('/api/missions/me')
         .then(res => res.json())
         .then(data => setActiveMissions(data.filter(m => m.status === 'ACTIVE')))
         .catch(err => console.error(err));
     }
-  }, [currentUser]); // Dependency changed to `currentUser`
+  };
+
+  useEffect(() => {
+    fetchMissions();
+  }, [currentUser]);
 
   const handleGatheringCreated = (newGathering) => {
     // Optionally prepend to list or refetch
@@ -263,7 +267,7 @@ const Home = () => {
         )}
 
         {activeTab === '일정' && (
-          <ItineraryTab />
+          <ItineraryTab onMissionStart={() => { fetchMissions(); setActiveTab('나의 미션'); }} />
         )}
       </div>
 

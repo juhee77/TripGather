@@ -70,6 +70,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/itineraries/**").permitAll()
                 .requestMatchers("/api/users/me").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                // WebSocket (핸드셰이크 허용)
+                .requestMatchers("/ws-stomp/**").permitAll()
                 // 나머지는 인증 필요
                 .anyRequest().authenticated()
             )

@@ -5,7 +5,7 @@ import RouteDetailModal from './RouteDetailModal';
 import { Plus, RotateCcw } from 'lucide-react';
 import { authFetch, apiUrl } from '../api/client';
 
-const ItineraryTab = () => {
+const ItineraryTab = ({ onMissionStart }) => {
     const [itineraries, setItineraries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -174,6 +174,7 @@ const ItineraryTab = () => {
                     onClose={() => setSelectedItinerary(null)}
                     onEdit={() => openEditor(selectedItinerary)}
                     onDelete={() => handleDelete(selectedItinerary.id)}
+                    onMissionStart={onMissionStart}
                 />
             )}
         </div>
