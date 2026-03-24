@@ -2,7 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.domain.Gathering;
 import com.example.demo.dto.GatheringResponse;
-import com.example.demo.service.GatheringService;
+import com.example.demo.usecase.GatheringUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +15,7 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173") // Allow frontend dev server
 public class GatheringController {
 
-    private final GatheringService gatheringService;
+    private final GatheringUseCase gatheringService;
 
     @GetMapping
     public ResponseEntity<List<GatheringResponse>> getAllGatherings(@RequestParam(required = false) String location) {

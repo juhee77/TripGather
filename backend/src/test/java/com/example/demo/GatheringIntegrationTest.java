@@ -11,6 +11,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.test.context.support.WithMockUser;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.domain.User;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,9 +33,17 @@ class GatheringIntegrationTest {
         @Autowired
         private GatheringRepository gatheringRepository;
 
+        @Autowired
+        private UserRepository userRepository;
+
         @Test
         @DisplayName("모임 생성 API (정상 케이스) 테스트")
+        @WithMockUser(username = "test@test.com")
         void createGatheringTest() throws Exception {
+                User testUser = new User();
+                testUser.setEmail("test@test.com");
+                testUser.setName("Test Host");
+                userRepository.save(testUser);
                 Gathering requestData = Gathering.builder()
                                 .title("테스트 모임입니다")
                                 .location("테스트 장소")
@@ -57,7 +68,13 @@ class GatheringIntegrationTest {
 
         @Test
         @DisplayName("이미지 텍스트 긴 경우 (Base64) 테스트")
+        @WithMockUser(username = "test@test.com")
         void createGatheringWithLongImageTest() throws Exception {
+                User testUser = new User();
+                testUser.setEmail("test@test.com");
+                testUser.setName("Test Host");
+                userRepository.save(testUser);
+
                 // Base64 문자열이 255자를 넘을 때의 상황 모사
                 String longBase64 = "data:image/jpeg;base64," + "A".repeat(1000);
                 Gathering requestData = Gathering.builder()

@@ -11,12 +11,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.demo.usecase.GatheringUseCase;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class GatheringService {
+public class GatheringServiceImpl implements GatheringUseCase {
     
     private final GatheringRepository gatheringRepository;
     private final UserRepository userRepository;
