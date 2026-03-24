@@ -38,6 +38,12 @@ public class UserMissionController {
         return ResponseEntity.ok(res);
     }
 
+    @GetMapping("/me/stamps")
+    public ResponseEntity<List<com.example.demo.dto.StampResponse>> getMyStamps(Authentication authentication) {
+        List<com.example.demo.dto.StampResponse> res = missionService.getMyStamps(authentication.getName());
+        return ResponseEntity.ok(res);
+    }
+
     @PostMapping("/{missionId}/steps/{stepId}/complete")
     public ResponseEntity<UserMissionStepResponse> completeStep(
             @PathVariable Long missionId,

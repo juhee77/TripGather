@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface UserMissionStepRepository extends JpaRepository<UserMissionStep, Long> {
     List<UserMissionStep> findByUserMissionId(Long userMissionId);
+    List<UserMissionStep> findByUserMissionUserIdAndIsCompletedOrderByCompletedAtDesc(Long userId, boolean isCompleted);
 }
