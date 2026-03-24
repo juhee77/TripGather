@@ -4,6 +4,7 @@ import com.example.demo.domain.Itinerary;
 import com.example.demo.domain.User;
 import com.example.demo.domain.UserMission;
 import com.example.demo.dto.UserMissionResponse;
+import com.example.demo.dto.StampResponse;
 import com.example.demo.repository.ItineraryRepository;
 import com.example.demo.repository.UserMissionRepository;
 import com.example.demo.repository.UserRepository;
@@ -126,6 +127,17 @@ public class UserMissionService {
                             .map(UserMissionStepResponse::from).collect(Collectors.toList()));
                     return res;
                 })
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<StampResponse> getMyStamps(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+
+        return stepRepository.findByUserMissionUserIdAndIsCompletedOrderByCompletedAtDesc(user.getId(), true)
+                .stream()
+                .map(StampResponse::from)
                 .toList();
     }
 }

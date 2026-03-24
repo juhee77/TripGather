@@ -5,7 +5,8 @@ import GatheringDetailModal from '../components/GatheringDetailModal';
 import TicketCard from '../components/TicketCard';
 import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
-import RouteDetailModal from '../components/RouteDetailModal'; // Added
+import RouteDetailModal from '../components/RouteDetailModal';
+import ProfileTab from '../components/ProfileTab'; // Added
 import { useUser } from '../contexts/UserContext';
 import { Search, Map as MapIcon, Plus, MessageCircle } from 'lucide-react';
 import { authFetch } from '../api/client'; // Added
@@ -118,7 +119,7 @@ const Home = () => {
         marginBottom: '24px'
       }}>
         <nav style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '10px' }} className="hide-scrollbar">
-          {['발견', '일정', '나의 미션', '내 모임'].map((tab) => (
+          {['발견', '일정', '나의 미션', '내 모임', '내 여권'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -268,6 +269,10 @@ const Home = () => {
 
         {activeTab === '일정' && (
           <ItineraryTab onMissionStart={() => { fetchMissions(); setActiveTab('나의 미션'); }} />
+        )}
+
+        {activeTab === '내 여권' && (
+          <ProfileTab />
         )}
       </div>
 
