@@ -25,9 +25,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
-class GatheringServiceTest {
+class GatheringServiceImplTest {
 
     @Mock
     private GatheringRepository gatheringRepository;
@@ -39,7 +40,7 @@ class GatheringServiceTest {
     private GatheringMemberRepository gatheringMemberRepository;
 
     @InjectMocks
-    private GatheringService gatheringService;
+    private GatheringServiceImpl gatheringService;
 
     @Test
     @DisplayName("모임 전체 조회 - 지역 파라미터가 없거나 전체인 경우")
@@ -103,6 +104,7 @@ class GatheringServiceTest {
 
         given(gatheringRepository.findById(gatheringId)).willReturn(Optional.of(gathering));
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(gatheringRepository.save(any(Gathering.class))).willAnswer(i -> i.getArgument(0));
 
         // when
         Gathering result = gatheringService.joinGathering(gatheringId);
@@ -146,6 +148,7 @@ class GatheringServiceTest {
 
         given(gatheringRepository.findById(gatheringId)).willReturn(Optional.of(gathering));
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(gatheringRepository.save(any(Gathering.class))).willAnswer(i -> i.getArgument(0));
 
         // when
         Gathering result = gatheringService.joinGathering(gatheringId);

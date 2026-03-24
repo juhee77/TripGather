@@ -6,18 +6,23 @@ import TicketCard from '../components/TicketCard';
 import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
 import RouteDetailModal from '../components/RouteDetailModal';
-import ProfileTab from '../components/ProfileTab'; // Added
+import ProfileTab from '../components/ProfileTab';
 import { useUser } from '../contexts/UserContext';
+import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel'; // Added
 import { Search, Map as MapIcon, Plus, MessageCircle } from 'lucide-react';
-import { authFetch } from '../api/client'; // Added
+import { authFetch } from '../api/client';
 
 const Home = () => {
   const { user: currentUser } = useUser();
-  const [gatherings, setGatherings] = useState([]);
+  const {
+    gatherings,
+    selectedRegion,
+    actions: { handleRegionChange, refreshGatherings }
+  } = useGatheringsViewModel();
+
   const [activeTab, setActiveTab] = useState('발견');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGathering, setSelectedGathering] = useState(null);
-  const [selectedRegion, setSelectedRegion] = useState('전체');
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
   const [myJoinedIds, setMyJoinedIds] = useState(() => {
     try {
@@ -29,17 +34,6 @@ const Home = () => {
   });
   const [activeMissions, setActiveMissions] = useState([]);
   const [selectedMission, setSelectedMission] = useState(null);
-
-  const fetchGatherings = () => {
-    fetch('http://localhost:8080/api/gatherings')
-      .then(res => res.json())
-      .then(data => setGatherings(data))
-      .catch(err => console.error("Error fetching gatherings:", err));
-  };
-
-  useEffect(() => {
-    fetchGatherings();
-  }, []);
 
   const fetchMissions = () => {
     if (currentUser) {
@@ -55,8 +49,7 @@ const Home = () => {
   }, [currentUser]);
 
   const handleGatheringCreated = (newGathering) => {
-    // Optionally prepend to list or refetch
-    fetchGatherings();
+    refreshGatherings();
   };
 
   const tabs = ['발견', '내 모임', '일정']; // This line will be replaced by the new nav structure
@@ -87,7 +80,7 @@ const Home = () => {
         <div style={{ display: 'flex', gap: '12px' }}>
           <select 
             value={selectedRegion} 
-            onChange={(e) => setSelectedRegion(e.target.value)}
+            onChange={(e) => handleRegionChange(e.target.value)}
             style={{ 
               background: 'var(--bg-color)', 
               padding: '10px 16px', 
@@ -309,13 +302,13 @@ const Home = () => {
         <GatheringDetailModal
           gathering={selectedGathering}
           onClose={() => setSelectedGathering(null)}
-          onUpdate={fetchGatherings}
+          onUpdate={refreshGatherings}
           onDelete={(id) => {
-            setGatherings(prev => prev.filter(g => g.id !== id));
+            refreshGatherings();
             setSelectedGathering(null);
           }}
           onJoin={(updatedGathering) => {
-            fetchGatherings(); // Full refresh to get status
+            refreshGatherings(); // Full refresh to get status
           }}
         />
       )}
