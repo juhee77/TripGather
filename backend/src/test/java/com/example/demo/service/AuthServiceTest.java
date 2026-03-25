@@ -13,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.example.demo.service.AuthServiceImpl;
 
 import java.util.Optional;
 
@@ -35,7 +36,7 @@ class AuthServiceTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @InjectMocks
-    private AuthService authService;
+    private AuthServiceImpl authService;
 
     @Test
     @DisplayName("회원가입 성공")

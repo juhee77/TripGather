@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ChatMessageResponse;
-import com.example.demo.service.ChatService;
+import com.example.demo.usecase.ChatUseCase;
 import com.example.demo.service.NotificationService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,7 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatController {
 
-    private final ChatService chatService;
+    private final ChatUseCase chatService;
     private final NotificationService notificationService;
 
     // 클라이언트가 /app/chat/{gatheringId}/send 로 메시지를 보내면 호출됨

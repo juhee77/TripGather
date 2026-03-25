@@ -3,7 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dto.AuthRequest.LoginRequest;
 import com.example.demo.dto.AuthRequest.SignupRequest;
 import com.example.demo.dto.AuthResponse;
-import com.example.demo.service.AuthService;
+import com.example.demo.usecase.AuthUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "http://localhost:5173")
 public class AuthController {
 
-    private final AuthService authService;
+    private final AuthUseCase authService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody SignupRequest request) {

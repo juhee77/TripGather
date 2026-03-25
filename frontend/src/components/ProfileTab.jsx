@@ -6,16 +6,23 @@ import { useUser } from '../contexts/UserContext';
 import { LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
+import { useUserViewModel } from '../viewmodels/useUserViewModel';
+import ChatRepository from '../repositories/ChatRepository';
+
 const ProfileTab = () => {
-  const { user: currentUser } = useUser();
+  const { user, loading: userLoading, updateProfile } = useUserViewModel();
   const { logout } = useAuth();
   const [stamps, setStamps] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (currentUser) {
+    if (user) {
       setLoading(true);
-      authFetch('/api/missions/me/stamps')
+      // Mission related stamps can go to a MissionRepository later, 
+      // but for now let's just keep it consistent.
+      fetch(`http://localhost:8080/api/missions/me/stamps`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      })
         .then(res => res.json())
         .then(data => {
           setStamps(data);
@@ -26,7 +33,7 @@ const ProfileTab = () => {
           setLoading(false);
         });
     }
-  }, [currentUser]);
+  }, [user]);
 
   return (
     <div style={{ paddingBottom: '40px' }}>

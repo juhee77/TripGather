@@ -4,7 +4,7 @@ import com.example.demo.domain.DirectMessage;
 import com.example.demo.domain.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.dto.DMResponse;
-import com.example.demo.service.DirectMessageService;
+import com.example.demo.usecase.DirectMessageUseCase;
 import com.example.demo.service.NotificationService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,7 +22,7 @@ import java.util.List;
 @RequestMapping("/api/dm")
 public class DirectMessageController {
 
-    private final DirectMessageService dmService;
+    private final DirectMessageUseCase dmService;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
     private final NotificationService notificationService;

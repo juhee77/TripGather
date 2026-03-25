@@ -2,7 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.domain.User;
 import com.example.demo.dto.UserResponse;
-import com.example.demo.service.UserService;
+import com.example.demo.usecase.UserUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +15,7 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
-    private final UserService userService;
+    private final UserUseCase userService;
 
     /**
      * 현재 로그인한 유저 정보. 인증 미구현 시 기본 유저(id=1) 반환.
