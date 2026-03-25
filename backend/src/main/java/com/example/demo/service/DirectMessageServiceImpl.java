@@ -7,13 +7,14 @@ import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.demo.usecase.DirectMessageUseCase;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class DirectMessageService {
+public class DirectMessageServiceImpl implements DirectMessageUseCase {
 
     private final DirectMessageRepository dmRepository;
     private final UserRepository userRepository;

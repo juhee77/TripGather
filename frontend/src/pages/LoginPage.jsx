@@ -1,35 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuthViewModel } from '../viewmodels/useAuthViewModel';
 import './LoginPage.css';
 
 function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  
-  const { login, signup } = useAuth();
+  const {
+    isLogin,
+    formData,
+    error,
+    loading,
+    handleInputChange,
+    toggleMode,
+    handleSubmit
+  } = useAuthViewModel();
+
   const navigate = useNavigate();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      if (isLogin) {
-        await login(formData.email, formData.password);
-      } else {
-        await signup(formData.name, formData.email, formData.password);
-      }
-      navigate('/gather');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="login-container">
@@ -40,11 +25,13 @@ function LoginPage() {
         <div className="tab-buttons">
           <button 
             className={`tab-btn ${isLogin ? 'active' : ''}`}
-            onClick={() => setIsLogin(true)}
+            onClick={toggleMode}
+            disabled={isLogin}
           >로그인</button>
           <button 
             className={`tab-btn ${!isLogin ? 'active' : ''}`}
-            onClick={() => setIsLogin(false)}
+            onClick={toggleMode}
+            disabled={!isLogin}
           >회원가입</button>
         </div>
 
@@ -52,22 +39,24 @@ function LoginPage() {
           {!isLogin && (
             <div className="input-group">
               <label>이름</label>
-              <input 
-                type="text" 
-                placeholder="홍길동"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                required
-              />
+                <input 
+                  type="text" 
+                  name="name"
+                  placeholder="홍길동"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                />
             </div>
           )}
           <div className="input-group">
             <label>이메일</label>
             <input 
               type="email" 
+              name="email"
               placeholder="example@test.com"
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={handleInputChange}
               required
             />
           </div>
@@ -75,9 +64,10 @@ function LoginPage() {
             <label>비밀번호</label>
             <input 
               type="password" 
+              name="password"
               placeholder="••••••••"
               value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              onChange={handleInputChange}
               required
             />
           </div>

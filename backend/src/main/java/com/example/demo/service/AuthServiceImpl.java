@@ -8,11 +8,12 @@ import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.example.demo.usecase.AuthUseCase;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthServiceImpl implements AuthUseCase {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;

@@ -1,91 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Send, Users, Shield, MoreHorizontal } from 'lucide-react';
-import SockJS from 'sockjs-client';
-import { Client } from '@stomp/stompjs';
-import { useUser } from '../contexts/UserContext';
+import { useChatViewModel } from '../viewmodels/useChatViewModel';
 
 const ChatRoom = ({ gathering, onBack, onStartDM }) => {
     const { user: currentUser } = useUser();
-    const [messages, setMessages] = useState([]);
-    const [input, setInput] = useState('');
-    const [stompClient, setStompClient] = useState(null);
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const scrollRef = useRef(null);
-
-    const isHost = (email) => {
-        if (!gathering.host) return false;
-        return typeof gathering.host === 'string' ? gathering.host === email : gathering.host.email === email;
-    };
-
-    const formatTime = (dateStr) => {
-        if (!dateStr) return "";
-        try {
-            const date = new Date(dateStr);
-            return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
-        } catch (e) {
-            return "";
-        }
-    };
-
-    useEffect(() => {
-        // 채팅 내역 불러오기
-        fetch(`http://localhost:8080/api/chat/${gathering.id}/history`)
-            .then(res => res.json())
-            .then(data => setMessages(data))
-            .catch(err => console.error("History fetch error:", err));
-
-        // Get token if it's stored locally
-        const token = localStorage.getItem('token'); 
-        
-        // WebSocket 연결
-        const socket = new SockJS('http://localhost:8080/ws-stomp');
-        const client = new Client({
-            webSocketFactory: () => socket,
-            connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
-            debug: (str) => console.log(str),
-            onConnect: () => {
-                console.log('Connected to WebSocket');
-                client.subscribe(`/topic/chat/${gathering.id}`, (message) => {
-                    const newMessage = JSON.parse(message.body);
-                    setMessages(prev => [...prev, newMessage]);
-                });
-            },
-            onStompError: (frame) => {
-                console.error('Broker reported error: ' + frame.headers['message']);
-                console.error('Additional details: ' + frame.body);
-            },
-        });
-
-        client.activate();
-        setStompClient(client);
-
-        return () => {
-            if (client) client.deactivate();
-        };
-    }, [gathering.id]);
-
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [messages]);
-
-    const handleSend = (e) => {
-        e.preventDefault();
-        if (!input.trim() || !stompClient) return;
-
-        const chatMessage = {
-            content: input,
-            senderEmail: currentUser.email
-        };
-
-        stompClient.publish({
-            destination: `/app/chat/${gathering.id}/send`,
-            body: JSON.stringify(chatMessage)
-        });
-
-        setInput('');
-    };
+    const {
+        messages,
+        input,
+        setInput,
+        isDrawerOpen,
+        setIsDrawerOpen,
+        scrollRef,
+        handleSend,
+        formatTime,
+        isHost
+    } = useChatViewModel(gathering, currentUser);
 
     return (
         <div className="animate-fade" style={{ 
