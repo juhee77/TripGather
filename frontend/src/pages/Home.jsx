@@ -5,10 +5,11 @@ import GatheringDetailModal from '../components/GatheringDetailModal';
 import TicketCard from '../components/TicketCard';
 import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
-import RouteDetailModal from '../components/RouteDetailModal';
 import ProfileTab from '../components/ProfileTab';
+import MissionTab from '../components/MissionTab'; // Added
 import { useUser } from '../contexts/UserContext';
-import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel'; // Added
+import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
+import { useMissionsViewModel } from '../viewmodels/useMissionsViewModel'; // Added
 import { Search, Map as MapIcon, Plus, MessageCircle } from 'lucide-react';
 import { authFetch } from '../api/client';
 
@@ -32,21 +33,15 @@ const Home = () => {
       return [];
     }
   });
-  const [activeMissions, setActiveMissions] = useState([]);
-  const [selectedMission, setSelectedMission] = useState(null);
 
-  const fetchMissions = () => {
-    if (currentUser) {
-      authFetch('/api/missions/me')
-        .then(res => res.json())
-        .then(data => setActiveMissions(data.filter(m => m.status === 'ACTIVE')))
-        .catch(err => console.error(err));
-    }
-  };
+  const {
+    activeMissions,
+    actions: { fetchMissions, startMission, completeMission, completeStep }
+  } = useMissionsViewModel();
 
   useEffect(() => {
-    fetchMissions();
-  }, [currentUser]);
+    if (currentUser) fetchMissions();
+  }, [currentUser, fetchMissions]);
 
   const handleGatheringCreated = (newGathering) => {
     refreshGatherings();
@@ -171,40 +166,11 @@ const Home = () => {
         )}
 
         {activeTab === '나의 미션' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {activeMissions.length === 0 ? (
-              <div className="glass" style={{ textAlign: 'center', padding: '60px 24px', borderRadius: 'var(--radius-lg)', background: 'white' }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🚀</div>
-                <p style={{ fontWeight: 700, color: 'var(--text-primary)' }}>현재 진행 중인 ми션이 없습니다.</p>
-                <button className="primary-btn" onClick={() => setActiveTab('일정')} style={{marginTop: '16px'}}>일정 보러가기</button>
-              </div>
-            ) : (
-              activeMissions.map((m, idx) => (
-                <div key={m.id} className="animate-fade" style={{ animationDelay: `${idx * 0.1}s` }}>
-                  <TicketCard
-                    itinerary={{
-                      id: m.itineraryId,
-                      missionId: m.id,
-                      title: m.itineraryTitle,
-                      author: m.itineraryAuthor,
-                      description: 'Proceed with this active mission!',
-                      createdAt: m.startedAt,
-                      steps: m.steps
-                    }}
-                    onViewRoute={(itinerary) => setSelectedMission(itinerary)}
-                  />
-                </div>
-              ))
-            )}
-            {selectedMission && (
-                <RouteDetailModal 
-                    itinerary={selectedMission}
-                    onClose={() => setSelectedMission(null)}
-                    onEdit={() => {}} 
-                    onDelete={() => {}}
-                />
-            )}
-          </div>
+          <MissionTab 
+            activeMissions={activeMissions} 
+            onMissionComplete={completeMission}
+            onStepComplete={completeStep}
+          />
         )}
 
         {activeTab === '내 모임' && (

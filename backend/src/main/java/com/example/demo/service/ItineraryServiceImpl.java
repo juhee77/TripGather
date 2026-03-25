@@ -5,12 +5,13 @@ import com.example.demo.repository.ItineraryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.demo.usecase.ItineraryUseCase;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class ItineraryService {
+public class ItineraryServiceImpl implements ItineraryUseCase {
 
     private final ItineraryRepository itineraryRepository;
 

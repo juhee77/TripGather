@@ -2,7 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.UserMissionResponse;
 import com.example.demo.dto.UserMissionStepResponse;
-import com.example.demo.service.UserMissionService;
+import com.example.demo.usecase.UserMissionUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.Data;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +18,7 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173")
 public class UserMissionController {
 
-    private final UserMissionService missionService;
+    private final UserMissionUseCase missionService;
 
     @PostMapping("/start/{itineraryId}")
     public ResponseEntity<UserMissionResponse> startMission(@PathVariable Long itineraryId, Authentication authentication) {

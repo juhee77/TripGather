@@ -18,10 +18,11 @@ import java.util.stream.Collectors;
 import com.example.demo.repository.UserMissionStepRepository;
 import com.example.demo.dto.UserMissionStepResponse;
 import com.example.demo.domain.UserMissionStep;
+import com.example.demo.usecase.UserMissionUseCase;
 
 @Service
 @RequiredArgsConstructor
-public class UserMissionService {
+public class UserMissionServiceImpl implements UserMissionUseCase {
 
     private final UserMissionRepository missionRepository;
     private final UserRepository userRepository;
