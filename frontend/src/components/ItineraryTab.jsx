@@ -3,43 +3,31 @@ import TicketCard from './TicketCard';
 import ItineraryEditorModal from './ItineraryEditorModal';
 import RouteDetailModal from './RouteDetailModal';
 import { Plus, RotateCcw } from 'lucide-react';
-import { authFetch, apiUrl } from '../api/client';
+import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
 
 const ItineraryTab = ({ onMissionStart }) => {
-    const [itineraries, setItineraries] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const {
+        itineraries,
+        isLoading: loading,
+        actions: { createItinerary, updateItinerary, deleteItinerary, refreshItineraries }
+    } = useItinerariesViewModel();
+
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [selectedItinerary, setSelectedItinerary] = useState(null);
     const [editingItinerary, setEditingItinerary] = useState(null);
-
-    const fetchItineraries = async () => {
-        setLoading(true);
-        try {
-            const res = await authFetch('/api/itineraries');
-            if (res.ok) {
-                const data = await res.json();
-                setItineraries(data);
-            }
-        } catch (err) {
-            console.error("Error fetching itineraries:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     useEffect(() => {
         fetchItineraries();
     }, []);
 
-    const handleSaved = (savedItinerary) => {
-        setItineraries(prev => {
-            const exists = prev.find(it => it.id === savedItinerary.id);
-            if (exists) {
-                return prev.map(it => it.id === savedItinerary.id ? savedItinerary : it);
-            }
-            return [savedItinerary, ...prev];
-        });
-        // 상세 모달이 열려있다면 정보 업데이트
+    const handleSaved = async (savedItinerary) => {
+        // ViewModel actions handle network calls and refresh
+        if (savedItinerary.id) {
+            await updateItinerary(savedItinerary.id, savedItinerary);
+        } else {
+            await createItinerary(savedItinerary);
+        }
+        
         if (selectedItinerary?.id === savedItinerary.id) {
             setSelectedItinerary(savedItinerary);
         }
@@ -48,11 +36,8 @@ const ItineraryTab = ({ onMissionStart }) => {
     const handleDelete = async (id) => {
         if (!window.confirm('정말 이 일정을 삭제하시겠습니까?')) return;
         try {
-            const res = await authFetch(`/api/itineraries/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                setItineraries(prev => prev.filter(it => it.id !== id));
-                if (selectedItinerary?.id === id) setSelectedItinerary(null);
-            }
+            await deleteItinerary(id);
+            if (selectedItinerary?.id === id) setSelectedItinerary(null);
         } catch (err) {
             console.error('Delete failed:', err);
         }
@@ -93,7 +78,7 @@ const ItineraryTab = ({ onMissionStart }) => {
                         </h2>
                         <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '4px' }}>Upcoming & Past Itineraries</p>
                     </div>
-                    <button onClick={fetchItineraries} style={{ 
+                    <button onClick={refreshItineraries} style={{ 
                         color: 'rgba(255,255,255,0.5)', 
                         display: 'flex', 
                         alignItems: 'center', 
