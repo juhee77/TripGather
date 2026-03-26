@@ -8,6 +8,8 @@ function LoginPage() {
     isLogin,
     formData,
     error,
+    successMessage,
+    setSuccessMessage,
     loading,
     handleInputChange,
     toggleMode,
@@ -15,6 +17,13 @@ function LoginPage() {
   } = useAuthViewModel();
 
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('verified') === 'true') {
+      setSuccessMessage('인증이 성공적으로 완료되었습니다! 이제 로그인이 가능합니다.');
+    }
+  }, [setSuccessMessage]);
 
   return (
     <div className="login-container">
@@ -72,6 +81,7 @@ function LoginPage() {
             />
           </div>
 
+          {successMessage && <p className="success-msg">{successMessage}</p>}
           {error && <p className="error-msg">{error}</p>}
 
           <button type="submit" className="submit-btn" disabled={loading}>

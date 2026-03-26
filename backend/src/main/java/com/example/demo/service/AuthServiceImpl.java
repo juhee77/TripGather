@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import com.example.demo.usecase.AuthUseCase;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +20,7 @@ public class AuthServiceImpl implements AuthUseCase {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final com.example.demo.security.LoginAttemptService loginAttemptService;
+    private final EmailService emailService;
 
     /**
      * 회원가입
@@ -28,19 +30,24 @@ public class AuthServiceImpl implements AuthUseCase {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다: " + request.getEmail());
         }
 
+        String verificationToken = java.util.UUID.randomUUID().toString();
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .provider("local")
                 .role("ROLE_USER")
+                .emailVerified(false)
+                .verificationToken(verificationToken)
                 .build();
 
         userRepository.save(user);
 
-        String token = jwtTokenProvider.generateAccessToken(user.getEmail());
+        emailService.sendVerificationEmail(user.getEmail(), verificationToken);
+
         return AuthResponse.builder()
-                .accessToken(token)
+                .accessToken("") // No token until verified
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
@@ -66,6 +73,10 @@ public class AuthServiceImpl implements AuthUseCase {
             throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
+        if (!user.isEmailVerified()) {
+            throw new IllegalStateException("이메일 인증이 완료되지 않았습니다.");
+        }
+
         loginAttemptService.loginSucceeded(request.getEmail());
         String token = jwtTokenProvider.generateAccessToken(user.getEmail());
         return AuthResponse.builder()
@@ -74,5 +85,16 @@ public class AuthServiceImpl implements AuthUseCase {
                 .name(user.getName())
                 .email(user.getEmail())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void verifyEmail(String token) {
+        User user = userRepository.findByVerificationToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 인증 토큰입니다."));
+
+        user.setEmailVerified(true);
+        user.setVerificationToken(null);
+        userRepository.save(user);
     }
 }

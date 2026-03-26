@@ -25,4 +25,10 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @GetMapping("/verify")
+    public org.springframework.web.servlet.view.RedirectView verify(@RequestParam String token) {
+        authService.verifyEmail(token);
+        return new org.springframework.web.servlet.view.RedirectView("http://localhost:5173/login?verified=true");
+    }
 }

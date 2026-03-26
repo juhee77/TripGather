@@ -29,6 +29,7 @@ public class DataInitializer {
                         .role("ROLE_USER")
                         .profileImageUrl(null)
                         .points(1500)
+                        .emailVerified(true)
                         .build());
                 userRepo.save(User.builder()
                         .name("Alex")
@@ -39,6 +40,7 @@ public class DataInitializer {
                         .role("ROLE_USER")
                         .profileImageUrl(null)
                         .points(800)
+                        .emailVerified(true)
                         .build());
             }
 
