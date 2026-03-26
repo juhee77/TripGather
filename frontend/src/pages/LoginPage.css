@@ -119,6 +119,15 @@
   border-radius: 8px;
 }
 
+.success-msg {
+  color: #16a34a;
+  font-size: 0.85rem;
+  margin-bottom: 15px;
+  background: #f0fdf4;
+  padding: 10px;
+  border-radius: 8px;
+}
+
 .sns-login-divider {
   position: relative;
   text-align: center;

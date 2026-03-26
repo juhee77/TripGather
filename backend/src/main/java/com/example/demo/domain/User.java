@@ -51,6 +51,13 @@ public class User implements UserDetails {
     @Builder.Default
     private int points = 0;
 
+    @Builder.Default
+    @Column(name = "email_verified")
+    private boolean emailVerified = false;
+
+    @Column(name = "verification_token")
+    private String verificationToken;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 

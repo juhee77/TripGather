@@ -1,4 +1,4 @@
 /plan/
 .DS_Store
 .env
-src/main/generated/
+backend/src/main/generated/
