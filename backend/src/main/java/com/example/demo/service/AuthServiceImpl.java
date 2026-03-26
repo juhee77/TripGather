@@ -18,6 +18,7 @@ public class AuthServiceImpl implements AuthUseCase {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final com.example.demo.security.LoginAttemptService loginAttemptService;
 
     /**
      * 회원가입
@@ -50,13 +51,22 @@ public class AuthServiceImpl implements AuthUseCase {
      * 로그인
      */
     public AuthResponse login(LoginRequest request) {
+        if (loginAttemptService.isBlocked(request.getEmail())) {
+            throw new IllegalStateException("보안을 위해 계정이 잠시 잠겼습니다. 나중에 다시 시도해주세요.");
+        }
+
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다."));
+                .orElseGet(() -> {
+                    loginAttemptService.loginFailed(request.getEmail());
+                    throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
+                });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            loginAttemptService.loginFailed(request.getEmail());
             throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
+        loginAttemptService.loginSucceeded(request.getEmail());
         String token = jwtTokenProvider.generateAccessToken(user.getEmail());
         return AuthResponse.builder()
                 .accessToken(token)

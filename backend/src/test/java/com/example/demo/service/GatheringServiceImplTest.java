@@ -16,6 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
 
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +49,7 @@ class GatheringServiceImplTest {
     void getAllGatherings_withoutLocation() {
         // given
         Gathering gathering = new Gathering();
-        given(gatheringRepository.findAllByOrderByCreatedAtDesc()).willReturn(Collections.singletonList(gathering));
+        given(gatheringRepository.searchGatherings(isNull(), isNull(), isNull())).willReturn(List.of(gathering));
 
         // when
         List<Gathering> result1 = gatheringService.getAllGatherings(null);
@@ -58,7 +60,7 @@ class GatheringServiceImplTest {
         assertThat(result1).hasSize(1);
         assertThat(result2).hasSize(1);
         assertThat(result3).hasSize(1);
-        verify(gatheringRepository, times(3)).findAllByOrderByCreatedAtDesc();
+        verify(gatheringRepository, times(3)).searchGatherings(isNull(), isNull(), isNull());
     }
 
     @Test
@@ -67,14 +69,14 @@ class GatheringServiceImplTest {
         // given
         String location = "강남구";
         Gathering gathering = new Gathering();
-        given(gatheringRepository.findAllByLocationContainingIgnoreCaseOrderByCreatedAtDesc(location)).willReturn(Collections.singletonList(gathering));
+        given(gatheringRepository.searchGatherings(isNull(), isNull(), eq(location))).willReturn(List.of(gathering));
 
         // when
         List<Gathering> result = gatheringService.getAllGatherings(location);
 
         // then
         assertThat(result).hasSize(1);
-        verify(gatheringRepository).findAllByLocationContainingIgnoreCaseOrderByCreatedAtDesc(location);
+        verify(gatheringRepository).searchGatherings(isNull(), isNull(), eq(location));
     }
 
     @Test
