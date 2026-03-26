@@ -6,16 +6,16 @@ spring:
       client:
         registration:
           kakao:
-            client-id: YOUR_KAKAO_CLIENT_ID
-            client-secret: YOUR_KAKAO_CLIENT_SECRET
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
             redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
             authorization-grant-type: authorization_code
             client-authentication-method: client_secret_post
             client-name: Kakao
             scope: profile_nickname, account_email
           naver:
-            client-id: YOUR_NAVER_CLIENT_ID
-            client-secret: YOUR_NAVER_CLIENT_SECRET
+            client-id: ${NAVER_CLIENT_ID}
+            client-secret: ${NAVER_CLIENT_SECRET}
             redirect-uri: "{baseUrl}/login/oauth2/code/naver"
             authorization-grant-type: authorization_code
             client-name: Naver
@@ -43,10 +43,10 @@ springdoc:
 
 
 jwt:
-  secret: "vms7065vms7065vms7065vms7065vms7065vms7065vms7065vms7065vms7065vms7065" # 32자 이상의 보안 비밀키
+  secret: ${JWT_SECRET}
 
 file:
-  upload-dir: uploads
+  upload-dir: ${UPLOAD_DIR:uploads}
 
 
 ---
@@ -57,12 +57,12 @@ spring:
   datasource:
     url: jdbc:h2:mem:tripgather;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate # Change to validate for Flyway
     show-sql: true
     properties:
       hibernate:
@@ -78,12 +78,12 @@ spring:
     activate:
       on-profile: "prod"
   datasource:
-    url: jdbc:postgresql://localhost:5432/tripgather
-    username: postgres
-    password: password
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/tripgather}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate # Change to validate for Flyway
     show-sql: false

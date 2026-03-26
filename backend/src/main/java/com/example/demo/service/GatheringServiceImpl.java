@@ -25,10 +25,8 @@ public class GatheringServiceImpl implements GatheringUseCase {
 
     @Transactional(readOnly = true)
     public List<Gathering> getAllGatherings(String location) {
-        if (location != null && !location.trim().isEmpty() && !location.equals("전체")) {
-            return gatheringRepository.findAllByLocationContainingIgnoreCaseOrderByCreatedAtDesc(location.trim());
-        }
-        return gatheringRepository.findAllByOrderByCreatedAtDesc();
+        String filterLocation = (location != null && !location.trim().isEmpty() && !location.equals("전체")) ? location.trim() : null;
+        return gatheringRepository.searchGatherings(null, null, filterLocation);
     }
 
     @Transactional

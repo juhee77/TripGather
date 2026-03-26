@@ -35,6 +35,9 @@ class AuthServiceTest {
     @Mock
     private JwtTokenProvider jwtTokenProvider;
 
+    @Mock
+    private com.example.demo.security.LoginAttemptService loginAttemptService;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -117,5 +120,19 @@ class AuthServiceTest {
 
         // when & then
         assertThrows(IllegalArgumentException.class, () -> authService.login(request));
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - 계정 잠금")
+    void login_Fail_Blocked() {
+        // given
+        LoginRequest request = new LoginRequest();
+        request.setEmail("blocked@test.com");
+        request.setPassword("password");
+
+        given(loginAttemptService.isBlocked(request.getEmail())).willReturn(true);
+
+        // when & then
+        assertThrows(IllegalStateException.class, () -> authService.login(request));
     }
 }

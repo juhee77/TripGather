@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface GatheringRepository extends JpaRepository<Gathering, Long> {
+public interface GatheringRepository extends JpaRepository<Gathering, Long>, GatheringRepositoryCustom {
     List<Gathering> findAllByOrderByCreatedAtDesc();
     List<Gathering> findAllByLocationContainingIgnoreCaseOrderByCreatedAtDesc(String location);
 }
