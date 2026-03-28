@@ -15,7 +15,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/missions")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class UserMissionController {
 
     private final UserMissionUseCase missionService;

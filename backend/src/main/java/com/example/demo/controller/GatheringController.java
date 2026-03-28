@@ -12,7 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/gatherings")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173") // Allow frontend dev server
 public class GatheringController {
 
     private final GatheringUseCase gatheringService;
