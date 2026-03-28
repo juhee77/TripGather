@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useUser } from './UserContext';
+import { apiUrl } from '../api/client';
 
 const NotificationContext = createContext();
 
@@ -12,7 +13,7 @@ export const NotificationProvider = ({ children }) => {
         if (!currentUser) return;
 
         console.log("Subscribing to notifications...");
-        const eventSource = new EventSource(`http://localhost:8080/api/notifications/subscribe?token=${localStorage.getItem('token')}`);
+        const eventSource = new EventSource(apiUrl(`/api/notifications/subscribe?token=${localStorage.getItem('token')}`));
 
         eventSource.addEventListener('chat-received', (event) => {
             const data = JSON.parse(event.data);

@@ -55,7 +55,7 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
       const formDataUpload = new FormData();
       formDataUpload.append('file', selectedFile);
       try {
-        const uploadRes = await authFetch('http://localhost:8080/api/files/upload', {
+        const uploadRes = await authFetch('/api/files/upload', {
           method: 'POST',
           body: formDataUpload,
         });
@@ -79,7 +79,7 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
     };
 
     try {
-      const response = await authFetch('http://localhost:8080/api/gatherings', {
+      const response = await authFetch('/api/gatherings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -62,7 +62,7 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
             if (photoFile) {
                 const fd = new FormData();
                 fd.append('file', photoFile);
-                const uploadRes = await authFetch('http://localhost:8080/api/files/upload', {
+                const uploadRes = await authFetch('/api/files/upload', {
                     method: 'POST',
                     body: fd
                 });
@@ -73,7 +73,7 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
             }
 
             const targetMissionId = localItinerary.missionId || localItinerary.id;
-            const res = await authFetch(`http://localhost:8080/api/missions/${targetMissionId}/steps/${stepId}/complete`, {
+            const res = await authFetch(`/api/missions/${targetMissionId}/steps/${stepId}/complete`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ memo, photoUrl: finalPhotoUrl })
@@ -312,7 +312,7 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                         ) : (
                             <button onClick={async () => {
                                 try {
-                                    const res = await authFetch(`http://localhost:8080/api/missions/complete/${localItinerary.id}`, { method: 'POST' });
+                                    const res = await authFetch(`/api/missions/complete/${localItinerary.id}`, { method: 'POST' });
                                     if (res.ok) alert("Mission Completed! You can view your history in MyPage.");
                                 } catch (e) {
                                     console.error("Could not complete mission:", e);
@@ -326,7 +326,7 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                         <button 
                             onClick={async () => {
                                 try {
-                                    const res = await authFetch(`http://localhost:8080/api/missions/start/${localItinerary.id}`, { method: 'POST' });
+                                    const res = await authFetch(`/api/missions/start/${localItinerary.id}`, { method: 'POST' });
                                     if (res.ok) {
                                         const missionData = await res.json();
                                         setLocalItinerary(missionData);

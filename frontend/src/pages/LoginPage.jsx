@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthViewModel } from '../viewmodels/useAuthViewModel';
+import { API_BASE } from '../api/client';
 import './LoginPage.css';
 
 function LoginPage() {
@@ -96,11 +97,11 @@ function LoginPage() {
         <div className="sns-buttons">
           <button 
             className="sns-btn kakao" 
-            onClick={() => window.location.href = 'http://localhost:8080/oauth2/authorization/kakao'}
+            onClick={() => window.location.href = `${API_BASE}/oauth2/authorization/kakao`}
           >카카오로 시작하기</button>
           <button 
             className="sns-btn naver" 
-            onClick={() => window.location.href = 'http://localhost:8080/oauth2/authorization/naver'}
+            onClick={() => window.location.href = `${API_BASE}/oauth2/authorization/naver`}
           >네이버로 시작하기</button>
         </div>
       </div>

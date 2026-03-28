@@ -24,7 +24,7 @@ const MyPage = () => {
   useEffect(() => {
     if (user) {
       setMissionsLoading(true);
-      authFetch('http://localhost:8080/api/missions/me')
+      authFetch('/api/missions/me')
         .then(res => res.json())
         .then(data => setMyMissions(data))
         .catch(err => console.error("Failed to load missions:", err))
@@ -66,7 +66,7 @@ const MyPage = () => {
       const formData = new FormData();
       formData.append('file', selectedFile);
       try {
-        const uploadRes = await authFetch('http://localhost:8080/api/files/upload', {
+        const uploadRes = await authFetch('/api/files/upload', {
           method: 'POST',
           body: formData,
         });

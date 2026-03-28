@@ -18,11 +18,7 @@ const ProfileTab = () => {
   useEffect(() => {
     if (user) {
       setLoading(true);
-      // Mission related stamps can go to a MissionRepository later, 
-      // but for now let's just keep it consistent.
-      fetch(`http://localhost:8080/api/missions/me/stamps`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      })
+      authFetch('/api/missions/me/stamps')
         .then(res => res.json())
         .then(data => {
           setStamps(data);
@@ -48,7 +44,7 @@ const ProfileTab = () => {
         </button>
       </div>
 
-      <PassportCard user={currentUser} stampsCount={stamps.length} />
+      <PassportCard user={user} stampsCount={stamps.length} />
       
       <StampBook stamps={stamps} loading={loading} />
 

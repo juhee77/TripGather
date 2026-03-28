@@ -25,7 +25,7 @@ const CreateItineraryModal = ({ onClose, onCreated }) => {
         };
 
         try {
-            const response = await authFetch('http://localhost:8080/api/itineraries', {
+            const response = await authFetch('/api/itineraries', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -17,8 +17,8 @@ const ItineraryTab = ({ onMissionStart }) => {
     const [editingItinerary, setEditingItinerary] = useState(null);
 
     useEffect(() => {
-        fetchItineraries();
-    }, []);
+        refreshItineraries();
+    }, [refreshItineraries]);
 
     const handleSaved = async (savedItinerary) => {
         // ViewModel actions handle network calls and refresh
