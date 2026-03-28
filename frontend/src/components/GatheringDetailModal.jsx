@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
-import { authFetch } from '../api/client';
+import { authFetch, apiUrl } from '../api/client';
 
 const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }) => {
   const { user: currentUser } = useUser();
@@ -19,7 +19,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
 
   const fetchComments = async () => {
     try {
-      const res = await fetch(`http://localhost:8080/api/gatherings/${gathering.id}/comments`);
+      const res = await fetch(apiUrl(`/api/gatherings/${gathering.id}/comments`));
       if (res.ok) {
         const data = await res.json();
         setComments(data);
@@ -38,7 +38,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
     try {
-      const res = await authFetch(`http://localhost:8080/api/gatherings/${gathering.id}/comments`, {
+      const res = await authFetch(`/api/gatherings/${gathering.id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: newComment, author: currentUser?.name || "익명" }),
@@ -58,7 +58,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
 
   const handleJoin = async () => {
     try {
-      const res = await authFetch(`http://localhost:8080/api/gatherings/${gathering.id}/join`, {
+      const res = await authFetch(`/api/gatherings/${gathering.id}/join`, {
         method: "POST"
       });
       if (res.ok) {
@@ -75,7 +75,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
 
   const handleApprove = async (userId) => {
     try {
-      const res = await authFetch(`http://localhost:8080/api/gatherings/${gathering.id}/members/${userId}/approve`, {
+      const res = await authFetch(`/api/gatherings/${gathering.id}/members/${userId}/approve`, {
         method: "POST"
       });
       if (res.ok) {
@@ -89,7 +89,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
 
   const handleReject = async (userId) => {
     try {
-      const res = await authFetch(`http://localhost:8080/api/gatherings/${gathering.id}/members/${userId}/reject`, {
+      const res = await authFetch(`/api/gatherings/${gathering.id}/members/${userId}/reject`, {
         method: "POST"
       });
       if (res.ok) {
@@ -104,7 +104,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
   const handleDelete = async () => {
     if (!window.confirm("정말로 이 모임을 삭제하시겠습니까?")) return;
     try {
-      const res = await authFetch(`http://localhost:8080/api/gatherings/${gathering.id}`, {
+      const res = await authFetch(`/api/gatherings/${gathering.id}`, {
         method: "DELETE"
       });
       if (res.ok) {

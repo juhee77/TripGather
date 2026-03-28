@@ -3,6 +3,7 @@ import { ArrowLeft, Send, Shield } from 'lucide-react';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import { useUser } from '../contexts/UserContext';
+import { authFetch, apiUrl } from '../api/client';
 
 const DMChatRoom = ({ otherUser, onBack }) => {
     const { user: currentUser } = useUser();
@@ -23,25 +24,22 @@ const DMChatRoom = ({ otherUser, onBack }) => {
 
     useEffect(() => {
         // DM 내역 불러오기
-        fetch(`http://localhost:8080/api/dm/history/${otherUser.email}`, {
-            headers: { 'Authorization': localStorage.getItem('token') } // token이 있다고 가정
-        })
+        authFetch(`/api/dm/history/${otherUser.email}`)
             .then(res => res.json())
             .then(data => setMessages(data))
             .catch(err => console.error("DM History fetch error:", err));
 
         // 읽음 처리 API 호출
         const markAsRead = () => {
-            fetch(`http://localhost:8080/api/dm/read/${otherUser.email}`, {
-                method: 'PUT',
-                headers: { 'Authorization': localStorage.getItem('token') }
+            authFetch(`/api/dm/read/${otherUser.email}`, {
+                method: 'PUT'
             }).catch(err => console.error("Mark as read error:", err));
         };
 
         markAsRead();
 
         // WebSocket 연결
-        const socket = new SockJS('http://localhost:8080/ws-stomp');
+        const socket = new SockJS(apiUrl('/ws-stomp'));
         const client = new Client({
             webSocketFactory: () => socket,
             debug: (str) => console.log(str),

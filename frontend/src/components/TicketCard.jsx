@@ -119,7 +119,7 @@ const TicketCard = ({ itinerary, onViewRoute }) => {
                                     return;
                                 }
                                 try {
-                                    const res = await authFetch(`http://localhost:8080/api/missions/start/${itinerary.id}`, { method: 'POST' });
+                                    const res = await authFetch(`/api/missions/start/${itinerary.id}`, { method: 'POST' });
                                     if (res.ok) {
                                         const missionData = await res.json();
                                         onViewRoute(missionData);

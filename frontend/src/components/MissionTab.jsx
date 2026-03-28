@@ -19,15 +19,15 @@ const MissionTab = ({
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-      {activeMissions.map((mission) => {
-        const completedSteps = mission.steps.filter(s => s.completed).length;
-        const totalSteps = mission.steps.length;
+      {activeMissions?.map((mission) => {
+        const completedSteps = mission?.steps?.filter(s => s.isCompleted || s.completed).length || 0;
+        const totalSteps = mission?.steps?.length || 0;
         const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
-        const isCompleted = mission.status === 'COMPLETED';
+        const isCompleted = mission?.status === 'COMPLETED';
 
         return (
           <div
-            key={mission.id}
+            key={mission?.id}
             onClick={() => setSelectedMission(mission)}
             style={{
               background: 'var(--surface)',
@@ -38,11 +38,11 @@ const MissionTab = ({
               position: 'relative'
             }}
           >
-            {mission.itinerary.bgImageUrl && (
+            {mission?.itineraryBgImageUrl && (
               <div style={{ height: '140px', overflow: 'hidden' }}>
                 <img
-                  src={mission.itinerary.bgImageUrl}
-                  alt={mission.itinerary.title}
+                  src={mission.itineraryBgImageUrl}
+                  alt={mission.itineraryTitle || 'Mission'}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               </div>
@@ -51,7 +51,7 @@ const MissionTab = ({
             <div style={{ padding: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                 <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text-primary)' }}>
-                  {mission.itinerary.title}
+                  {mission?.itineraryTitle || 'Unknown Mission'}
                 </h3>
                 {isCompleted && (
                   <span style={{ 
@@ -68,7 +68,7 @@ const MissionTab = ({
               </div>
               
               <div style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' }}>
-                {mission.itinerary.location} • {mission.itinerary.dates}
+                {mission?.itineraryLocation || 'Unknown Location'} • {mission?.itineraryDates || 'No Dates'}
               </div>
 
               <div style={{ background: 'var(--bg-color)', borderRadius: '8px', height: '8px', overflow: 'hidden' }}>
@@ -89,11 +89,11 @@ const MissionTab = ({
 
       {selectedMission && (
         <RouteDetailModal
-          itinerary={selectedMission.itinerary}
+          itinerary={selectedMission.itinerary || {}}
           onClose={() => setSelectedMission(null)}
           mission={selectedMission}
           onMissionComplete={(itineraryId) => {
-            onMissionComplete(itineraryId);
+            onMissionComplete?.(itineraryId);
             setSelectedMission(prev => ({...prev, status: 'COMPLETED'}));
           }}
           onStepComplete={onStepComplete}
