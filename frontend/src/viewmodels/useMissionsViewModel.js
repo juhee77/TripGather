@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import UserMissionRepository from '../repositories/UserMissionRepository';
 
 export const useMissionsViewModel = () => {
@@ -30,34 +30,41 @@ export const useMissionsViewModel = () => {
     }
   }, []);
 
-  const startMission = async (itineraryId) => {
+  useEffect(() => {
+    fetchMissions();
+    fetchStamps();
+  }, [fetchMissions, fetchStamps]);
+
+  const startMission = useCallback(async (itineraryId) => {
     await UserMissionRepository.startMission(itineraryId);
     await fetchMissions();
-  };
+  }, [fetchMissions]);
 
-  const completeMission = async (itineraryId) => {
+  const completeMission = useCallback(async (itineraryId) => {
     await UserMissionRepository.completeMission(itineraryId);
     await fetchMissions();
     await fetchStamps();
-  };
+  }, [fetchMissions, fetchStamps]);
 
-  const completeStep = async (missionId, stepId, memo, photoUrl) => {
+  const completeStep = useCallback(async (missionId, stepId, memo, photoUrl) => {
     await UserMissionRepository.completeStep(missionId, stepId, memo, photoUrl);
     await fetchMissions();
-    await fetchStamps(); // Stamp might be new
-  };
+    await fetchStamps(); 
+  }, [fetchMissions, fetchStamps]);
+
+  const actions = useMemo(() => ({
+    fetchMissions,
+    fetchStamps,
+    startMission,
+    completeMission,
+    completeStep
+  }), [fetchMissions, fetchStamps, startMission, completeMission, completeStep]);
 
   return {
     activeMissions,
     myStamps,
     isLoading,
     error,
-    actions: {
-      fetchMissions,
-      fetchStamps,
-      startMission,
-      completeMission,
-      completeStep
-    }
+    actions
   };
 };

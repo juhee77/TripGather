@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api/auth';
+import { API_BASE } from '../api/client';
+const API_BASE_URL = `${API_BASE}/api/auth`;
 
 const AuthRepository = {
   login: async (email, password) => {

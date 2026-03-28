@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import ChatRepository from '../repositories/ChatRepository';
+import { apiUrl } from '../api/client';
 
 export const useChatViewModel = (gathering, currentUser) => {
   const [messages, setMessages] = useState([]);
@@ -23,7 +24,7 @@ export const useChatViewModel = (gathering, currentUser) => {
     fetchHistory();
 
     const token = localStorage.getItem('token');
-    const socket = new SockJS('http://localhost:8080/ws-stomp');
+    const socket = new SockJS(apiUrl('/ws-stomp'));
     const client = new Client({
       webSocketFactory: () => socket,
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
