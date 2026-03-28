@@ -1,22 +1,18 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import GatheringRepository from '../repositories/GatheringRepository';
 
-/**
- * useGatheringsViewModel acts as the "ViewModel" in MVVM.
- * It manages the view state and handles business interactions via the Model.
- */
 export const useGatheringsViewModel = () => {
   const [gatherings, setGatherings] = useState([]);
-  const [selectedRegion, setSelectedRegion] = useState('전체');
+  const [selectedRegion, setSelectedRegion] = useState('\uC804\uCCB4');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchGatherings = useCallback(async (region = '전체') => {
+  const fetchGatherings = useCallback(async (region = '\uC804\uCCB4') => {
     setIsLoading(true);
     setError(null);
     try {
       const data = await GatheringRepository.fetchAll(region);
-      setGatherings(data);
+      setGatherings(data || []);
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -25,39 +21,40 @@ export const useGatheringsViewModel = () => {
     }
   }, []);
 
-  // Fetch automatically initially or when region changes
   useEffect(() => {
     fetchGatherings(selectedRegion);
   }, [selectedRegion, fetchGatherings]);
 
-  const handleRegionChange = (newRegion) => {
+  const handleRegionChange = useCallback((newRegion) => {
     setSelectedRegion(newRegion);
-  };
+  }, []);
 
-  const createGathering = async (gatheringData) => {
+  const createGathering = useCallback(async (gatheringData) => {
     await GatheringRepository.create(gatheringData);
-    await fetchGatherings(selectedRegion); // Refresh list
-  };
+    await fetchGatherings(selectedRegion);
+  }, [selectedRegion, fetchGatherings]);
 
-  const deleteGathering = async (gatheringId) => {
+  const deleteGathering = useCallback(async (gatheringId) => {
     await GatheringRepository.delete(gatheringId);
     setGatherings(prev => prev.filter(g => g.id !== gatheringId));
-  };
+  }, []);
 
-  const refreshGatherings = () => {
+  const refreshGatherings = useCallback(() => {
     return fetchGatherings(selectedRegion);
-  };
+  }, [selectedRegion, fetchGatherings]);
+
+  const actions = useMemo(() => ({
+    handleRegionChange,
+    createGathering,
+    deleteGathering,
+    refreshGatherings
+  }), [handleRegionChange, createGathering, deleteGathering, refreshGatherings]);
 
   return {
     gatherings,
     selectedRegion,
     isLoading,
     error,
-    actions: {
-      handleRegionChange,
-      createGathering,
-      deleteGathering,
-      refreshGatherings
-    }
+    actions
   };
 };

@@ -1,14 +1,14 @@
-import { authFetch } from '../api/client';
+import { authFetch, apiUrl } from '../api/client';
 
 class ItineraryRepository {
   async fetchAll() {
-    const response = await fetch('http://localhost:8080/api/itineraries');
+    const response = await fetch(apiUrl('/api/itineraries'));
     if (!response.ok) throw new Error('Failed to fetch itineraries');
     return response.json();
   }
 
   async getById(id) {
-    const response = await fetch(`http://localhost:8080/api/itineraries/${id}`);
+    const response = await fetch(apiUrl(`/api/itineraries/${id}`));
     if (!response.ok) throw new Error('Failed to fetch itinerary');
     return response.json();
   }

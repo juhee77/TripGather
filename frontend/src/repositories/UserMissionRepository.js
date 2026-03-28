@@ -32,6 +32,7 @@ class UserMissionRepository {
   async completeStep(missionId, stepId, memo, photoUrl) {
     const response = await authFetch(`/api/missions/${missionId}/steps/${stepId}/complete`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ memo, photoUrl })
     });
     if (!response.ok) throw new Error('Failed to complete mission step');

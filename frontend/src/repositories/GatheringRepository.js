@@ -1,4 +1,4 @@
-import { authFetch } from '../api/client';
+import { authFetch, apiUrl } from '../api/client';
 
 /**
  * GatheringRepository encapsulates data fetching logic.
@@ -6,11 +6,11 @@ import { authFetch } from '../api/client';
  */
 class GatheringRepository {
   async fetchAll(location = null) {
-    const url = location && location !== '전체' 
-      ? `http://localhost:8080/api/gatherings?location=${encodeURIComponent(location)}`
-      : 'http://localhost:8080/api/gatherings';
+    const path = location && location !== '전체' 
+      ? `/api/gatherings?location=${encodeURIComponent(location)}`
+      : '/api/gatherings';
     
-    const response = await fetch(url);
+    const response = await fetch(apiUrl(path));
     if (!response.ok) throw new Error('Failed to fetch gatherings');
     return response.json();
   }

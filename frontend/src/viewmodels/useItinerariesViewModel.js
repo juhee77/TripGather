@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import ItineraryRepository from '../repositories/ItineraryRepository';
 
 export const useItinerariesViewModel = () => {
@@ -24,34 +24,36 @@ export const useItinerariesViewModel = () => {
     fetchItineraries();
   }, [fetchItineraries]);
 
-  const createItinerary = async (itineraryData) => {
+  const createItinerary = useCallback(async (itineraryData) => {
     await ItineraryRepository.create(itineraryData);
     await fetchItineraries();
-  };
+  }, [fetchItineraries]);
 
-  const updateItinerary = async (id, updateData) => {
+  const updateItinerary = useCallback(async (id, updateData) => {
     await ItineraryRepository.update(id, updateData);
     await fetchItineraries();
-  };
+  }, [fetchItineraries]);
 
-  const deleteItinerary = async (id) => {
+  const deleteItinerary = useCallback(async (id) => {
     await ItineraryRepository.delete(id);
     setItineraries(prev => prev.filter(i => i.id !== id));
-  };
+  }, []);
 
-  const refreshItineraries = () => {
+  const refreshItineraries = useCallback(() => {
     return fetchItineraries();
-  };
+  }, [fetchItineraries]);
+
+  const actions = useMemo(() => ({
+    createItinerary,
+    updateItinerary,
+    deleteItinerary,
+    refreshItineraries
+  }), [createItinerary, updateItinerary, deleteItinerary, refreshItineraries]);
 
   return {
     itineraries,
     isLoading,
     error,
-    actions: {
-      createItinerary,
-      updateItinerary,
-      deleteItinerary,
-      refreshItineraries
-    }
+    actions
   };
 };

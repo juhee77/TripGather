@@ -7,6 +7,7 @@ export const useAuthViewModel = () => {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [loading, setLoading] = useState(false);
   
   const { login, signup } = useAuth();
   const navigate = useNavigate();
