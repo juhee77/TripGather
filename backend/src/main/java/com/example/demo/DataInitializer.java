@@ -120,6 +120,9 @@ public class DataInitializer {
                         .title("Seoul Weekend Trip (나의 주말 서울 나들이)")
                         .author("Jihyun (지현)")
                         .description("N서울타워 → 경복궁 → 성수동 → DDP → 한강 → 귀가")
+                        .location("서울 중구")
+                        .dates("8/17 - 8/19")
+                        .bgImageUrl("https://images.unsplash.com/photo-1535191036316-2eb944f24d85?auto=format&fit=crop&q=80&w=600")
                         .routePoints(new java.util.ArrayList<>(List.of(
                                 seoul_day1_p1, seoul_day1_p2, seoul_day1_p3,
                                 seoul_day2_p1, seoul_day2_p2,
@@ -159,6 +162,9 @@ public class DataInitializer {
                         .title("제주도 2박 3일 먹방 코스 🍊")
                         .author("Alex")
                         .description("고기국수 → 흑돼지 → 성산일출봉 → 귤밭 카페")
+                        .location("제주 제주시")
+                        .dates("9/1 - 9/3")
+                        .bgImageUrl("https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&q=80&w=600")
                         .routePoints(new java.util.ArrayList<>(List.of(
                                 jeju_day1_p1, jeju_day1_p2,
                                 jeju_day2_p1, jeju_day2_p2,

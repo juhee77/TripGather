@@ -45,6 +45,10 @@ springdoc:
 jwt:
   secret: ${JWT_SECRET}
 
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  backend-url: ${BACKEND_URL:http://localhost:8080}
+
 file:
   upload-dir: ${UPLOAD_DIR:uploads}
 
@@ -62,7 +66,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: validate # Change to validate for Flyway
+      ddl-auto: update # Change to update to allow adding columns
     show-sql: true
     properties:
       hibernate:
@@ -87,3 +91,17 @@ spring:
     hibernate:
       ddl-auto: validate # Change to validate for Flyway
     show-sql: false
+
+---
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

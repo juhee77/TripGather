@@ -13,9 +13,13 @@ public class UserMissionResponse {
     private Long itineraryId;
     private String itineraryTitle;
     private String itineraryAuthor;
+    private String itineraryLocation;
+    private String itineraryDates;
+    private String itineraryBgImageUrl;
     private String status;
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
+    private ItineraryResponse itinerary;
     private java.util.List<UserMissionStepResponse> steps;
 
     public static UserMissionResponse from(UserMission mission) {
@@ -25,10 +29,17 @@ public class UserMissionResponse {
                 .itineraryId(mission.getItinerary().getId())
                 .itineraryTitle(mission.getItinerary().getTitle())
                 .itineraryAuthor(mission.getItinerary().getAuthor())
+                .itineraryLocation(mission.getItinerary().getLocation())
+                .itineraryDates(mission.getItinerary().getDates())
+                .itineraryBgImageUrl(mission.getItinerary().getBgImageUrl())
                 .status(mission.getStatus())
                 .startedAt(mission.getStartedAt())
                 .completedAt(mission.getCompletedAt())
-                // Only populated if steps are fetched/provided by service normally, otherwise handled outside
+                .itinerary(ItineraryResponse.from(mission.getItinerary()))
+                .steps(mission.getSteps() != null ? 
+                        mission.getSteps().stream()
+                                .map(UserMissionStepResponse::from)
+                                .toList() : null)
                 .build();
     }
 }

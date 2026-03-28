@@ -23,6 +23,13 @@ public class Itinerary {
 
     private String description;
 
+    private String location;
+
+    private String dates;
+
+    @Column(columnDefinition = "TEXT")
+    private String bgImageUrl;
+
     @OneToMany(mappedBy = "itinerary", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private java.util.List<RoutePoint> routePoints = new java.util.ArrayList<>();
