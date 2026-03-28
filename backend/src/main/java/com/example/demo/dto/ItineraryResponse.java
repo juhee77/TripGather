@@ -18,6 +18,9 @@ public class ItineraryResponse {
     private String title;
     private String author;
     private String description;
+    private String location;
+    private String dates;
+    private String bgImageUrl;
     private LocalDateTime createdAt;
     private List<RoutePointResponse> routePoints;
 

@@ -26,6 +26,10 @@ public class UserMission {
 
     private String status; // "ACTIVE" or "COMPLETED"
 
+    @OneToMany(mappedBy = "userMission", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<UserMissionStep> steps = new java.util.ArrayList<>();
+
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
 }

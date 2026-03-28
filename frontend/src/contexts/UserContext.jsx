@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { authFetch } from '../api/client';
 
 const UserContext = createContext(null);
@@ -50,13 +50,13 @@ export function UserProvider({ children }) {
     }
   }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     loading,
     error,
     refetch: fetchMe,
     updateProfile,
-  };
+  }), [user, loading, error, fetchMe, updateProfile]);
 
   return (
     <UserContext.Provider value={value}>
