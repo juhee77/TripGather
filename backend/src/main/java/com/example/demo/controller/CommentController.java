@@ -14,7 +14,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/gatherings/{gatheringId}/comments")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class CommentController {
 
     private final CommentRepository commentRepository;

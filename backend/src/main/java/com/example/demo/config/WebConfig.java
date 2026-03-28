@@ -11,14 +11,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url}")
+    private String frontendUrl;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins(
-                        "http://localhost:5173",
-                        "http://localhost:5174",
-                        "http://localhost:5175"   // Vite 포트 자동 증가 대비
-                )
+                .allowedOrigins(frontendUrl)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(false);

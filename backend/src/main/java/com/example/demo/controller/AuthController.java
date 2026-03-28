@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
 public class AuthController {
 
     private final AuthUseCase authService;
+
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody SignupRequest request) {
@@ -29,6 +31,6 @@ public class AuthController {
     @GetMapping("/verify")
     public org.springframework.web.servlet.view.RedirectView verify(@RequestParam String token) {
         authService.verifyEmail(token);
-        return new org.springframework.web.servlet.view.RedirectView("http://localhost:5173/login?verified=true");
+        return new org.springframework.web.servlet.view.RedirectView(frontendUrl + "/login?verified=true");
     }
 }
