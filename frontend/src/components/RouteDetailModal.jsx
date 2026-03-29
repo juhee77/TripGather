@@ -46,7 +46,7 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
     })();
 
     const totalSteps = localItinerary.steps?.length || 0;
-    const completedSteps = localItinerary.steps?.filter(s => s.isCompleted)?.length || 0;
+    const completedSteps = localItinerary.steps?.filter(s => s.isCompleted || s.completed)?.length || 0;
     const progressPercent = totalSteps === 0 ? 0 : Math.round((completedSteps / totalSteps) * 100);
 
     const handlePhotoChange = (e) => {
@@ -201,7 +201,7 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                                 }} />
 
                                 {day.points.map((point, ptIdx) => {
-                                    const isStepCompleted = point.isCompleted === true;
+                                    const isStepCompleted = point.isCompleted === true || point.completed === true;
                                     const isCurrentlyChecking = checkingStepId === point.id;
                                     
                                     return (
