@@ -268,13 +268,19 @@ const Home = () => {
         <GatheringDetailModal
           gathering={selectedGathering}
           onClose={() => setSelectedGathering(null)}
-          onUpdate={refreshGatherings}
+          onUpdate={() => {
+            refreshGatherings();
+            // Refresh local selectedGathering to show new member status immediately
+            const updated = gatherings.find(g => g.id === selectedGathering.id);
+            if (updated) setSelectedGathering(updated);
+          }}
           onDelete={(id) => {
             refreshGatherings();
             setSelectedGathering(null);
           }}
           onJoin={(updatedGathering) => {
-            refreshGatherings(); // Full refresh to get status
+            refreshGatherings();
+            setSelectedGathering(updatedGathering);
           }}
         />
       )}

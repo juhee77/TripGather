@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface UserMissionUseCase {
     UserMissionResponse startMission(Long itineraryId, String email);
-    UserMissionResponse completeMission(Long itineraryId, String email);
+    UserMissionResponse completeMission(Long missionId, String email);
     UserMissionStepResponse completeStep(Long missionId, Long stepId, String memo, String photoUrl, String email);
     List<UserMissionResponse> getMyMissions(String email);
     List<StampResponse> getMyStamps(String email);

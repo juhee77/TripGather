@@ -74,8 +74,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  padding: 0;
   border: 1px solid var(--border-color);
+}
+
+.stamp-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
 }
 
 .stamp-border {
@@ -137,9 +144,43 @@
 
 /* Back Face */
 .stamp-back {
-  background: #1A1C29;
+  background: var(--primary-orange);
   transform: rotateY(180deg);
-  border: 1px solid var(--border-color);
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+}
+
+.stamp-info-back {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: white;
+}
+
+.stamp-mission-name {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.stamp-date {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.stamp-badge {
+  margin-top: 10px;
+  font-size: 9px;
+  font-weight: 900;
+  background: white;
+  color: var(--primary-orange);
+  padding: 4px 8px;
+  borderRadius: 12px;
 }
 
 .stamp-photo {

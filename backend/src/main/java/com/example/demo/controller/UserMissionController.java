@@ -25,9 +25,9 @@ public class UserMissionController {
         return ResponseEntity.ok(res);
     }
 
-    @PostMapping("/complete/{itineraryId}")
-    public ResponseEntity<UserMissionResponse> completeMission(@PathVariable Long itineraryId, Authentication authentication) {
-        UserMissionResponse res = missionService.completeMission(itineraryId, authentication.getName());
+    @PostMapping("/complete/{missionId}")
+    public ResponseEntity<UserMissionResponse> completeMission(@PathVariable Long missionId, Authentication authentication) {
+        UserMissionResponse res = missionService.completeMission(missionId, authentication.getName());
         return ResponseEntity.ok(res);
     }
 

@@ -70,16 +70,27 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
     }
 
     @Transactional
-    public UserMissionResponse completeMission(Long itineraryId, String email) {
+    public UserMissionResponse completeMission(Long missionId, String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
 
-        UserMission mission = missionRepository.findByUserIdAndItineraryId(user.getId(), itineraryId)
-                .orElseThrow(() -> new IllegalArgumentException("Mission is not active for this itinerary."));
+        UserMission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new IllegalArgumentException("Mission not found: " + missionId));
+
+        if (!mission.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Not your mission");
+        }
 
         if (!"COMPLETED".equals(mission.getStatus())) {
             mission.setStatus("COMPLETED");
             mission.setCompletedAt(LocalDateTime.now());
+            
+            // Auto-generate stamp image if not exists
+            if (mission.getStampImageUrl() == null || mission.getStampImageUrl().isEmpty()) {
+                String seed = mission.getItinerary().getTitle().replaceAll("\\s+", "_");
+                mission.setStampImageUrl("https://api.dicebear.com/7.x/bottts/svg?seed=" + seed + "&backgroundColor=ffd43b,ff922b");
+            }
+            
             missionRepository.save(mission);
         }
 
@@ -136,8 +147,8 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
 
-        return stepRepository.findByUserMissionUserIdAndIsCompletedOrderByCompletedAtDesc(user.getId(), true)
-                .stream()
+        return missionRepository.findByUserId(user.getId()).stream()
+                .filter(m -> "COMPLETED".equals(m.getStatus()))
                 .map(StampResponse::from)
                 .toList();
     }

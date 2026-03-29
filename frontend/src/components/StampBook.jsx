@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Calendar, Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
 import './StampBook.css';
 
 const StampItem = ({ stamp }) => {
@@ -17,33 +17,27 @@ const StampItem = ({ stamp }) => {
         
         {/* Front: The Stamp Identity */}
         <div className="stamp-face stamp-front">
-          <div className="stamp-border">
-            <div className="stamp-inner">
-              <span className="stamp-clear-text">CLEAR</span>
-              <div className="stamp-details">
-                <span className="stamp-mission">{stamp.missionTitle}</span>
-                <span className="stamp-point"><MapPin size={10} style={{marginRight: '2px'}}/>{stamp.routePointLabel}</span>
+          {stamp.stampImageUrl ? (
+            <img src={stamp.stampImageUrl} alt="stamp" className="stamp-image" />
+          ) : (
+            <div className="stamp-border">
+              <div className="stamp-inner">
+                <span className="stamp-clear-text">CLEAR</span>
+                <div className="stamp-details">
+                  <span className="stamp-mission">{stamp.missionTitle}</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Back: The Attached Memory / Photo */}
         <div className="stamp-face stamp-back">
-          {stamp.photoUrl ? (
-            <div className="stamp-photo" style={{ backgroundImage: `url(${stamp.photoUrl})` }}>
-              <div className="stamp-photo-overlay">
-                <span className="stamp-date">{formatDate(stamp.completedAt)}</span>
-                {stamp.memo && <p className="stamp-memo">"{stamp.memo}"</p>}
-              </div>
-            </div>
-          ) : (
-            <div className="stamp-photo-empty">
-              <ImageIcon size={24} color="rgba(255,255,255,0.2)" />
-              <span className="stamp-date">{formatDate(stamp.completedAt)}</span>
-              {stamp.memo && <p className="stamp-memo">"{stamp.memo}"</p>}
-            </div>
-          )}
+          <div className="stamp-info-back">
+            <span className="stamp-mission-name">{stamp.missionTitle}</span>
+            <span className="stamp-date">{formatDate(stamp.completedAt)}</span>
+            <div className="stamp-badge">MISSION COMPLETE</div>
+          </div>
         </div>
 
       </div>
@@ -76,7 +70,7 @@ const StampBook = ({ stamps, loading }) => {
           </div>
         ) : (
           stamps.map(stamp => (
-            <StampItem key={stamp.stepId} stamp={stamp} />
+            <StampItem key={stamp.missionId} stamp={stamp} />
           ))
         )}
       </div>
