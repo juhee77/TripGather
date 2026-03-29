@@ -107,23 +107,23 @@ const ChatTab = ({ joinedGatherings }) => {
                             
                             <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                    <h3 className="text-s" style={{ color: 'white', fontWeight: 800, margin: 0 }}>{g.title}</h3>
-                                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>방금 전</span>
+                                    <h3 className="text-s" style={{ color: 'var(--text-primary)', fontWeight: 800, margin: 0 }}>{g.title}</h3>
+                                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>방금 전</span>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
                                         모임 채팅에 참여해 보세요.
                                     </p>
                                     <div style={{ 
                                         display: 'flex', alignItems: 'center', gap: '4px', 
-                                        background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '6px' 
+                                        background: 'rgba(0,0,0,0.05)', padding: '2px 6px', borderRadius: '6px' 
                                     }}>
                                         <Users size={10} color="var(--primary-orange)" />
                                         <span style={{ fontSize: '10px', color: 'var(--primary-orange)', fontWeight: 800 }}>{g.currentJoining}</span>
                                     </div>
                                 </div>
                             </div>
-                            <ChevronRight size={20} color="rgba(255,255,255,0.2)" />
+                            <ChevronRight size={20} color="var(--text-muted)" />
                         </div>
                     ))
                 ) : (
