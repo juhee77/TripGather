@@ -1,3 +1,6 @@
+import React from 'react';
+import { ArrowLeft, Users, MoreHorizontal, Shield, Send } from 'lucide-react';
+import { useUser } from '../contexts/UserContext';
 import { useChatViewModel } from '../viewmodels/useChatViewModel';
 
 const ChatRoom = ({ gathering, onBack, onStartDM }) => {

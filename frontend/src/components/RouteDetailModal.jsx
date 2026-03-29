@@ -17,12 +17,16 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
     
     const fileInputRef = useRef(null);
 
-    const isAuthor = currentUser && (currentUser.name === localItinerary.author);
+    const isAuthor = currentUser && (currentUser.name === (localItinerary.author || localItinerary.itineraryAuthor));
     const isMission = !!localItinerary.steps;
 
     useEffect(() => {
         setIsVisible(true);
     }, []);
+
+    useEffect(() => {
+        setLocalItinerary(itinerary);
+    }, [itinerary]);
 
     const groupedByDay = (() => {
         const sourcePoints = localItinerary.steps || localItinerary.routePoints || [];
@@ -72,7 +76,7 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                 }
             }
 
-            const targetMissionId = localItinerary.missionId || localItinerary.id;
+            const targetMissionId = localItinerary.itineraryId ? localItinerary.id : (localItinerary.missionId || localItinerary.id);
             const res = await authFetch(`/api/missions/${targetMissionId}/steps/${stepId}/complete`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -130,11 +134,11 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                             boxShadow: '0 0 15px rgba(255, 92, 0, 0.3)'
                         }}>
                             <div style={{ width: '100%', height: '100%', borderRadius: 'var(--radius-full)', background: '#0D0D19', overflow: 'hidden' }}>
-                                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${localItinerary.author}`} alt="author" style={{ width: '100%', height: '100%' }} />
+                                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${localItinerary.author || localItinerary.itineraryAuthor}`} alt="author" style={{ width: '100%', height: '100%' }} />
                             </div>
                         </div>
                         <div>
-                            <div style={{ fontSize: '15px', fontWeight: 800 }}>{localItinerary.author}</div>
+                            <div style={{ fontSize: '15px', fontWeight: 800 }}>{localItinerary.author || localItinerary.itineraryAuthor}</div>
                             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>TRAVEL LOG • JOURNEY</div>
                         </div>
                     </div>
@@ -149,10 +153,10 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                             marginBottom: '12px', background: 'linear-gradient(to bottom, #FFFFFF 0%, #A5B4FC 100%)', 
                             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1.2
                         }}>
-                            {localItinerary.title}
+                            {localItinerary.title || localItinerary.itineraryTitle}
                         </h1>
-                        <p className="text-s" style={{ color: 'rgba(255,255,255,0.6)', lineHeight: '1.7', fontSize: '15px' }}>
-                            {localItinerary.description}
+                        <p className="text-s" style={{ color: 'rgba(255,255,255,0.85)', lineHeight: '1.7', fontSize: '15px' }}>
+                            {localItinerary.description || localItinerary.itinerary?.description}
                         </p>
                     </div>
 

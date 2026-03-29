@@ -20,10 +20,10 @@ const MissionTab = ({
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
       {activeMissions?.map((mission) => {
+        const isCompleted = mission?.status === 'COMPLETED';
         const completedSteps = mission?.steps?.filter(s => s.isCompleted || s.completed).length || 0;
         const totalSteps = mission?.steps?.length || 0;
-        const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
-        const isCompleted = mission?.status === 'COMPLETED';
+        const progress = isCompleted ? 100 : (totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0);
 
         return (
           <div
@@ -89,9 +89,8 @@ const MissionTab = ({
 
       {selectedMission && (
         <RouteDetailModal
-          itinerary={selectedMission.itinerary || {}}
+          itinerary={selectedMission}
           onClose={() => setSelectedMission(null)}
-          mission={selectedMission}
           onMissionComplete={(itineraryId) => {
             onMissionComplete?.(itineraryId);
             setSelectedMission(prev => ({...prev, status: 'COMPLETED'}));
