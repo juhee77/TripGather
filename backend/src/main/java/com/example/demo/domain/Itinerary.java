@@ -30,6 +30,9 @@ public class Itinerary {
     @Column(columnDefinition = "TEXT")
     private String bgImageUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String stampImageUrl;
+
     @OneToMany(mappedBy = "itinerary", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private java.util.List<RoutePoint> routePoints = new java.util.ArrayList<>();

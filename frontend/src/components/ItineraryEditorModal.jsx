@@ -7,21 +7,50 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
+        stampImageUrl: '',
         routePoints: []
     });
     const [saving, setSaving] = useState(false);
+    const [stampPreview, setStampPreview] = useState(null);
+    const stampInputRef = React.useRef(null);
 
     useEffect(() => {
         if (itinerary) {
             setFormData({
                 title: itinerary.title || '',
                 description: itinerary.description || '',
+                stampImageUrl: itinerary.stampImageUrl || '',
                 routePoints: itinerary.routePoints ? [...itinerary.routePoints].sort((a, b) => 
                     a.dayNumber !== b.dayNumber ? a.dayNumber - b.dayNumber : a.sequenceOrder - b.sequenceOrder
                 ) : []
             });
+            if (itinerary.stampImageUrl) setStampPreview(itinerary.stampImageUrl);
         }
     }, [itinerary]);
+
+    const handleStampUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onloadend = () => setStampPreview(reader.result);
+        reader.readAsDataURL(file);
+
+        try {
+            const fd = new FormData();
+            fd.append('file', file);
+            const res = await authFetch('/api/files/upload', {
+                method: 'POST',
+                body: fd
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setFormData(prev => ({ ...prev, stampImageUrl: data.url }));
+            }
+        } catch (err) {
+            console.error("Stamp upload failed", err);
+        }
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -165,6 +194,39 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
                                         color: 'white', fontSize: '15px', fontWeight: 500, outline: 'none', height: '120px', resize: 'none', lineHeight: '1.6'
                                     }} 
                                 />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-s" style={{ color: 'var(--primary-orange)', fontWeight: 900, marginBottom: '12px', display: 'block', letterSpacing: '1px' }}>STAMP DESIGN (REWARD)</label>
+                            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                <div 
+                                    onClick={() => stampInputRef.current.click()}
+                                    style={{ 
+                                        width: '80px', height: '80px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: '2px dashed rgba(255,255,255,0.1)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative'
+                                    }}
+                                >
+                                    {stampPreview ? (
+                                        <img src={stampPreview} alt="stamp preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        <Plus size={24} color="rgba(255,255,255,0.3)" />
+                                    )}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>
+                                        {stampPreview ? 'Custom stamp selected' : 'No custom stamp. Auto-generated bottt will be used.'}
+                                    </p>
+                                    <button 
+                                        type="button"
+                                        onClick={() => stampInputRef.current.click()}
+                                        className="glass"
+                                        style={{ fontSize: '12px', padding: '8px 16px', borderRadius: '8px', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
+                                    >
+                                        CHOOSE IMAGE
+                                    </button>
+                                </div>
+                                <input type="file" ref={stampInputRef} onChange={handleStampUpload} accept="image/*" style={{ display: 'none' }} />
                             </div>
                         </div>
                     </div>
