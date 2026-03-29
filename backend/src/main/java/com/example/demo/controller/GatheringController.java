@@ -23,6 +23,20 @@ public class GatheringController {
                 .collect(java.util.stream.Collectors.toList()));
     }
 
+    @GetMapping("/my/hosted")
+    public ResponseEntity<List<GatheringResponse>> getMyHostedGatherings() {
+        return ResponseEntity.ok(gatheringService.getHostedGatherings().stream()
+                .map(GatheringResponse::from)
+                .collect(java.util.stream.Collectors.toList()));
+    }
+
+    @GetMapping("/my/joined")
+    public ResponseEntity<List<GatheringResponse>> getMyJoinedGatherings() {
+        return ResponseEntity.ok(gatheringService.getJoinedGatherings().stream()
+                .map(GatheringResponse::from)
+                .collect(java.util.stream.Collectors.toList()));
+    }
+
     @PostMapping
     public ResponseEntity<GatheringResponse> createGathering(@RequestBody Gathering gathering) {
         return ResponseEntity.ok(GatheringResponse.from(gatheringService.createGathering(gathering)));
