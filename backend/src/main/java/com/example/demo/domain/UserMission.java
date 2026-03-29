@@ -25,6 +25,7 @@ public class UserMission {
     private Itinerary itinerary;
 
     private String status; // "ACTIVE" or "COMPLETED"
+    private String stampImageUrl;
 
     @OneToMany(mappedBy = "userMission", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

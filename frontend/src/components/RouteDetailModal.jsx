@@ -171,10 +171,16 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                                         <h3 style={{ fontWeight: 900, color: 'var(--primary-orange)', fontSize: '16px', letterSpacing: '1px', marginBottom: '4px' }}>MISSION PROGRESS</h3>
                                         <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{completedSteps} / {totalSteps} Stops Completed</p>
                                     </div>
-                                    <span style={{ fontWeight: 900, color: 'white', fontSize: '24px' }}>{progressPercent}%</span>
+                                    <span style={{ fontWeight: 900, color: progressPercent >= 100 ? '#51CF66' : 'white', fontSize: '24px' }}>{progressPercent}%</span>
                                 </div>
                                 <div style={{ width: '100%', height: '10px', background: 'rgba(0,0,0,0.5)', borderRadius: '5px', overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <div style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--primary-gradient)', transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)', boxShadow: '0 0 10px rgba(255, 92, 0, 0.5)' }} />
+                                    <div style={{ 
+                                        width: `${progressPercent}%`, 
+                                        height: '100%', 
+                                        background: progressPercent >= 100 ? '#51CF66' : 'var(--primary-gradient)', 
+                                        transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)', 
+                                        boxShadow: progressPercent >= 100 ? '0 0 15px rgba(81, 207, 102, 0.5)' : '0 0 10px rgba(255, 92, 0, 0.5)' 
+                                    }} />
                                 </div>
                             </div>
                         </div>
@@ -316,14 +322,23 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                         ) : (
                             <button onClick={async () => {
                                 try {
+                                    // localItinerary.id is the missionId in mission context
                                     const res = await authFetch(`/api/missions/complete/${localItinerary.id}`, { method: 'POST' });
-                                    if (res.ok) alert("Mission Completed! You can view your history in MyPage.");
+                                    if (res.ok) {
+                                        alert("축하합니다! 미션을 모두 완료하여 완료 처리되었습니다. 🏆✨");
+                                        onClose();
+                                    } else {
+                                        const err = await res.text();
+                                        alert("실패: " + err);
+                                    }
                                 } catch (e) {
                                     console.error("Could not complete mission:", e);
                                 }
-                                onClose();
-                            }} className="primary-btn" style={{ width: '100%', height: '60px', borderRadius: 'var(--radius-md)', fontSize: '17px', gap: '12px' }}>
-                                FINALIZE MISSION <ChevronRight size={20} />
+                            }} className="primary-btn" style={{ 
+                                width: '100%', height: '60px', borderRadius: 'var(--radius-md)', 
+                                fontSize: '18px', gap: '12px', background: '#51CF66', color: '#0D0D19' 
+                            }}>
+                                🏆 미션 최종 완료하기 <ChevronRight size={20} />
                             </button>
                         )
                     ) : (

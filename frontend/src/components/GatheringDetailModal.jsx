@@ -7,6 +7,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
   const { user: currentUser } = useUser();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+  const [activeTab, setActiveTab] = useState('정보'); // '정보', '멤버', '댓글'
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ ...gathering });
 
@@ -80,7 +81,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
       });
       if (res.ok) {
         alert("멤버를 승인했습니다!");
-        onUpdate && onUpdate(); // Refresh gathering data
+        onUpdate && onUpdate();
       }
     } catch (err) {
       console.error("Error approving member", err);
@@ -121,164 +122,227 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
 
   return (
     <div onClick={onClose} style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-      backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, 
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000,
       display: 'flex', justifyContent: 'center', alignItems: 'flex-end'
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
-        background: 'var(--surface)', width: '100%', maxWidth: '480px', height: '85vh', 
-        borderTopLeftRadius: '28px', borderTopRightRadius: '28px', 
+        background: 'var(--surface)', width: '100%', maxWidth: '480px', height: '85vh',
+        borderTopLeftRadius: '28px', borderTopRightRadius: '28px',
         display: 'flex', flexDirection: 'column',
         animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         boxShadow: '0 -10px 40px rgba(0,0,0,0.1)', overflow: 'hidden'
       }}>
-        {/* Header */}
-        <div style={{ padding: '20px 24px', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 800 }}>모임 상세 ✨</h2>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {isHost && (
-              <>
-                <button onClick={() => setIsEditing(true)} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', border: 'none', cursor: 'pointer' }}>
-                  <Edit size={18} color="var(--primary)" />
+        {/* Header - Fixed */}
+        <div style={{ padding: '20px 24px 10px 24px', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--primary-orange)', fontWeight: 800 }}>GATHERING DETAIL</span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {isHost && (
+                <>
+                  <button onClick={() => setIsEditing(true)} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', border: 'none', cursor: 'pointer' }}>
+                    <Edit size={18} color="var(--primary-orange)" />
+                  </button>
+                  <button onClick={handleDelete} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', border: 'none', cursor: 'pointer' }}>
+                    <Trash2 size={18} color="#FF6B6B" />
+                  </button>
+                </>
+              )}
+              <button onClick={onClose} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
+                <X size={20} color="var(--text-primary)" />
+              </button>
+            </div>
+          </div>
+
+          <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>{gathering.title}</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>
+            Host: {typeof gathering.host === 'string' ? gathering.host : gathering.host?.name}
+          </p>
+
+          {/* New Tabs */}
+          <div style={{ display: 'flex', gap: '20px', marginTop: '20px', borderBottom: '1px solid var(--border-color)' }}>
+            {['정보', '멤버', `대화 (${comments.length})`].map((tab) => {
+              const tabName = tab.startsWith('대화') ? '대화' : tab;
+              const isActive = activeTab === tabName;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tabName)}
+                  style={{
+                    padding: '8px 4px',
+                    fontSize: '15px',
+                    fontWeight: isActive ? 800 : 600,
+                    color: isActive ? 'var(--primary-orange)' : 'var(--text-muted)',
+                    borderBottom: isActive ? '2px solid var(--primary-orange)' : '2px solid transparent',
+                    background: 'none',
+                    borderRadius: 0,
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {tab}
                 </button>
-                <button onClick={handleDelete} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', border: 'none', cursor: 'pointer' }}>
-                  <Trash2 size={18} color="#FF6B6B" />
-                </button>
-              </>
-            )}
-            <button onClick={onClose} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
-              <X size={20} color="var(--text-main)" />
-            </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Scrollable Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 24px 24px 24px' }}>
-          {gathering.bgImageUrl && (
-            <div style={{ height: '200px', margin: '20px -24px', backgroundImage: `url(${gathering.bgImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+          {activeTab === '정보' && (
+            <div className="animate-fade">
+              {gathering.bgImageUrl && (
+                <div style={{
+                  height: '180px',
+                  borderRadius: '20px',
+                  backgroundImage: `url(${gathering.bgImageUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  marginBottom: '24px',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                }} />
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px', background: 'var(--bg-color)', borderRadius: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 600 }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+                    <Calendar size={18} color="var(--primary-orange)" />
+                  </div>
+                  <span>{gathering.dates}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 600 }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+                    <MapPin size={18} color="#FF6B6B" />
+                  </div>
+                  <span>{gathering.location}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 600 }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+                    <Users size={18} color="#4DABF7" />
+                  </div>
+                  <span>{gathering.currentJoining} / {gathering.maxJoining} 명 참여 중</span>
+                </div>
+              </div>
+
+              {!isHost && (
+                <button
+                  onClick={handleJoin}
+                  disabled={gathering.currentJoining >= gathering.maxJoining || myStatus}
+                  style={{
+                    width: '100%', padding: '18px',
+                    background: (gathering.currentJoining >= gathering.maxJoining && !myStatus) ? 'var(--text-muted)' : myStatus === 'PENDING' ? '#FFD43B' : myStatus === 'APPROVED' ? '#51CF66' : 'var(--primary-gradient)',
+                    color: 'white', border: 'none', borderRadius: '20px', fontSize: '17px', fontWeight: 800, marginTop: '24px', cursor: 'pointer',
+                    boxShadow: (gathering.currentJoining < gathering.maxJoining && !myStatus) ? '0 10px 20px rgba(255, 92, 0, 0.3)' : 'none'
+                  }}
+                >
+                  {myStatus === 'PENDING' ? '신청 대기 중...' :
+                    myStatus === 'APPROVED' ? '참여 확정됨!' :
+                      myStatus === 'REJECTED' ? '거절된 모임입니다' :
+                        gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참여 신청하기'}
+                </button>
+              )}
+            </div>
           )}
 
-          <div style={{ marginTop: gathering.bgImageUrl ? '0' : '20px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 600, background: 'var(--bg-color)', padding: '4px 8px', borderRadius: '8px' }}>{gathering.category}</span>
-            <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '12px 0 8px 0', color: 'var(--text-main)' }}>{gathering.title}</h1>
-            <p style={{ color: 'var(--text-sub)', fontSize: '15px', fontWeight: 500 }}>
-              Host: {typeof gathering.host === 'string' ? gathering.host : gathering.host?.name}
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px', padding: '16px', background: 'var(--bg-color)', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: 'var(--text-main)', fontWeight: 500 }}>
-              <Calendar size={18} color="var(--primary)" /> {gathering.dates}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: 'var(--text-main)', fontWeight: 500 }}>
-              <MapPin size={18} color="#FF6B6B" /> {gathering.location}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: 'var(--text-main)', fontWeight: 500 }}>
-              <Users size={18} color="#4DABF7" /> {gathering.currentJoining} / {gathering.maxJoining} 명 참여 중
-            </div>
-          </div>
-
-          {!isHost && (
-            <button 
-              onClick={handleJoin} 
-              disabled={gathering.currentJoining >= gathering.maxJoining || myStatus} 
-              style={{
-                width: '100%', padding: '16px', 
-                background: (gathering.currentJoining >= gathering.maxJoining && !myStatus) ? 'var(--text-muted)' : myStatus === 'PENDING' ? '#FFD43B' : myStatus === 'APPROVED' ? '#51CF66' : 'var(--primary-orange)', 
-                color: 'white', border: 'none', borderRadius: '16px', fontSize: '16px', fontWeight: 700, marginTop: '24px', cursor: 'pointer',
-                boxShadow: (gathering.currentJoining < gathering.maxJoining && !myStatus) ? '0 4px 12px rgba(255, 92, 0, 0.3)' : 'none'
-              }}
-            >
-              {myStatus === 'PENDING' ? '신청 대기 중...' : 
-               myStatus === 'APPROVED' ? '참여 확정됨!' : 
-               myStatus === 'REJECTED' ? '거절된 모임입니다' :
-               gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참여 신청하기'}
-            </button>
-          )}
-
-          {/* Member Management Section (Host Only) */}
-          {isHost && (
-            <div style={{ marginTop: '32px', padding: '20px', background: 'var(--bg-color)', borderRadius: '20px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Users size={18} color="var(--primary)" /> 참여 신청 관리
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {gathering.members?.filter(m => m.status === 'PENDING').map(req => (
-                  <div key={req.user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '18px', background: 'var(--border)' }}>
-                        {req.user.profileImageUrl && <img src={req.user.profileImageUrl} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />}
+          {activeTab === '멤버' && (
+            <div className="animate-fade">
+              {/* Host Section */}
+              {isHost && (
+                <div style={{ marginBottom: '32px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>참여 신청 관리</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {gathering.members?.filter(m => m.status === 'PENDING').map(req => (
+                      <div key={req.user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-color)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '20px', background: 'var(--border-color)', overflow: 'hidden' }}>
+                            {req.user.profileImageUrl ? <img src={req.user.profileImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E2E8F0', fontSize: '20px' }}>👤</div>}
+                          </div>
+                          <span style={{ fontSize: '15px', fontWeight: 700 }}>{req.user.name}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => handleApprove(req.user.id)} style={{ width: '36px', height: '36px', background: 'rgba(81, 207, 102, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <CheckCircle size={20} color="#51CF66" />
+                          </button>
+                          <button onClick={() => handleReject(req.user.id)} style={{ width: '36px', height: '36px', background: 'rgba(255, 107, 107, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <XCircle size={20} color="#FF6B6B" />
+                          </button>
+                        </div>
                       </div>
-                      <span style={{ fontSize: '14px', fontWeight: 600 }}>{req.user.name}</span>
+                    ))}
+                    {gathering.members?.filter(m => m.status === 'PENDING').length === 0 && (
+                      <p style={{ fontSize: '14px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px', background: 'var(--bg-color)', borderRadius: '16px' }}>새로운 참가 신청이 없습니다.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Confirmed Members Section */}
+              <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>참여 중인 멤버</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
+                {gathering.members?.filter(m => m.status === 'APPROVED').map(req => (
+                  <div key={req.user.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: 'var(--bg-color)', borderRadius: '12px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '16px', background: 'var(--border-color)', overflow: 'hidden' }}>
+                      {req.user.profileImageUrl ? <img src={req.user.profileImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E2E8F0', fontSize: '14px' }}>👤</div>}
                     </div>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                      <button onClick={() => handleApprove(req.user.id)} style={{ padding: '6px', background: 'none', border: 'none', cursor: 'pointer' }}>
-                        <CheckCircle size={22} color="#51CF66" />
-                      </button>
-                      <button onClick={() => handleReject(req.user.id)} style={{ padding: '6px', background: 'none', border: 'none', cursor: 'pointer' }}>
-                        <XCircle size={22} color="#FF6B6B" />
-                      </button>
-                    </div>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{req.user.name}</span>
                   </div>
                 ))}
-                {gathering.members?.filter(m => m.status === 'PENDING').length === 0 && (
-                  <p style={{ fontSize: '13px', color: 'var(--text-sub)', textAlign: 'center' }}>새로운 참가 신청이 없습니다.</p>
-                )}
               </div>
             </div>
           )}
 
-          <div style={{ marginTop: '32px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <MessageCircle size={18} /> 질문/댓글 ({comments.length})
-            </h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '80px' }}>
-              {comments.map(c => (
-                <div key={c.id} style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '16px', background: 'var(--border)', flexShrink: 0 }} />
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)' }}>{c.author}</span>
-                      <span style={{ fontSize: '12px', color: 'var(--text-sub)' }}>{new Date(c.createdAt).toLocaleDateString()}</span>
+          {activeTab === '대화' && (
+            <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '80px' }}>
+                {comments.map(c => (
+                  <div key={c.id} style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '18px', background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700, color: 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                      {c.author.slice(0, 1)}
                     </div>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '15px', color: 'var(--text-main)' }}>{c.content}</p>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{c.author}</span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>{new Date(c.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <div style={{ background: 'var(--bg-color)', padding: '12px 16px', borderRadius: '0 16px 16px 16px', fontSize: '15px', color: 'var(--text-primary)', display: 'inline-block', border: '1px solid rgba(0,0,0,0.03)' }}>
+                        {c.content}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {comments.length === 0 && <p style={{ fontSize: '14px', color: 'var(--text-sub)' }}>첫 번째 댓글을 남겨보세요!</p>}
+                ))}
+                {comments.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                    <p style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: 600 }}>궁금한 점을 댓글로 남겨보세요! 💬</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Comment Input */}
-        <div style={{ 
-          position: 'absolute', bottom: 0, left: 0, right: 0, 
-          padding: '12px 24px 24px 24px', background: 'var(--surface)', borderTop: '1px solid var(--border)',
-          display: 'flex', gap: '8px'
-        }}>
-          <input 
-            type="text" value={newComment} onChange={e => setNewComment(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.preventDefault(); // Prevent form submission if it's trapped somewhere
-                handlePostComment();
-              }
-            }}
-            placeholder="댓글을 입력하세요..."
-            style={{ 
-              flex: 1, padding: '12px 16px', borderRadius: '20px', border: '1px solid var(--border)', 
-              background: 'var(--bg-color)', fontSize: '15px', outline: 'none' 
-            }}
-          />
-          <button onClick={handlePostComment} style={{
-            width: '44px', height: '44px', borderRadius: '22px', background: 'var(--primary)', color: 'white', 
-            border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+        {/* Comment Input Wrapper - Only shown for Taik tab */}
+        {activeTab === '대화' && (
+          <div style={{
+            padding: '12px 24px 24px 24px', background: 'var(--surface)', borderTop: '1px solid var(--border-color)',
+            display: 'flex', gap: '8px'
           }}>
-            <Send size={18} style={{ marginLeft: '2px' }}/>
-          </button>
-        </div>
-
+            <input
+              type="text" value={newComment} onChange={e => setNewComment(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handlePostComment(); }}
+              placeholder="호스트에게 질문을 남겨주세요..."
+              style={{
+                flex: 1, padding: '14px 20px', borderRadius: '24px', border: '1px solid var(--border-color)',
+                background: 'var(--bg-color)', fontSize: '15px', outline: 'none', fontWeight: 500
+              }}
+            />
+            <button onClick={handlePostComment} style={{
+              width: '48px', height: '48px', borderRadius: '24px', background: 'var(--primary-gradient)', color: 'white',
+              border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(255, 92, 0, 0.2)'
+            }}>
+              <Send size={20} style={{ marginLeft: '2px' }} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

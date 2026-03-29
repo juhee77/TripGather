@@ -103,9 +103,9 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
 
   const inputStyle = {
     width: '100%', padding: '16px 16px 16px 44px', borderRadius: '16px', 
-    border: '1px solid var(--border)', background: 'var(--bg-color)', 
+    border: '1px solid var(--border-color)', background: 'var(--bg-color)', 
     fontSize: '16px', fontWeight: 500, outline: 'none', transition: 'border 0.2s',
-    color: 'var(--text-main)'
+    color: 'var(--text-primary)'
   };
 
   return (
@@ -126,10 +126,10 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
             padding: '8px', background: 'var(--bg-color)', borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
-            <X size={20} color="var(--text-main)" />
+            <X size={20} color="var(--text-primary)" />
           </button>
         </div>
-        <p style={{ color: 'var(--text-sub)', fontSize: '15px', marginBottom: '24px' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '15px', marginBottom: '24px' }}>
           관심사가 맞는 동네 이웃들과 함께해요!
         </p>
 
@@ -143,7 +143,7 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
               style={{
                 width: '100%', height: '140px', borderRadius: '16px',
                 background: previewUrl ? `url(${previewUrl}) center/cover` : 'var(--bg-color)',
-                border: previewUrl ? 'none' : '1px dashed var(--text-sub)',
+                border: previewUrl ? 'none' : '1px dashed var(--text-muted)',
                 display: 'flex', flexDirection: 'column',
                 justifyContent: 'center', alignItems: 'center',
                 cursor: 'pointer', position: 'relative', overflow: 'hidden'
@@ -151,8 +151,8 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
             >
               {!previewUrl && (
                 <>
-                  <Camera size={28} color="var(--text-sub)" style={{ marginBottom: '8px' }}/>
-                  <span style={{ fontSize: '14px', color: 'var(--text-sub)', fontWeight: 500 }}>사진을 추가해주세요 (선택)</span>
+                  <Camera size={28} color="var(--text-muted)" style={{ marginBottom: '8px' }}/>
+                  <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 500 }}>사진을 추가해주세요 (선택)</span>
                 </>
               )}
               {previewUrl && (
@@ -201,8 +201,8 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
                 required name="title" value={formData.title} onChange={handleChange}
                 placeholder="예: 이번 주말 한강 피크닉 갈 사람~" 
                 style={inputStyle}
-                onFocus={(e) => e.target.style.border = '1px solid var(--primary)'}
-                onBlur={(e) => e.target.style.border = '1px solid var(--border)'}
+                onFocus={(e) => e.target.style.border = '1px solid var(--primary-orange)'}
+                onBlur={(e) => e.target.style.border = '1px solid var(--border-color)'}
               />
             </div>
           </div>
@@ -215,8 +215,8 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
                 required name="location" value={formData.location} onChange={handleChange}
                 placeholder="예: 강남역 10번 출구 앞" 
                 style={inputStyle}
-                onFocus={(e) => e.target.style.border = '1px solid var(--primary)'}
-                onBlur={(e) => e.target.style.border = '1px solid var(--border)'}
+                onFocus={(e) => e.target.style.border = '1px solid var(--primary-orange)'}
+                onBlur={(e) => e.target.style.border = '1px solid var(--border-color)'}
               />
             </div>
           </div>
@@ -229,9 +229,9 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
                 <CalendarIcon size={18} color="var(--text-sub)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
                 <input 
                   required type="date" name="date" value={formData.date} onChange={handleChange}
-                  style={{...inputStyle, paddingLeft: '44px', color: formData.date ? 'var(--text-main)' : 'transparent', textShadow: formData.date ? 'none' : '0 0 0 var(--text-sub)'}}
-                  onFocus={(e) => { e.target.style.border = '1px solid var(--primary)'; e.target.style.color = 'var(--text-main)'; e.target.style.textShadow = 'none'; }}
-                  onBlur={(e) => { e.target.style.border = '1px solid var(--border)'; if(!e.target.value) { e.target.style.color = 'transparent'; e.target.style.textShadow = '0 0 0 var(--text-sub)';} }}
+                  style={{...inputStyle, paddingLeft: '44px', color: formData.date ? 'var(--text-primary)' : 'transparent', textShadow: formData.date ? 'none' : '0 0 0 var(--text-muted)'}}
+                  onFocus={(e) => { e.target.style.border = '1px solid var(--primary-orange)'; e.target.style.color = 'var(--text-primary)'; e.target.style.textShadow = 'none'; }}
+                  onBlur={(e) => { e.target.style.border = '1px solid var(--border-color)'; if(!e.target.value) { e.target.style.color = 'transparent'; e.target.style.textShadow = '0 0 0 var(--text-muted)';} }}
                 />
               </div>
 
@@ -239,9 +239,9 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
                 <Clock size={18} color="var(--text-sub)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
                 <input 
                   required type="time" name="time" value={formData.time} onChange={handleChange}
-                  style={{...inputStyle, paddingLeft: '44px', color: formData.time ? 'var(--text-main)' : 'transparent', textShadow: formData.time ? 'none' : '0 0 0 var(--text-sub)'}}
-                  onFocus={(e) => { e.target.style.border = '1px solid var(--primary)'; e.target.style.color = 'var(--text-main)'; e.target.style.textShadow = 'none'; }}
-                  onBlur={(e) => { e.target.style.border = '1px solid var(--border)'; if(!e.target.value) { e.target.style.color = 'transparent'; e.target.style.textShadow = '0 0 0 var(--text-sub)';} }}
+                  style={{...inputStyle, paddingLeft: '44px', color: formData.time ? 'var(--text-primary)' : 'transparent', textShadow: formData.time ? 'none' : '0 0 0 var(--text-muted)'}}
+                  onFocus={(e) => { e.target.style.border = '1px solid var(--primary-orange)'; e.target.style.color = 'var(--text-primary)'; e.target.style.textShadow = 'none'; }}
+                  onBlur={(e) => { e.target.style.border = '1px solid var(--border-color)'; if(!e.target.value) { e.target.style.color = 'transparent'; e.target.style.textShadow = '0 0 0 var(--text-muted)';} }}
                 />
               </div>
             </div>
@@ -253,8 +253,8 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
                 <input 
                   required type="number" min="2" max="20" name="maxJoining" value={formData.maxJoining} onChange={handleChange}
                   style={{ ...inputStyle, paddingLeft: '44px' }}
-                  onFocus={(e) => e.target.style.border = '1px solid var(--primary)'}
-                  onBlur={(e) => e.target.style.border = '1px solid var(--border)'}
+                  onFocus={(e) => e.target.style.border = '1px solid var(--primary-orange)'}
+                  onBlur={(e) => e.target.style.border = '1px solid var(--border-color)'}
                 />
               </div>
             </div>

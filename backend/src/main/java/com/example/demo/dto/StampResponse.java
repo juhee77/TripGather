@@ -9,25 +9,17 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class StampResponse {
-    private Long stepId;
     private Long missionId;
     private String missionTitle;
-    private String dayLabel;
-    private String routePointLabel;
-    private String memo;
-    private String photoUrl;
+    private String stampImageUrl;
     private LocalDateTime completedAt;
 
-    public static StampResponse from(UserMissionStep step) {
+    public static StampResponse from(com.example.demo.domain.UserMission mission) {
         return StampResponse.builder()
-                .stepId(step.getId())
-                .missionId(step.getUserMission().getId())
-                .missionTitle(step.getUserMission().getItinerary().getTitle())
-                .dayLabel(step.getRoutePoint().getDayLabel())
-                .routePointLabel(step.getRoutePoint().getLabel())
-                .memo(step.getMemo())
-                .photoUrl(step.getPhotoUrl())
-                .completedAt(step.getCompletedAt())
+                .missionId(mission.getId())
+                .missionTitle(mission.getItinerary().getTitle())
+                .stampImageUrl(mission.getStampImageUrl())
+                .completedAt(mission.getCompletedAt())
                 .build();
     }
 }
