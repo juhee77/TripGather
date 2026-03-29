@@ -6,9 +6,10 @@ const MissionTab = ({
   onMissionComplete,
   onStepComplete
 }) => {
-  const [selectedMission, setSelectedMission] = useState(null);
+  const [selectedMissionId, setSelectedMissionId] = useState(null);
+  const selectedMission = activeMissions?.find(m => m.id === selectedMissionId);
 
-  if (activeMissions.length === 0) {
+  if (!activeMissions || activeMissions.length === 0) {
     return (
       <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
         <p>현재 참여 중인 미션이 없습니다.</p>
@@ -28,7 +29,7 @@ const MissionTab = ({
         return (
           <div
             key={mission?.id}
-            onClick={() => setSelectedMission(mission)}
+            onClick={() => setSelectedMissionId(mission.id)}
             style={{
               background: 'var(--surface)',
               borderRadius: '16px',
@@ -89,12 +90,14 @@ const MissionTab = ({
 
       {selectedMission && (
         <RouteDetailModal
-          itinerary={selectedMission}
-          onClose={() => setSelectedMission(null)}
-          onMissionComplete={(itineraryId) => {
-            onMissionComplete?.(itineraryId);
-            setSelectedMission(prev => ({...prev, status: 'COMPLETED'}));
+          itinerary={{
+            ...selectedMission.itinerary,
+            id: selectedMission.id, // Use Mission ID
+            steps: selectedMission.steps,
+            status: selectedMission.status,
+            itineraryId: selectedMission.itineraryId
           }}
+          onClose={() => setSelectedMissionId(null)}
           onStepComplete={onStepComplete}
         />
       )}
