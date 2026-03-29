@@ -208,7 +208,7 @@ const MyPage = () => {
         ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {myMissions.map((m, idx) => (
-                <div key={m.id} onClick={() => setSelectedMission(m)} style={{ cursor: 'pointer', background: 'white', padding: '20px', borderRadius: 'var(--radius-lg)', animationDelay: `${idx * 0.1}s`, border: '1px solid var(--border-color)' }} className="glass animate-fade">
+                <div key={m.id} onClick={() => setSelectedMission(m)} style={{ cursor: 'pointer', background: 'var(--surface-solid)', padding: '20px', borderRadius: 'var(--radius-lg)', animationDelay: `${idx * 0.1}s`, border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-premium)' }} className="animate-fade">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{m.itineraryTitle}</h4>
                     <span style={{ 

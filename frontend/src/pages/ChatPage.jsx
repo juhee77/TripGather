@@ -11,17 +11,24 @@ const ChatPage = () => {
 
   useEffect(() => {
     resetUnreadCount();
-    authFetch('/api/gatherings')
-      .then(res => res.json())
-      .then(data => setGatherings(data))
-      .catch(err => console.error(err));
+    
+    // Fetch both hosted and joined gatherings
+    Promise.all([
+      authFetch('/api/gatherings/my/hosted').then(res => res.json()),
+      authFetch('/api/gatherings/my/joined').then(res => res.json())
+    ]).then(([hosted, joined]) => {
+      // Remove duplicates just in case (though status should keep them separate)
+      const combined = [...hosted];
+      joined.forEach(j => {
+        if (!combined.find(c => c.id === j.id)) {
+          combined.push(j);
+        }
+      });
+      setGatherings(combined);
+    }).catch(err => console.error("Error fetching my gatherings:", err));
   }, [resetUnreadCount]);
 
-  const joinedGatherings = gatherings.filter(g => {
-    const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
-    const isApproved = g.members?.some(m => m.user.email === currentUser?.email && m.status === 'APPROVED');
-    return isHost || isApproved;
-  });
+  const joinedGatherings = gatherings; // Already filtered by backend
 
   return (
     <div className="page" style={{ paddingBottom: '80px' }}>

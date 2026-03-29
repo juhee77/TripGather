@@ -103,10 +103,10 @@ const TicketCard = ({ itinerary, onViewRoute }) => {
                                 padding: '12px 20px', 
                                 fontSize: '14px', 
                                 fontWeight: 700,
-                                color: 'var(--text-primary)',
+                                color: 'var(--text-main)',
                                 borderRadius: 'var(--radius-md)',
-                                background: 'white',
-                                border: '1px solid var(--border-color)',
+                                background: '#F1F3F5', // Defined grey for better contrast
+                                border: '1px solid #DEE2E6',
                                 flex: 1
                             }}
                         >

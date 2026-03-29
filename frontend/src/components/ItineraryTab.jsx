@@ -4,6 +4,7 @@ import ItineraryEditorModal from './ItineraryEditorModal';
 import RouteDetailModal from './RouteDetailModal';
 import { Plus, RotateCcw } from 'lucide-react';
 import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
+import { useMissionsViewModel } from '../viewmodels/useMissionsViewModel';
 
 const ItineraryTab = ({ onMissionStart }) => {
     const {
@@ -11,6 +12,14 @@ const ItineraryTab = ({ onMissionStart }) => {
         isLoading: loading,
         actions: { createItinerary, updateItinerary, deleteItinerary, refreshItineraries }
     } = useItinerariesViewModel();
+
+    const { activeMissions } = useMissionsViewModel();
+
+    // Map itineraries to include mission data if already participating
+    const mappedItineraries = itineraries.map(it => {
+        const mission = activeMissions.find(m => m.itineraryId === it.id);
+        return mission ? { ...it, ...mission, isParticipating: true } : it;
+    });
 
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [selectedItinerary, setSelectedItinerary] = useState(null);
@@ -95,7 +104,7 @@ const ItineraryTab = ({ onMissionStart }) => {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    {itineraries.map((it, idx) => (
+                    {mappedItineraries.map((it, idx) => (
                         <div key={it.id} className="animate-fade" style={{ animationDelay: `${idx * 0.1}s` }}>
                             <TicketCard
                                 itinerary={it}
@@ -103,7 +112,7 @@ const ItineraryTab = ({ onMissionStart }) => {
                             />
                         </div>
                     ))}
-                    {!loading && itineraries.length === 0 && (
+                    {!loading && mappedItineraries.length === 0 && (
                         <div className="glass-dark animate-fade" style={{ 
                             textAlign: 'center', 
                             padding: '80px 30px', 
