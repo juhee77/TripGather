@@ -128,6 +128,18 @@ public class GatheringServiceImpl implements GatheringUseCase {
         gatheringRepository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
+    public List<Gathering> getJoinedGatherings() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return gatheringRepository.findJoinedGatherings(email);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Gathering> getHostedGatherings() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return gatheringRepository.findByHostEmailOrderByCreatedAtDesc(email);
+    }
+
     private void validateHost(Long gatheringId) {
         Gathering gathering = gatheringRepository.findById(gatheringId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid gathering ID"));

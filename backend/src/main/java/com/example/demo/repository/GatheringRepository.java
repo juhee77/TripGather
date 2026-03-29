@@ -10,4 +10,8 @@ import java.util.List;
 public interface GatheringRepository extends JpaRepository<Gathering, Long>, GatheringRepositoryCustom {
     List<Gathering> findAllByOrderByCreatedAtDesc();
     List<Gathering> findAllByLocationContainingIgnoreCaseOrderByCreatedAtDesc(String location);
+    List<Gathering> findByHostEmailOrderByCreatedAtDesc(String email);
+    
+    @org.springframework.data.jpa.repository.Query("SELECT g FROM Gathering g JOIN g.members m WHERE m.user.email = :email AND m.status = 'APPROVED' ORDER BY g.createdAt DESC")
+    List<Gathering> findJoinedGatherings(String email);
 }

@@ -11,4 +11,6 @@ public interface GatheringUseCase {
     void rejectMember(Long gatheringId, Long userId);
     Gathering updateGathering(Long id, Gathering updateData);
     void deleteGathering(Long id);
+    List<Gathering> getJoinedGatherings();
+    List<Gathering> getHostedGatherings();
 }
