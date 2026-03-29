@@ -21,6 +21,7 @@ public class ItineraryResponse {
     private String location;
     private String dates;
     private String bgImageUrl;
+    private String stampImageUrl;
     private LocalDateTime createdAt;
     private List<RoutePointResponse> routePoints;
 
@@ -31,6 +32,10 @@ public class ItineraryResponse {
                 .title(itinerary.getTitle())
                 .author(itinerary.getAuthor())
                 .description(itinerary.getDescription())
+                .location(itinerary.getLocation())
+                .dates(itinerary.getDates())
+                .bgImageUrl(itinerary.getBgImageUrl())
+                .stampImageUrl(itinerary.getStampImageUrl())
                 .createdAt(itinerary.getCreatedAt())
                 .routePoints(itinerary.getRoutePoints() != null ? 
                         itinerary.getRoutePoints().stream()

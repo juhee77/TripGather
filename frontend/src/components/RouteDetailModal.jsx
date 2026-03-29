@@ -142,9 +142,21 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>TRAVEL LOG • JOURNEY</div>
                         </div>
                     </div>
-                    <button onClick={onClose} className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.1)' }}>
-                        <X size={20} color="white" />
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {isAuthor && !isMission && (
+                            <>
+                                <button onClick={onEdit} className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.1)' }}>
+                                    <Edit3 size={18} color="white" />
+                                </button>
+                                <button onClick={onDelete} className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,107,107,0.1)' }}>
+                                    <Trash2 size={18} color="#FF6B6B" />
+                                </button>
+                            </>
+                        )}
+                        <button onClick={onClose} className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.1)' }}>
+                            <X size={20} color="white" />
+                        </button>
+                    </div>
                 </header>
 
                 <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px 24px' }}>

@@ -39,6 +39,7 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         Itinerary itinerary = getById(id);
         itinerary.setTitle(update.getTitle());
         itinerary.setDescription(update.getDescription());
+        itinerary.setStampImageUrl(update.getStampImageUrl());
         
         // RoutePoints 업데이트 로직 (간단화를 위해 기존 삭제 후 재등록 패턴 또는 병합)
         if (update.getRoutePoints() != null) {

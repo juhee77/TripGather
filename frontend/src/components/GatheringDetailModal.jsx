@@ -102,6 +102,26 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
     }
   };
 
+  const handleUpdate = async () => {
+    try {
+      const res = await authFetch(`/api/gatherings/${gathering.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editData),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        alert("모임 정보가 수정되었습니다! ✨");
+        onUpdate && onUpdate(updated);
+        setIsEditing(false);
+      } else {
+        alert("수정에 실패했습니다.");
+      }
+    } catch (err) {
+      console.error("Error updating gathering", err);
+    }
+  };
+
   const handleDelete = async () => {
     if (!window.confirm("정말로 이 모임을 삭제하시겠습니까?")) return;
     try {
@@ -190,55 +210,102 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
           {activeTab === '정보' && (
             <div className="animate-fade">
-              {gathering.bgImageUrl && (
-                <div style={{
-                  height: '180px',
-                  borderRadius: '20px',
-                  backgroundImage: `url(${gathering.bgImageUrl})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  marginBottom: '24px',
-                  boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
-                }} />
-              )}
+              {isEditing ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '20px', background: 'var(--bg-color)', borderRadius: '20px' }}>
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary-orange)', display: 'block', marginBottom: '8px' }}>TITLE</label>
+                    <input 
+                      type="text" value={editData.title} 
+                      onChange={e => setEditData({...editData, title: e.target.value})}
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontWeight: 600 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary-orange)', display: 'block', marginBottom: '8px' }}>SCHEDULE</label>
+                    <input 
+                      type="text" value={editData.dates} 
+                      onChange={e => setEditData({...editData, dates: e.target.value})}
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontWeight: 600 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary-orange)', display: 'block', marginBottom: '8px' }}>LOCATION</label>
+                    <input 
+                      type="text" value={editData.location} 
+                      onChange={e => setEditData({...editData, location: e.target.value})}
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontWeight: 600 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary-orange)', display: 'block', marginBottom: '8px' }}>MAX PARTICIPANTS</label>
+                    <input 
+                      type="number" value={editData.maxJoining} 
+                      onChange={e => setEditData({...editData, maxJoining: parseInt(e.target.value)})}
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontWeight: 600 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                    <button onClick={handleUpdate} style={{ flex: 1, padding: '14px', background: 'var(--primary-gradient)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                      저장하기
+                    </button>
+                    <button onClick={() => setIsEditing(false)} style={{ flex: 1, padding: '14px', background: 'var(--bg-color)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                      취소
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {gathering.bgImageUrl && (
+                    <div style={{
+                      height: '180px',
+                      borderRadius: '20px',
+                      backgroundImage: `url(${gathering.bgImageUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      marginBottom: '24px',
+                      boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                    }} />
+                  )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px', background: 'var(--bg-color)', borderRadius: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 600 }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
-                    <Calendar size={18} color="var(--primary-orange)" />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px', background: 'var(--bg-color)', borderRadius: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 600 }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+                        <Calendar size={18} color="var(--primary-orange)" />
+                      </div>
+                      <span>{gathering.dates}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 600 }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+                        <MapPin size={18} color="#FF6B6B" />
+                      </div>
+                      <span>{gathering.location}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 600 }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
+                        <Users size={18} color="#4DABF7" />
+                      </div>
+                      <span>{gathering.currentJoining} / {gathering.maxJoining} 명 참여 중</span>
+                    </div>
                   </div>
-                  <span>{gathering.dates}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 600 }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
-                    <MapPin size={18} color="#FF6B6B" />
-                  </div>
-                  <span>{gathering.location}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 600 }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
-                    <Users size={18} color="#4DABF7" />
-                  </div>
-                  <span>{gathering.currentJoining} / {gathering.maxJoining} 명 참여 중</span>
-                </div>
-              </div>
 
-              {!isHost && (
-                <button
-                  onClick={handleJoin}
-                  disabled={gathering.currentJoining >= gathering.maxJoining || myStatus}
-                  style={{
-                    width: '100%', padding: '18px',
-                    background: (gathering.currentJoining >= gathering.maxJoining && !myStatus) ? 'var(--text-muted)' : myStatus === 'PENDING' ? '#FFD43B' : myStatus === 'APPROVED' ? '#51CF66' : 'var(--primary-gradient)',
-                    color: 'white', border: 'none', borderRadius: '20px', fontSize: '17px', fontWeight: 800, marginTop: '24px', cursor: 'pointer',
-                    boxShadow: (gathering.currentJoining < gathering.maxJoining && !myStatus) ? '0 10px 20px rgba(255, 92, 0, 0.3)' : 'none'
-                  }}
-                >
-                  {myStatus === 'PENDING' ? '신청 대기 중...' :
-                    myStatus === 'APPROVED' ? '참여 확정됨!' :
-                      myStatus === 'REJECTED' ? '거절된 모임입니다' :
-                        gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참여 신청하기'}
-                </button>
+                  {!isHost && (
+                    <button
+                      onClick={handleJoin}
+                      disabled={gathering.currentJoining >= gathering.maxJoining || myStatus}
+                      style={{
+                        width: '100%', padding: '18px',
+                        background: (gathering.currentJoining >= gathering.maxJoining && !myStatus) ? 'var(--text-muted)' : myStatus === 'PENDING' ? '#FFD43B' : myStatus === 'APPROVED' ? '#51CF66' : 'var(--primary-gradient)',
+                        color: 'white', border: 'none', borderRadius: '20px', fontSize: '17px', fontWeight: 800, marginTop: '24px', cursor: 'pointer',
+                        boxShadow: (gathering.currentJoining < gathering.maxJoining && !myStatus) ? '0 10px 20px rgba(255, 92, 0, 0.3)' : 'none'
+                      }}
+                    >
+                      {myStatus === 'PENDING' ? '신청 대기 중...' :
+                        myStatus === 'APPROVED' ? '참여 확정됨!' :
+                          myStatus === 'REJECTED' ? '거절된 모임입니다' :
+                            gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참여 신청하기'}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           )}

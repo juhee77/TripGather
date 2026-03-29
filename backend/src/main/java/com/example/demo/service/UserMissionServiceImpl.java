@@ -51,6 +51,7 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
                             .itinerary(itinerary)
                             .status("ACTIVE")
                             .startedAt(LocalDateTime.now())
+                            .stampImageUrl(itinerary.getStampImageUrl()) // Inherit stamp image if pre-defined
                             .build();
                     UserMission savedMission = missionRepository.save(mission);
                     
@@ -85,7 +86,7 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
             mission.setStatus("COMPLETED");
             mission.setCompletedAt(LocalDateTime.now());
             
-            // Auto-generate stamp image if not exists
+            // Auto-generate stamp image if not exists and not already inherited/set
             if (mission.getStampImageUrl() == null || mission.getStampImageUrl().isEmpty()) {
                 String seed = mission.getItinerary().getTitle().replaceAll("\\s+", "_");
                 mission.setStampImageUrl("https://api.dicebear.com/7.x/bottts/svg?seed=" + seed + "&backgroundColor=ffd43b,ff922b");
