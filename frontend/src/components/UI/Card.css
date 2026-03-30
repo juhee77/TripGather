@@ -1,0 +1,22 @@
+.ui-card {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  border: 1px solid var(--border-color);
+}
+
+.ui-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.ui-card.padding-md {
+  padding: 24px;
+}
+
+.ui-card.surface-solid {
+  background-color: var(--surface-solid);
+}
+
+/* Glass and animations are already in index.css but we can extend them here if needed */

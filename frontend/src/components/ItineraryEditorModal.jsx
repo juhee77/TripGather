@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, Type, FileText, Send, Plus, Trash2, MapPin, Clock } from 'lucide-react';
 import { authFetch } from '../api/client';
+import ModalHeader from './UI/ModalHeader';
+import ModalFooter from './UI/ModalFooter';
+import FormInput from './UI/FormInput';
+import PrimaryButton from './UI/PrimaryButton';
 
 const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
     const isEdit = !!itinerary;
@@ -126,102 +130,64 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
     if (days.length === 0) days.push(1);
 
     return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(25px)', zIndex: 3000,
-            display: 'flex', justifyContent: 'center', alignItems: 'flex-end'
-        }}>
-            <div className="glass-dark" style={{
-                width: '100%', maxWidth: '500px', height: '94vh',
-                borderTopLeftRadius: '32px', borderTopRightRadius: '32px',
-                display: 'flex', flexDirection: 'column', overflow: 'hidden',
-                boxShadow: '0 -20px 60px rgba(0,0,0,0.5)',
-                border: 'none',
-                animation: 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
-            }}>
-                <header style={{ 
-                    padding: '24px 28px', 
-                    borderBottom: '1px solid rgba(255,255,255,0.1)', 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    background: 'rgba(255,255,255,0.02)'
-                }}>
-                    <div>
-                        <h2 className="heading-m" style={{ color: 'white', marginBottom: '4px' }}>
-                            {isEdit ? 'EDIT VOYAGE ✈️' : 'NEW CHECK-IN 🎫'}
-                        </h2>
-                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Configure your travel mission</p>
-                    </div>
-                    <button onClick={onClose} className="icon-circle glass" style={{ width: '40px', height: '40px' }}>
-                        <X size={20} color="white" />
-                    </button>
-                </header>
+        <div className="modal-overlay">
+            <div className="modal-content-night">
+                <ModalHeader 
+                    title={isEdit ? 'EDIT VOYAGE ✈️' : 'NEW CHECK-IN 🎫'}
+                    subtitle="Configure your travel mission"
+                    onClose={onClose}
+                    dark
+                />
 
                 <form onSubmit={handleSubmit} className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <div>
-                            <label className="text-s" style={{ color: 'var(--primary-orange)', fontWeight: 900, marginBottom: '12px', display: 'block', letterSpacing: '1px' }}>VOYAGE TITLE</label>
-                            <div style={{ position: 'relative' }}>
-                                <Type size={18} color="rgba(255,255,255,0.3)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
-                                <input 
-                                    required 
-                                    name="title" 
-                                    value={formData.title} 
-                                    onChange={handleChange} 
-                                    placeholder="Enter your trip title..." 
-                                    className="glass"
-                                    style={{ 
-                                        width: '100%', padding: '16px 16px 16px 48px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)',
-                                        color: 'white', fontSize: '16px', fontWeight: 600, outline: 'none'
-                                    }} 
-                                />
-                            </div>
-                        </div>
+                        <FormInput 
+                            label="VOYAGE TITLE"
+                            icon={Type}
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            placeholder="Enter your trip title..."
+                            dark
+                        />
+
+                        <FormInput 
+                            label="INTEL & INTENTION"
+                            icon={FileText}
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
+                            placeholder="Briefly describe the journey..."
+                            dark
+                            as="textarea"
+                            style={{ height: '120px', resize: 'none', lineHeight: '1.6' }}
+                        />
 
                         <div>
-                            <label className="text-s" style={{ color: 'var(--primary-orange)', fontWeight: 900, marginBottom: '12px', display: 'block', letterSpacing: '1px' }}>INTEL & INTENTION</label>
-                            <div style={{ position: 'relative' }}>
-                                <FileText size={18} color="rgba(255,255,255,0.3)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
-                                <textarea 
-                                    name="description" 
-                                    value={formData.description} 
-                                    onChange={handleChange} 
-                                    placeholder="Briefly describe the journey..." 
-                                    className="glass"
-                                    style={{ 
-                                        width: '100%', padding: '16px 16px 16px 48px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)',
-                                        color: 'white', fontSize: '15px', fontWeight: 500, outline: 'none', height: '120px', resize: 'none', lineHeight: '1.6'
-                                    }} 
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="text-s" style={{ color: 'var(--primary-orange)', fontWeight: 900, marginBottom: '12px', display: 'block', letterSpacing: '1px' }}>STAMP DESIGN (REWARD)</label>
+                            <label className="label-orange">STAMP DESIGN (REWARD)</label>
                             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                                 <div 
                                     onClick={() => stampInputRef.current.click()}
                                     style={{ 
-                                        width: '80px', height: '80px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: '2px dashed rgba(255,255,255,0.1)',
+                                        width: '80px', height: '80px', borderRadius: '16px', background: 'var(--night-surface)', border: '2px dashed var(--night-border)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative'
                                     }}
                                 >
                                     {stampPreview ? (
                                         <img src={stampPreview} alt="stamp preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
-                                        <Plus size={24} color="rgba(255,255,255,0.3)" />
+                                        <Plus size={24} color="var(--night-text-muted)" />
                                     )}
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>
+                                    <p style={{ fontSize: '13px', color: 'var(--night-text-muted)', marginBottom: '8px' }}>
                                         {stampPreview ? 'Custom stamp selected' : 'No custom stamp. Auto-generated bottt will be used.'}
                                     </p>
                                     <button 
                                         type="button"
                                         onClick={() => stampInputRef.current.click()}
                                         className="glass"
-                                        style={{ fontSize: '12px', padding: '8px 16px', borderRadius: '8px', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
+                                        style={{ fontSize: '12px', padding: '8px 16px', borderRadius: '8px', color: 'white', border: '1px solid var(--night-border)' }}
                                     >
                                         CHOOSE IMAGE
                                     </button>
@@ -294,24 +260,14 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
                     </div>
                 </form>
 
-                <footer style={{ 
-                    padding: '28px', 
-                    borderTop: '1px solid rgba(255,255,255,0.1)', 
-                    background: 'rgba(13, 13, 25, 0.8)',
-                    backdropFilter: 'blur(10px)'
-                }}>
-                    <button 
-                        type="submit" 
+                <ModalFooter dark>
+                    <PrimaryButton 
                         onClick={handleSubmit}
-                        disabled={saving}
-                        className="primary-btn"
-                        style={{
-                            width: '100%', height: '64px', borderRadius: '16px', fontSize: '18px'
-                        }}
+                        loading={saving}
                     >
-                        {saving ? 'MISSION ENCRYPTING...' : (isEdit ? 'CONFIRM UPDATE' : 'BOARDING PASS ISSUED')} <Send size={20} />
-                    </button>
-                </footer>
+                        {isEdit ? 'CONFIRM UPDATE' : 'BOARDING PASS ISSUED'} <Send size={20} style={{ marginLeft: '8px' }} />
+                    </PrimaryButton>
+                </ModalFooter>
             </div>
             <style>{`
                 @keyframes slideUp {
