@@ -1,7 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
-const ModalHeader = ({ title, subtitle, onClose, dark = false }) => {
+const ModalHeader = ({ title, subtitle, onClose, actions, dark = false }) => {
   const headerStyle = {
     padding: '24px 28px',
     borderBottom: `1px solid ${dark ? 'rgba(255,255,255,0.1)' : 'var(--border-color)'}`,

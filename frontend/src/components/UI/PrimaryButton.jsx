@@ -22,6 +22,8 @@ const PrimaryButton = ({
 
   return (
     <button 
+      type={props.type || 'button'}
+      {...props}
       onClick={onClick}
       disabled={disabled || loading}
       className={`${getVariantClass()} ${className}`}
@@ -30,7 +32,6 @@ const PrimaryButton = ({
         cursor: (disabled || loading) ? 'not-allowed' : 'pointer',
         ...style
       }}
-      {...props}
     >
       {loading ? 'PROCESSING...' : children}
     </button>

@@ -1,10 +1,9 @@
 import React from 'react';
 import { Plane, Calendar, MapPin } from 'lucide-react';
-import { authFetch } from '../api/client';
 import TicketBase from './UI/TicketBase';
 import PrimaryButton from './UI/PrimaryButton';
 
-const TicketCard = ({ itinerary, onViewRoute }) => {
+const TicketCard = ({ itinerary, onViewRoute, onStartMission }) => {
     const { title, author, description, createdAt } = itinerary;
     const date = createdAt ? new Date(createdAt).toLocaleDateString() : '2026-03-12';
 
@@ -39,40 +38,37 @@ const TicketCard = ({ itinerary, onViewRoute }) => {
         </div>
     );
 
+    const handleView = (e) => {
+        if (e) e.stopPropagation();
+        if (onViewRoute) onViewRoute(itinerary);
+    };
+
     const footer = (
-        <div style={{ display: 'flex', gap: '10px', width: '100%', justifyContent: 'flex-end' }}>
+        <>
             <PrimaryButton 
                 variant="secondary"
-                onClick={() => onViewRoute(itinerary)}
+                onClick={handleView}
                 style={{ flex: 1, height: '48px', fontSize: '14px' }}
             >
                 상세 보기
             </PrimaryButton>
             <PrimaryButton 
                 variant="primary"
-                onClick={async () => {
+                onClick={async (e) => {
+                    if (e) e.stopPropagation();
                     if (itinerary.steps) {
-                        onViewRoute(itinerary);
+                        handleView();
                         return;
                     }
-                    try {
-                        const res = await authFetch(`/api/missions/start/${itinerary.id}`, { method: 'POST' });
-                        if (res.ok) {
-                            const missionData = await res.json();
-                            onViewRoute(missionData);
-                        } else {
-                            onViewRoute(itinerary);
-                        }
-                    } catch (e) { 
-                        console.error("Could not start mission:", e); 
-                        onViewRoute(itinerary);
+                    if (onStartMission) {
+                        await onStartMission(itinerary.id);
                     }
                 }}
                 style={{ flex: 1.5, height: '48px', fontSize: '14px', whiteSpace: 'nowrap' }}
             >
                 {itinerary.steps ? '미션 계속하기' : '챌린지 참여하기'}
             </PrimaryButton>
-        </div>
+        </>
     );
 
     return (

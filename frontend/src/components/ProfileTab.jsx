@@ -13,23 +13,25 @@ const ProfileTab = () => {
   const { user, loading: userLoading, updateProfile } = useUserViewModel();
   const { logout } = useAuth();
   const [stamps, setStamps] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && !hasFetched) {
       setLoading(true);
       authFetch('/api/missions/me/stamps')
         .then(res => res.json())
         .then(data => {
-          setStamps(data);
+          setStamps(Array.isArray(data) ? data : []);
           setLoading(false);
+          setHasFetched(true);
         })
         .catch(err => {
           console.error("Error fetching stamps:", err);
           setLoading(false);
         });
     }
-  }, [user]);
+  }, [user, hasFetched]);
 
   return (
     <div style={{ paddingBottom: '40px' }}>
