@@ -1,0 +1,43 @@
+.ticket-base {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  box-shadow: var(--shadow-premium);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--surface-solid);
+}
+
+.ticket-header {
+  position: relative;
+  border-bottom: 2.5px dashed var(--border-color);
+  padding: 30px 24px;
+}
+
+.ticket-body {
+  padding: 0 24px;
+}
+
+.ticket-footer {
+  padding: 20px 24px;
+  background-color: #FAFAFB;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.ticket-cutout {
+  position: absolute;
+  bottom: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.ticket-cutout.left { left: -12px; }
+.ticket-cutout.right { right: -12px; }
+
+.surface-solid {
+  background-color: var(--surface-solid);
+}

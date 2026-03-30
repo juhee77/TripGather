@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { authFetch, apiUrl } from '../api/client';
+import ModalHeader from './UI/ModalHeader';
+import ModalFooter from './UI/ModalFooter';
+import FormInput from './UI/FormInput';
+import PrimaryButton from './UI/PrimaryButton';
 
 const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }) => {
   const { user: currentUser } = useUser();
@@ -141,46 +145,27 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
   if (!gathering) return null;
 
   return (
-    <div onClick={onClose} style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000,
-      display: 'flex', justifyContent: 'center', alignItems: 'flex-end'
-    }}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: 'var(--surface)', width: '100%', maxWidth: '480px', height: '85vh',
-        borderTopLeftRadius: '28px', borderTopRightRadius: '28px',
-        display: 'flex', flexDirection: 'column',
-        animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-        boxShadow: '0 -10px 40px rgba(0,0,0,0.1)', overflow: 'hidden'
-      }}>
-        {/* Header - Fixed */}
-        <div style={{ padding: '20px 24px 10px 24px', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--primary-orange)', fontWeight: 800 }}>GATHERING DETAIL</span>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {isHost && (
-                <>
-                  <button onClick={() => setIsEditing(true)} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', border: 'none', cursor: 'pointer' }}>
-                    <Edit size={18} color="var(--primary-orange)" />
-                  </button>
-                  <button onClick={handleDelete} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', border: 'none', cursor: 'pointer' }}>
-                    <Trash2 size={18} color="#FF6B6B" />
-                  </button>
-                </>
-              )}
-              <button onClick={onClose} style={{ padding: '8px', background: 'var(--bg-color)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
-                <X size={20} color="var(--text-primary)" />
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content-night" style={{ background: 'white' }} onClick={(e) => e.stopPropagation()}>
+        <ModalHeader 
+          title={gathering.title}
+          subtitle={`Host: ${typeof gathering.host === 'string' ? gathering.host : gathering.host?.name}`}
+          onClose={onClose}
+          actions={isHost && (
+            <>
+              <button onClick={() => setIsEditing(true)} className="icon-circle" style={{ background: 'var(--bg-color)', color: 'var(--primary-orange)' }}>
+                <Edit size={18} />
               </button>
-            </div>
-          </div>
+              <button onClick={handleDelete} className="icon-circle" style={{ background: 'var(--bg-color)', color: '#FF6B6B' }}>
+                <Trash2 size={18} />
+              </button>
+            </>
+          )}
+        />
 
-          <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>{gathering.title}</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600 }}>
-            Host: {typeof gathering.host === 'string' ? gathering.host : gathering.host?.name}
-          </p>
-
+        <div style={{ padding: '0 24px', borderBottom: '1px solid var(--border-color)' }}>
           {/* New Tabs */}
-          <div style={{ display: 'flex', gap: '20px', marginTop: '20px', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', gap: '20px' }}>
             {['정보', '멤버', `대화 (${comments.length})`].map((tab) => {
               const tabName = tab.startsWith('대화') ? '대화' : tab;
               const isActive = activeTab === tabName;
@@ -189,14 +174,15 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
                   key={tab}
                   onClick={() => setActiveTab(tabName)}
                   style={{
-                    padding: '8px 4px',
+                    padding: '16px 4px',
                     fontSize: '15px',
                     fontWeight: isActive ? 800 : 600,
                     color: isActive ? 'var(--primary-orange)' : 'var(--text-muted)',
                     borderBottom: isActive ? '2px solid var(--primary-orange)' : '2px solid transparent',
                     background: 'none',
                     borderRadius: 0,
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    cursor: 'pointer'
                   }}
                 >
                   {tab}
@@ -212,42 +198,32 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
             <div className="animate-fade">
               {isEditing ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '20px', background: 'var(--bg-color)', borderRadius: '20px' }}>
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary-orange)', display: 'block', marginBottom: '8px' }}>TITLE</label>
-                    <input 
-                      type="text" value={editData.title} 
-                      onChange={e => setEditData({...editData, title: e.target.value})}
-                      style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontWeight: 600 }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary-orange)', display: 'block', marginBottom: '8px' }}>SCHEDULE</label>
-                    <input 
-                      type="text" value={editData.dates} 
-                      onChange={e => setEditData({...editData, dates: e.target.value})}
-                      style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontWeight: 600 }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary-orange)', display: 'block', marginBottom: '8px' }}>LOCATION</label>
-                    <input 
-                      type="text" value={editData.location} 
-                      onChange={e => setEditData({...editData, location: e.target.value})}
-                      style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontWeight: 600 }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary-orange)', display: 'block', marginBottom: '8px' }}>MAX PARTICIPANTS</label>
-                    <input 
-                      type="number" value={editData.maxJoining} 
-                      onChange={e => setEditData({...editData, maxJoining: parseInt(e.target.value)})}
-                      style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'white', color: 'var(--text-primary)', fontWeight: 600 }}
-                    />
-                  </div>
+                  <FormInput 
+                    label="TITLE"
+                    value={editData.title}
+                    onChange={e => setEditData({...editData, title: e.target.value})}
+                  />
+                  <FormInput 
+                    label="SCHEDULE"
+                    icon={Calendar}
+                    value={editData.dates}
+                    onChange={e => setEditData({...editData, dates: e.target.value})}
+                  />
+                  <FormInput 
+                    label="LOCATION"
+                    icon={MapPin}
+                    value={editData.location}
+                    onChange={e => setEditData({...editData, location: e.target.value})}
+                  />
+                  <FormInput 
+                    label="MAX PARTICIPANTS"
+                    icon={Users}
+                    type="number"
+                    value={editData.maxJoining}
+                    onChange={e => setEditData({...editData, maxJoining: parseInt(e.target.value)})}
+                  />
                   <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                    <button onClick={handleUpdate} style={{ flex: 1, padding: '14px', background: 'var(--primary-gradient)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}>
-                      저장하기
-                    </button>
+                    <PrimaryButton onClick={handleUpdate} style={{ flex: 1, height: '54px' }}>저장하기</PrimaryButton>
                     <button onClick={() => setIsEditing(false)} style={{ flex: 1, padding: '14px', background: 'var(--bg-color)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}>
                       취소
                     </button>

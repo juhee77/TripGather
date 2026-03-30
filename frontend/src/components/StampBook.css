@@ -180,7 +180,7 @@
   background: white;
   color: var(--primary-orange);
   padding: 4px 8px;
-  borderRadius: 12px;
+  border-radius: 12px;
 }
 
 .stamp-photo {

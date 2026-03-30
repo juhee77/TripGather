@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, MapPin, ChevronRight, Trash2, Edit3, Navigation, CheckCircle, Camera, Check } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { authFetch } from '../api/client';
+import ModalHeader from './UI/ModalHeader';
+import ModalFooter from './UI/ModalFooter';
+import PrimaryButton from './UI/PrimaryButton';
+import FormInput from './UI/FormInput';
 
 const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
     const [isVisible, setIsVisible] = useState(false);
@@ -104,60 +108,27 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
     };
 
     return (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(20px)', zIndex: 2000,
-            display: 'flex', justifyContent: 'center', alignItems: 'center'
-        }}>
-            <div className="glass-dark" style={{
-                width: '100%', maxWidth: '480px', height: '100vh',
-                position: 'relative', display: 'flex', flexDirection: 'column',
-                transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-                transform: isVisible ? 'translateY(0)' : 'translateY(100%)',
-                color: 'white', overflow: 'hidden',
-                border: 'none',
+        <div className="modal-overlay">
+            <div className="modal-content-night" style={{ 
+                height: '100vh',
                 borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0'
             }}>
-                <header style={{
-                    padding: '20px 24px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    background: 'rgba(13, 13, 25, 0.5)',
-                    backdropFilter: 'blur(10px)'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        <div style={{ 
-                            width: '40px', height: '40px', borderRadius: 'var(--radius-full)', 
-                            background: 'var(--primary-gradient)', padding: '2px',
-                            boxShadow: '0 0 15px rgba(255, 92, 0, 0.3)'
-                        }}>
-                            <div style={{ width: '100%', height: '100%', borderRadius: 'var(--radius-full)', background: '#0D0D19', overflow: 'hidden' }}>
-                                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${localItinerary.author || localItinerary.itineraryAuthor}`} alt="author" style={{ width: '100%', height: '100%' }} />
-                            </div>
-                        </div>
-                        <div>
-                            <div style={{ fontSize: '15px', fontWeight: 800 }}>{localItinerary.author || localItinerary.itineraryAuthor}</div>
-                            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>TRAVEL LOG • JOURNEY</div>
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {isAuthor && !isMission && (
-                            <>
-                                <button onClick={onEdit} className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.1)' }}>
-                                    <Edit3 size={18} color="white" />
-                                </button>
-                                <button onClick={onDelete} className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,107,107,0.1)' }}>
-                                    <Trash2 size={18} color="#FF6B6B" />
-                                </button>
-                            </>
-                        )}
-                        <button onClick={onClose} className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.1)' }}>
-                            <X size={20} color="white" />
-                        </button>
-                    </div>
-                </header>
+                <ModalHeader 
+                    title={localItinerary.author || localItinerary.itineraryAuthor}
+                    subtitle="TRAVEL LOG • JOURNEY"
+                    onClose={onClose}
+                    dark
+                    actions={isAuthor && !isMission && (
+                        <>
+                            <button onClick={onEdit} className="icon-circle glass" style={{ width: '40px', height: '40px' }}>
+                                <Edit3 size={18} color="white" />
+                            </button>
+                            <button onClick={onDelete} className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,107,107,0.1)' }}>
+                                <Trash2 size={18} color="#FF6B6B" />
+                            </button>
+                        </>
+                    )}
+                />
 
                 <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px 24px' }}>
                     <div style={{ marginBottom: '32px', animation: 'fadeIn 0.6s ease-out' }}>
@@ -316,25 +287,24 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                     ))}
                 </div>
 
-                <footer className="glass" style={{ padding: '24px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '16px', background: 'rgba(13, 13, 25, 0.8)' }}>
+                <ModalFooter dark>
                     {isAuthor && !isMission ? (
                         <div style={{ display: 'flex', gap: '14px' }}>
-                            <button onClick={onEdit} className="glass" style={{ flex: 1, height: '60px', borderRadius: 'var(--radius-md)', color: 'white', fontWeight: 800, fontSize: '15px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', border: '1px solid rgba(255,255,255,0.2)' }}>
-                                <Edit3 size={18} /> EDIT JOURNEY
-                            </button>
-                            <button onClick={onDelete} className="glass" style={{ width: '60px', height: '60px', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'center', alignItems: 'center', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                            <PrimaryButton onClick={onEdit} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--night-border)' }}>
+                                <Edit3 size={18} style={{ marginRight: '8px' }} /> EDIT JOURNEY
+                            </PrimaryButton>
+                            <button onClick={onDelete} className="glass" style={{ width: '60px', height: '60px', borderRadius: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.05)' }}>
                                 <Trash2 size={20} color="#EF4444" />
                             </button>
                         </div>
                     ) : isMission ? (
                         progressPercent < 100 ? (
-                            <button disabled className="primary-btn" style={{ width: '100%', height: '60px', borderRadius: 'var(--radius-md)', fontSize: '15px', gap: '12px', background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', boxShadow: 'none' }}>
+                            <PrimaryButton disabled style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--night-text-muted)' }}>
                                 COMPLETE ALL STOPS FIRST
-                            </button>
+                            </PrimaryButton>
                         ) : (
-                            <button onClick={async () => {
+                            <PrimaryButton onClick={async () => {
                                 try {
-                                    // localItinerary.id is the missionId in mission context
                                     const res = await authFetch(`/api/missions/complete/${localItinerary.id}`, { method: 'POST' });
                                     if (res.ok) {
                                         alert("축하합니다! 미션을 모두 완료하여 완료 처리되었습니다. 🏆✨");
@@ -346,15 +316,12 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                                 } catch (e) {
                                     console.error("Could not complete mission:", e);
                                 }
-                            }} className="primary-btn" style={{ 
-                                width: '100%', height: '60px', borderRadius: 'var(--radius-md)', 
-                                fontSize: '18px', gap: '12px', background: '#51CF66', color: '#0D0D19' 
-                            }}>
+                            }} style={{ background: '#51CF66', color: '#0D0D19' }}>
                                 🏆 미션 최종 완료하기 <ChevronRight size={20} />
-                            </button>
+                            </PrimaryButton>
                         )
                     ) : (
-                        <button 
+                        <PrimaryButton 
                             onClick={async () => {
                                 try {
                                     const res = await authFetch(`/api/missions/start/${localItinerary.id}`, { method: 'POST' });
@@ -366,16 +333,11 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                                     console.error("Could not start mission from modal:", e);
                                 }
                             }}
-                            className="primary-btn" 
-                            style={{ 
-                                width: '100%', height: '60px', borderRadius: 'var(--radius-md)', fontSize: '17px', gap: '12px',
-                                boxShadow: '0 15px 30px rgba(255, 92, 0, 0.4)'
-                            }}
                         >
                             🚀 이 챌린지에 참여하기
-                        </button>
+                        </PrimaryButton>
                     )}
-                </footer>
+                </ModalFooter>
             </div>
         </div>
     );
