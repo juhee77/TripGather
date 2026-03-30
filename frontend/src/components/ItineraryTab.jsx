@@ -13,13 +13,25 @@ const ItineraryTab = ({ onMissionStart }) => {
         actions: { createItinerary, updateItinerary, deleteItinerary, refreshItineraries }
     } = useItinerariesViewModel();
 
-    const { activeMissions } = useMissionsViewModel();
-
+    const { 
+        activeMissions, 
+        actions: { startMission: apiStartMission } 
+    } = useMissionsViewModel();
+ 
     // Map itineraries to include mission data if already participating
     const mappedItineraries = itineraries.map(it => {
         const mission = activeMissions.find(m => m.itineraryId === it.id);
         return mission ? { ...it, ...mission, isParticipating: true } : it;
     });
+
+    const handleStartMission = async (itineraryId) => {
+        try {
+            await apiStartMission(itineraryId);
+            if (onMissionStart) onMissionStart();
+        } catch (err) {
+            console.error("Failed to start mission:", err);
+        }
+    };
 
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [selectedItinerary, setSelectedItinerary] = useState(null);
@@ -109,6 +121,7 @@ const ItineraryTab = ({ onMissionStart }) => {
                             <TicketCard
                                 itinerary={it}
                                 onViewRoute={(itinerary) => setSelectedItinerary(itinerary)}
+                                onStartMission={handleStartMission}
                             />
                         </div>
                     ))}

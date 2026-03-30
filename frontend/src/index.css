@@ -100,6 +100,7 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto; /* Ensure events are captured */
 }
 
 button:active {
@@ -117,7 +118,7 @@ button:active {
 
 .secondary-btn {
   background: #F1F3F5;
-  color: var(--text-main);
+  color: var(--text-primary);
   padding: 12px 24px;
   border-radius: var(--radius-md);
   font-weight: 700;

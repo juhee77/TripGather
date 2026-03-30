@@ -9,8 +9,8 @@ This skill defines the global rules and communication standards for all contribu
 
 ## Communication Standard
 
-1.  **Language**: All AI responses, explanations, and summaries MUST be provided in **Korean (한국어)**. This ensures consistency for the project owner.
-2.  **Code Comments**: Code-level comments should remain in English for international developer compatibility, but task descriptions and high-level summaries should be in Korean.
+1.  **Language**: All AI responses, explanations, summaries, and **AI-generated documents (Artifacts, Tasks, Plans, Walkthroughs)** MUST be provided in **Korean (한국어)**. This ensures consistency for the project owner.
+2.  **Code Comments**: Code-level comments should remain in English for international developer compatibility, but documentation and high-level summaries should be in Korean.
 
 ## Project Structure Rules
 
