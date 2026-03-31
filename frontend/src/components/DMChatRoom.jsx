@@ -101,33 +101,45 @@ const DMChatRoom = ({ otherUser, onBack }) => {
         setInput('');
     };
 
+    if (!currentUser || !otherUser) {
+        return (
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'white', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="animate-pulse" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>메시지 동기화 중...</div>
+            </div>
+        );
+    }
+
     return (
         <div className="animate-fade" style={{ 
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-            background: 'var(--bg-dark)', zIndex: 300, display: 'flex', flexDirection: 'column' 
+            background: 'var(--bg-color)', zIndex: 300, display: 'flex', flexDirection: 'column',
+            overflow: 'hidden'
         }}>
-            {/* Header */}
-            <header className="glass" style={{ 
-                padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '0 0 24px 24px'
+            {/* Premium DM Header */}
+            <header className="glass-premium" style={{ 
+                padding: '20px', display: 'flex', alignItems: 'center', gap: '16px',
+                borderBottom: '1px solid var(--border-color)',
+                borderRadius: '0 0 24px 24px',
+                zIndex: 310, background: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(20px)'
             }}>
-                <button onClick={onBack} className="icon-circle glass" style={{ width: '40px', height: '40px' }}>
-                    <ArrowLeft size={20} color="white" />
+                <button onClick={onBack} className="icon-circle glass" style={{ width: '42px', height: '42px', border: '1px solid var(--border-color)' }}>
+                    <ArrowLeft size={20} color="var(--text-primary)" />
                 </button>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ 
-                        width: '40px', height: '40px', borderRadius: '14px', 
+                        width: '42px', height: '42px', borderRadius: '14px', 
                         background: otherUser.profileImageUrl ? `url(${otherUser.profileImageUrl}) center/cover` : 'var(--primary-gradient)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'white'
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'white',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                     }}>
                         {!otherUser.profileImageUrl && otherUser.name[0]}
                     </div>
                     <div>
-                        <h3 className="text-s" style={{ color: 'white', fontWeight: 900, marginBottom: '2px' }}>{otherUser.name}</h3>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <h3 style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '16px', margin: 0 }}>{otherUser.name}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ADE80' }}></span>
-                            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>대화 가능</span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>1:1 SECURE LINE</span>
                         </div>
                     </div>
                 </div>
@@ -137,7 +149,7 @@ const DMChatRoom = ({ otherUser, onBack }) => {
             <div 
                 ref={scrollRef}
                 className="hide-scrollbar"
-                style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '16px' }}
+                style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}
             >
                 {messages.map((m, idx) => {
                     const isMe = m.senderEmail === currentUser.email;
@@ -146,24 +158,28 @@ const DMChatRoom = ({ otherUser, onBack }) => {
                             display: 'flex', 
                             flexDirection: 'column', 
                             alignItems: isMe ? 'flex-end' : 'flex-start',
-                            animation: 'bubbleUp 0.3s ease-out'
+                            animation: 'bubbleUp 0.3s ease-out',
+                            marginBottom: '4px'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
-                                <div className={isMe ? 'glass-premium' : 'glass'} style={{ 
+                                <div className={isMe ? 'glass-premium' : ''} style={{ 
                                     padding: '12px 18px', 
-                                    borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                                    maxWidth: '100%',
-                                    background: isMe ? 'var(--primary-gradient)' : 'rgba(255,255,255,0.05)',
-                                    border: isMe ? 'none' : '1px solid rgba(255,255,255,0.05)',
-                                    boxShadow: isMe ? '0 8px 20px rgba(255, 92, 0, 0.2)' : 'none'
+                                    borderRadius: isMe ? '20px 20px 4px 20px' : '4px 20px 20px 20px',
+                                    maxWidth: '85%',
+                                    background: isMe ? 'var(--primary-gradient)' : 'white',
+                                    border: isMe ? 'none' : '1px solid var(--border-color)',
+                                    boxShadow: isMe ? '0 8px 20px rgba(255, 92, 0, 0.15)' : '0 2px 8px rgba(0,0,0,0.02)',
+                                    position: 'relative'
                                 }}>
-                                    <p style={{ fontSize: '14px', color: 'white', margin: 0, lineHeight: '1.5' }}>{m.content}</p>
+                                    <p style={{ fontSize: '14px', color: isMe ? 'white' : 'var(--text-primary)', margin: 0, lineHeight: '1.5', fontWeight: 500, wordBreak: 'break-word' }}>
+                                        {m.content}
+                                    </p>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', gap: '2px' }}>
                                     {isMe && m.isRead && (
                                         <span style={{ fontSize: '10px', color: 'var(--primary-orange)', fontWeight: 800 }}>읽음</span>
                                     )}
-                                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
                                         {formatTime(m.sentAt)}
                                     </span>
                                 </div>
@@ -173,18 +189,18 @@ const DMChatRoom = ({ otherUser, onBack }) => {
                 })}
             </div>
 
-            {/* Input Area */}
-            <footer style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(13, 13, 25, 0.8)', backdropFilter: 'blur(20px)' }}>
-                <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px' }}>
+            {/* Premium Input Area */}
+            <footer style={{ padding: '16px 20px 32px', borderTop: '1px solid var(--border-color)', background: 'white', zIndex: 310 }}>
+                <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <div style={{ flex: 1, position: 'relative' }}>
                         <input 
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="메시지를 입력하세요..."
-                            className="glass"
+                            placeholder="비밀 메시지 입력..."
                             style={{ 
-                                width: '100%', padding: '16px 20px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)',
-                                background: 'rgba(255,255,255,0.02)', color: 'white', outline: 'none', fontSize: '15px' 
+                                width: '100%', padding: '16px 20px', borderRadius: '18px', border: '1px solid var(--border-color)',
+                                background: 'var(--bg-color)', color: 'var(--text-primary)', outline: 'none', fontSize: '15px',
+                                fontWeight: 600
                             }}
                         />
                     </div>
@@ -192,7 +208,7 @@ const DMChatRoom = ({ otherUser, onBack }) => {
                         type="submit" 
                         disabled={!input.trim()}
                         className="primary-btn" 
-                        style={{ width: '56px', height: '52px', borderRadius: '16px', padding: 0 }}
+                        style={{ width: '52px', height: '52px', borderRadius: '18px', padding: 0, boxShadow: '0 8px 16px rgba(255, 92, 0, 0.2)' }}
                     >
                         <Send size={20} />
                     </button>
@@ -201,8 +217,8 @@ const DMChatRoom = ({ otherUser, onBack }) => {
 
             <style jsx>{`
                 @keyframes bubbleUp {
-                    from { transform: scale(0.95); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
+                    from { transform: translateY(10px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
                 }
             `}</style>
         </div>
