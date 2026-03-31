@@ -8,4 +8,5 @@ public interface DirectMessageUseCase {
     List<DirectMessage> getChatHistory(String email1, String email2);
     void markAsRead(Long dmId);
     void markMessagesAsRead(String myEmail, String otherUserEmail);
+    List<com.example.demo.domain.User> getChatPartners(String myEmail);
 }

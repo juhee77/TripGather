@@ -49,6 +49,14 @@ public class DirectMessageController {
                 .toList();
     }
 
+    @GetMapping("/partners")
+    public List<com.example.demo.dto.UserResponse> getMyChatPartners(Principal principal) {
+        String myEmail = principal.getName();
+        return dmService.getChatPartners(myEmail).stream()
+                .map(com.example.demo.dto.UserResponse::from)
+                .toList();
+    }
+
     @PutMapping("/read/{otherUserEmail}")
     public void markAsRead(@PathVariable String otherUserEmail, Principal principal) {
         String myEmail = principal.getName();

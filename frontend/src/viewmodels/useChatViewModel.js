@@ -60,7 +60,8 @@ export const useChatViewModel = (gathering, currentUser) => {
 
     const chatMessage = {
       content: input,
-      senderEmail: currentUser.email
+      senderEmail: currentUser.email,
+      senderName: currentUser.name
     };
 
     stompClient.publish({

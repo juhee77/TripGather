@@ -63,4 +63,8 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
             }
         });
     }
+
+    public List<User> getChatPartners(String myEmail) {
+        return dmRepository.findChatPartners(myEmail);
+    }
 }
