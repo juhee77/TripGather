@@ -16,6 +16,11 @@ const ChatRepository = {
 
   markDMAsRead: async (otherUserEmail) => {
     await axios.put(`${API_BASE_URL}/dm/read/${otherUserEmail}`);
+  },
+  
+  getDMPartners: async () => {
+    const response = await axios.get(`${API_BASE_URL}/dm/partners`);
+    return response.data;
   }
 };
 

@@ -78,7 +78,7 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                                 {showName && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px', marginLeft: '12px' }}>
                                         <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                                            {m.senderName}
+                                            {m.senderName || '익명 요원'}
                                         </span>
                                         {isHost(m.senderEmail) && <Shield size={10} color="var(--primary-orange)" />}
                                     </div>

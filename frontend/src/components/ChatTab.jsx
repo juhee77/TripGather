@@ -21,6 +21,26 @@ const ChatTab = ({ joinedGatherings }) => {
         return <ChatRoom gathering={selectedRoom} onBack={() => setSelectedRoom(null)} onStartDM={handleStartDM} />;
     }
 
+    const [dmPartners, setDmPartners] = useState([]);
+    const [loadingDMs, setLoadingDMs] = useState(false);
+
+    React.useEffect(() => {
+        if (chatType === 'dm') {
+            setLoadingDMs(true);
+            import('../repositories/ChatRepository').then(repo => {
+                repo.default.getDMPartners()
+                    .then(data => {
+                        setDmPartners(data || []);
+                        setLoadingDMs(false);
+                    })
+                    .catch(err => {
+                        console.error("Error fetching DM partners:", err);
+                        setLoadingDMs(false);
+                    });
+            });
+        }
+    }, [chatType]);
+
     return (
         <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Header / Search Area */}
@@ -127,14 +147,62 @@ const ChatTab = ({ joinedGatherings }) => {
                         </div>
                     ))
                 ) : (
-                    /* DM List Placeholder */
-                    <div className="glass" style={{ 
-                        textAlign: 'center', padding: '60px 24px', borderRadius: '32px',
-                        border: '1px dashed rgba(255,255,255,0.1)'
-                    }}>
-                        <div style={{ fontSize: '40px', marginBottom: '16px' }}>👤</div>
-                        <p style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>최근 DM 내역이 없습니다.<br/>모임 참여자 목록에서 대화를 시작해 보세요!</p>
-                    </div>
+                    <>
+                        {dmPartners.map((partner, idx) => (
+                            <div 
+                                key={partner.email}
+                                onClick={() => handleStartDM(partner)}
+                                className="glass"
+                                style={{
+                                    padding: '20px',
+                                    borderRadius: '24px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '16px',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s ease',
+                                    animation: `slideUp 0.4s ease-out forwards`,
+                                    animationDelay: `${idx * 0.05}s`,
+                                    opacity: 0,
+                                    border: '1px solid rgba(255,255,255,0.05)'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                            >
+                                <div style={{ 
+                                    width: '56px', height: '56px', borderRadius: '18px', 
+                                    background: partner.profileImageUrl ? `url(${partner.profileImageUrl}) center/cover` : 'var(--bg-color)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0,
+                                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    fontSize: '20px', fontWeight: 800, color: 'var(--text-muted)'
+                                }}>
+                                    {!partner.profileImageUrl && partner.name[0]}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                        <h3 className="text-s" style={{ color: 'var(--text-primary)', fontWeight: 800, margin: 0 }}>{partner.name}</h3>
+                                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>메시지를 보냈습니다.</span>
+                                    </div>
+                                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>{partner.email}</p>
+                                </div>
+                                <ChevronRight size={20} color="var(--text-muted)" />
+                            </div>
+                        ))}
+                        {!loadingDMs && dmPartners.length === 0 && (
+                            <div className="glass" style={{ 
+                                textAlign: 'center', padding: '60px 24px', borderRadius: '32px',
+                                border: '1px dashed rgba(255,255,255,0.1)'
+                            }}>
+                                <div style={{ fontSize: '40px', marginBottom: '16px' }}>👤</div>
+                                <p style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>최근 DM 내역이 없습니다.<br/>모임 참여자 목록에서 대화를 시작해 보세요!</p>
+                            </div>
+                        )}
+                        {loadingDMs && (
+                            <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.3)' }}>DM 목록을 불러오는 중...</div>
+                        )}
+                    </>
                 )}
 
                 {chatType === 'group' && joinedGatherings.length === 0 && (

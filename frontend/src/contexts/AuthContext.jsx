@@ -5,14 +5,25 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [loading, setLoading] = useState(true);
+
+  const saveAuth = (token, userData) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setToken(token);
+    setUser(userData);
+  };
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setToken(null);
     setUser(null);
-    window.location.href = '/login'; // Force app reload to clear UserContext and other transient state
+    window.location.href = '/login'; 
   }, []);
 
   const login = async (email, password) => {
@@ -34,9 +45,7 @@ export function AuthProvider({ children }) {
     }
 
     const data = await res.json();
-    localStorage.setItem('token', data.accessToken);
-    setToken(data.accessToken);
-    setUser({ id: data.userId, name: data.name, email: data.email });
+    saveAuth(data.accessToken, { id: data.userId, name: data.name, email: data.email });
     return data;
   };
 
@@ -59,9 +68,7 @@ export function AuthProvider({ children }) {
     }
 
     const data = await res.json();
-    localStorage.setItem('token', data.accessToken);
-    setToken(data.accessToken);
-    setUser({ id: data.userId, name: data.name, email: data.email });
+    saveAuth(data.accessToken, { id: data.userId, name: data.name, email: data.email });
     return data;
   };
 
@@ -74,7 +81,9 @@ export function AuthProvider({ children }) {
           });
           if (res.ok) {
             const userData = await res.json();
-            setUser({ id: userData.id, name: userData.name, email: userData.email, profileImageUrl: userData.profileImageUrl });
+            const updatedUser = { id: userData.id, name: userData.name, email: userData.email, profileImageUrl: userData.profileImageUrl };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
           } else if (res.status === 401) {
             logout();
           }

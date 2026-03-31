@@ -261,11 +261,12 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
           </div>
 
           <button type="submit" style={{ 
-            background: 'var(--primary)', color: 'white',
+            background: 'var(--primary-gradient)', color: 'white',
             border: 'none', cursor: 'pointer',
-            height: '60px', borderRadius: '20px', fontSize: '18px', fontWeight: 700, 
-            marginTop: '16px', boxShadow: '0 8px 16px rgba(255, 123, 84, 0.3)',
-            transition: 'transform 0.1s'
+            height: '60px', borderRadius: '20px', fontSize: '18px', fontWeight: 800, 
+            marginTop: '16px', boxShadow: '0 8px 24px rgba(255, 92, 0, 0.3)',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}
           onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
           onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
