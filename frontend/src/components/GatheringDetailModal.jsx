@@ -126,19 +126,21 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm("정말로 이 모임을 삭제하시겠습니까?")) return;
+  const handleLeave = async () => {
+    if (!window.confirm("정말로 이 모임에서 나가시겠습니까?")) return;
     try {
-      const res = await authFetch(`/api/gatherings/${gathering.id}`, {
-        method: "DELETE"
+      const res = await authFetch(`/api/gatherings/${gathering.id}/leave`, {
+        method: "POST"
       });
       if (res.ok) {
-        alert("모임이 삭제되었습니다.");
-        onDelete && onDelete(gathering.id);
+        alert("모임에서 탈퇴되었습니다.");
+        onUpdate && onUpdate();
         onClose();
+      } else {
+        alert("탈퇴 처리에 실패했습니다.");
       }
     } catch (err) {
-      console.error("Error deleting gathering", err);
+      console.error("Error leaving gathering", err);
     }
   };
 
@@ -151,7 +153,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
           title={gathering.title}
           subtitle={`Host: ${typeof gathering.host === 'string' ? gathering.host : gathering.host?.name}`}
           onClose={onClose}
-          actions={isHost && (
+          actions={isHost ? (
             <>
               <button onClick={() => setIsEditing(true)} className="icon-circle" style={{ background: 'var(--bg-color)', color: 'var(--primary-orange)' }}>
                 <Edit size={18} />
@@ -160,7 +162,11 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
                 <Trash2 size={18} />
               </button>
             </>
-          )}
+          ) : (myStatus === 'APPROVED' && (
+            <button onClick={handleLeave} title="모임 나가기" className="icon-circle" style={{ background: 'var(--bg-color)', color: '#FF6B6B' }}>
+              <XCircle size={18} />
+            </button>
+          ))}
         />
 
         <div style={{ padding: '0 24px', borderBottom: '1px solid var(--border-color)' }}>

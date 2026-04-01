@@ -23,6 +23,8 @@ const DMChatRoom = ({ otherUser, onBack }) => {
     };
 
     useEffect(() => {
+        if (!otherUser?.email || !currentUser?.email) return;
+
         // DM 내역 불러오기
         authFetch(`/api/dm/history/${otherUser.email}`)
             .then(res => res.json())
@@ -31,6 +33,7 @@ const DMChatRoom = ({ otherUser, onBack }) => {
 
         // 읽음 처리 API 호출
         const markAsRead = () => {
+            if (!otherUser?.email) return;
             authFetch(`/api/dm/read/${otherUser.email}`, {
                 method: 'PUT'
             }).catch(err => console.error("Mark as read error:", err));
@@ -75,7 +78,7 @@ const DMChatRoom = ({ otherUser, onBack }) => {
         return () => {
             if (client) client.deactivate();
         };
-    }, [otherUser.email, currentUser.email]);
+    }, [otherUser?.email, currentUser?.email]);
 
     useEffect(() => {
         if (scrollRef.current) {

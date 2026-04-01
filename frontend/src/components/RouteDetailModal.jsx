@@ -107,6 +107,24 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
         }
     };
 
+    const handleLeaveRequest = async () => {
+        if (!window.confirm("정말로 이 미션을 중단하고 나가시겠습니까? 호스트의 승인 후 최종 탈퇴 처리됩니다.")) return;
+        try {
+            const targetMissionId = localItinerary.itineraryId ? localItinerary.id : (localItinerary.missionId || localItinerary.id);
+            const res = await authFetch(`/api/missions/${targetMissionId}/leave/request`, {
+                method: 'POST'
+            });
+            if (res.ok) {
+                alert("탈퇴 요청을 보냈습니다. 호스트가 승인하면 목록에서 사라집니다.");
+                onClose();
+            } else {
+                alert("탈퇴 요청에 실패했습니다.");
+            }
+        } catch (e) {
+            console.error("Error requesting leave", e);
+        }
+    };
+
     return (
         <div className="modal-overlay">
             <div className="modal-content-night" style={{ 
@@ -118,15 +136,21 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                     subtitle="TRAVEL LOG • JOURNEY"
                     onClose={onClose}
                     dark
-                    actions={isAuthor && !isMission && (
+                    actions={isAuthor ? (
                         <>
-                            <button onClick={onEdit} className="icon-circle glass" style={{ width: '40px', height: '40px' }}>
-                                <Edit3 size={18} color="white" />
-                            </button>
+                            {!isMission && (
+                                <button onClick={onEdit} className="icon-circle glass" style={{ width: '40px', height: '40px' }}>
+                                    <Edit3 size={18} color="white" />
+                                </button>
+                            )}
                             <button onClick={onDelete} className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,107,107,0.1)' }}>
                                 <Trash2 size={18} color="#FF6B6B" />
                             </button>
                         </>
+                    ) : isMission && (
+                        <button onClick={handleLeaveRequest} title="참여 취소 요청" className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,107,107,0.1)' }}>
+                            <Trash2 size={18} color="#FF6B6B" />
+                        </button>
                     )}
                 />
 

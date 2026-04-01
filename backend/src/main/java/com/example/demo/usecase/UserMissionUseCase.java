@@ -11,4 +11,7 @@ public interface UserMissionUseCase {
     UserMissionStepResponse completeStep(Long missionId, Long stepId, String memo, String photoUrl, String email);
     List<UserMissionResponse> getMyMissions(String email);
     List<StampResponse> getMyStamps(String email);
+    void requestLeave(Long missionId, String email);
+    List<UserMissionResponse> getLeaveRequests(String hostEmail);
+    void approveLeave(Long missionId, String hostEmail);
 }
