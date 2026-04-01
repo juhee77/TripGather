@@ -13,7 +13,6 @@
 
 ## 📸 주요 화면 (Key Features)
 
-````carousel
 ![Feed](./docs/assets/screenshots/feed.png)
 **[발견]** 주변에서 열리는 다양한 모임과 여행 일정을 피드 형태로 구경합니다.
 <!-- slide -->
@@ -31,7 +30,6 @@
 <!-- slide -->
 ![Passport](./docs/assets/screenshots/passport.png)
 **[나의 여권]** 참여한 미션과 챌린지 성취도에 따라 스탬프를 모으고 등급을 높입니다.
-````
 
 ---
 
