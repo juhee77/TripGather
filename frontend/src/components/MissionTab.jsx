@@ -20,7 +20,7 @@ const MissionTab = ({
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-      {activeMissions?.map((mission) => {
+      {activeMissions?.filter(m => m.status === 'ACTIVE').map((mission) => {
         const isCompleted = mission?.status === 'COMPLETED';
         const completedSteps = mission?.steps?.filter(s => s.isCompleted || s.completed).length || 0;
         const totalSteps = mission?.steps?.length || 0;

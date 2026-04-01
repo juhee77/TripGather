@@ -153,4 +153,50 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
                 .map(StampResponse::from)
                 .toList();
     }
+
+    @Transactional
+    public void requestLeave(Long missionId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        UserMission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new IllegalArgumentException("Mission not found"));
+        
+        if (!mission.getUser().getId().equals(user.getId())) {
+            throw new IllegalStateException("본인의 챌린지만 중단 요청을 할 수 있습니다.");
+        }
+        
+        mission.setStatus("LEAVE_REQUESTED");
+        missionRepository.save(mission);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserMissionResponse> getLeaveRequests(String hostEmail) {
+        User host = userRepository.findByEmail(hostEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Host not found"));
+        
+        return missionRepository.findLeaveRequestsByHost(host.getName()).stream()
+                .map(mission -> {
+                    UserMissionResponse res = UserMissionResponse.from(mission);
+                    res.setSteps(stepRepository.findByUserMissionId(mission.getId()).stream()
+                            .map(UserMissionStepResponse::from).collect(Collectors.toList()));
+                    return res;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void approveLeave(Long missionId, String hostEmail) {
+        User host = userRepository.findByEmail(hostEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Host not found"));
+        
+        UserMission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new IllegalArgumentException("Mission not found"));
+        
+        // Itinerary.author가 작성자의 이름(Name)이라고 가정
+        if (!mission.getItinerary().getAuthor().equals(host.getName())) {
+            throw new IllegalStateException("해당 일정의 작성자만 승인할 수 있습니다.");
+        }
+        
+        missionRepository.delete(mission);
+    }
 }

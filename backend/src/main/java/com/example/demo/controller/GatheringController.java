@@ -58,6 +58,12 @@ public class GatheringController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/{id}/leave")
+    public ResponseEntity<Void> leaveGathering(@PathVariable Long id) {
+        gatheringService.leaveGathering(id);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/{id}/members/{userId}/approve")
     public ResponseEntity<Void> approveMember(@PathVariable Long id, @PathVariable Long userId) {
         gatheringService.approveMember(id, userId);

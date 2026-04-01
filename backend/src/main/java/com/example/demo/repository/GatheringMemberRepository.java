@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface GatheringMemberRepository extends JpaRepository<GatheringMember, Long> {
     Optional<GatheringMember> findByGatheringIdAndUserId(Long gatheringId, Long userId);
+    long countByGatheringIdAndStatus(Long gatheringId, MemberStatus status);
 }

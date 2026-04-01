@@ -12,15 +12,17 @@ export const useChatViewModel = (gathering, currentUser) => {
   const scrollRef = useRef(null);
 
   const fetchHistory = useCallback(async () => {
+    if (!gathering?.id) return;
     try {
       const history = await ChatRepository.getChatHistory(gathering.id);
       setMessages(history);
     } catch (err) {
       console.error("History fetch error:", err);
     }
-  }, [gathering.id]);
+  }, [gathering?.id]);
 
   useEffect(() => {
+    if (!gathering?.id) return;
     fetchHistory();
 
     const token = localStorage.getItem('token');
@@ -46,7 +48,7 @@ export const useChatViewModel = (gathering, currentUser) => {
     return () => {
       if (client) client.deactivate();
     };
-  }, [gathering.id, fetchHistory]);
+  }, [gathering?.id, fetchHistory]);
 
   useEffect(() => {
     if (scrollRef.current) {

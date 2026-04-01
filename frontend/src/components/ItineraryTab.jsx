@@ -20,7 +20,7 @@ const ItineraryTab = ({ onMissionStart }) => {
  
     // Map itineraries to include mission data if already participating
     const mappedItineraries = itineraries.map(it => {
-        const mission = activeMissions.find(m => m.itineraryId === it.id);
+        const mission = activeMissions.find(m => m.itineraryId === it.id && m.status !== 'COMPLETED');
         return mission ? { ...it, ...mission, isParticipating: true } : it;
     });
 

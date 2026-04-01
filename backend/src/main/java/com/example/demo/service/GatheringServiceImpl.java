@@ -140,6 +140,32 @@ public class GatheringServiceImpl implements GatheringUseCase {
         return gatheringRepository.findByHostEmailOrderByCreatedAtDesc(email);
     }
 
+    @Transactional
+    public void leaveGathering(Long id) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        
+        GatheringMember member = gatheringMemberRepository.findByGatheringIdAndUserId(id, user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 모임의 멤버가 아닙니다."));
+        
+        Gathering gathering = member.getGathering();
+        if (gathering.getHost().getId().equals(user.getId())) {
+            throw new IllegalStateException("호스트는 모임을 나갈 수 없습니다. 모임을 삭제해주십시오.");
+        }
+        
+        boolean wasApproved = member.getStatus() == MemberStatus.APPROVED;
+        gatheringMemberRepository.delete(member);
+        
+        if (wasApproved) {
+            // Flush and update count
+            gatheringMemberRepository.flush();
+            long count = gatheringMemberRepository.countByGatheringIdAndStatus(id, MemberStatus.APPROVED);
+            gathering.setCurrentJoining((int) count);
+            gatheringRepository.save(gathering);
+        }
+    }
+
     private void validateHost(Long gatheringId) {
         Gathering gathering = gatheringRepository.findById(gatheringId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid gathering ID"));

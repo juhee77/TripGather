@@ -53,6 +53,23 @@ public class UserMissionController {
         return ResponseEntity.ok(res);
     }
 
+    @PostMapping("/{missionId}/leave/request")
+    public ResponseEntity<Void> requestLeave(@PathVariable Long missionId, Authentication authentication) {
+        missionService.requestLeave(missionId, authentication.getName());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/host/requests")
+    public ResponseEntity<List<UserMissionResponse>> getLeaveRequests(Authentication authentication) {
+        return ResponseEntity.ok(missionService.getLeaveRequests(authentication.getName()));
+    }
+
+    @PostMapping("/{missionId}/leave/approve")
+    public ResponseEntity<Void> approveLeave(@PathVariable Long missionId, Authentication authentication) {
+        missionService.approveLeave(missionId, authentication.getName());
+        return ResponseEntity.ok().build();
+    }
+
     @Data
     public static class StepCompleteRequest {
         private String memo;
