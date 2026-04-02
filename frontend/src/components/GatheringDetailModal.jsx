@@ -144,6 +144,24 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm("정말로 모임을 삭제하시겠습니까?")) return;
+    try {
+      const res = await authFetch(`/api/gatherings/${gathering.id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        alert("모임이 삭제되었습니다.");
+        onDelete && onDelete();
+        onClose();
+      } else {
+        alert("삭제 처리에 실패했습니다.");
+      }
+    } catch (err) {
+      console.error("Error deleting gathering", err);
+    }
+  };
+
   if (!gathering) return null;
 
   return (

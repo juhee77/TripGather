@@ -1,23 +1,27 @@
 package com.example.demo;
 
-import com.example.demo.domain.Gathering;
-import com.example.demo.domain.Itinerary;
-import com.example.demo.domain.RoutePoint;
-import com.example.demo.domain.User;
-import com.example.demo.repository.GatheringRepository;
-import com.example.demo.repository.ItineraryRepository;
-import com.example.demo.repository.UserRepository;
+import com.example.demo.domain.*;
+import com.example.demo.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Configuration
 public class DataInitializer {
 
     @Bean
-    public CommandLineRunner initData(UserRepository userRepo, GatheringRepository gatheringRepo, ItineraryRepository itineraryRepo, org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
+    public CommandLineRunner initData(
+            UserRepository userRepo, 
+            GatheringRepository gatheringRepo, 
+            ItineraryRepository itineraryRepo, 
+            GatheringMemberRepository memberRepo,
+            ChatMessageRepository chatRepo,
+            UserMissionRepository missionRepo,
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
+        
         return args -> {
             if (userRepo.count() == 0) {
                 userRepo.save(User.builder()
@@ -44,9 +48,10 @@ public class DataInitializer {
                         .build());
             }
 
-                User jihyun = userRepo.findByEmail("jihyun@test.com").get();
-                User alex = userRepo.findByEmail("alex@test.com").get();
+            User jihyun = userRepo.findByEmail("jihyun@test.com").get();
+            User alex = userRepo.findByEmail("alex@test.com").get();
 
+            if (gatheringRepo.count() == 0) {
                 Gathering g1 = gatheringRepo.save(Gathering.builder()
                         .title("Weekend Trip to Busan! (부산 주말 여행! 🌊)")
                         .host(jihyun)
@@ -54,6 +59,7 @@ public class DataInitializer {
                         .lat(35.1154)
                         .lng(129.0422)
                         .dates("Aug 17-18")
+                        .currentJoining(1)
                         .maxJoining(6)
                         .bgImageUrl("https://images.unsplash.com/photo-1546872957-3f746681498b?auto=format&fit=crop&q=80&w=600")
                         .build());
@@ -65,6 +71,7 @@ public class DataInitializer {
                         .lat(37.5122)
                         .lng(126.9970)
                         .dates("Today 20:00")
+                        .currentJoining(1)
                         .maxJoining(4)
                         .bgImageUrl("")
                         .build());
@@ -76,17 +83,30 @@ public class DataInitializer {
                         .lat(37.4979)
                         .lng(127.0276)
                         .dates("Sat 18:00")
+                        .currentJoining(2)
                         .maxJoining(5)
                         .category("밥/카페")
                         .bgImageUrl("https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&q=80&w=600")
                         .build());
                 
-                // 멤버 관계 추가 (호스트는 승인된 상태로 시작)
-                userRepo.save(jihyun); // Ensure managed
-                userRepo.save(alex);
+                // 멤버 관계 추가
+                memberRepo.save(GatheringMember.builder().gathering(g1).user(jihyun).status(MemberStatus.APPROVED).requestedAt(LocalDateTime.now()).build());
+                memberRepo.save(GatheringMember.builder().gathering(g1).user(alex).status(MemberStatus.PENDING).requestedAt(LocalDateTime.now()).build());
+
+                memberRepo.save(GatheringMember.builder().gathering(g2).user(alex).status(MemberStatus.APPROVED).requestedAt(LocalDateTime.now()).build());
+                memberRepo.save(GatheringMember.builder().gathering(g2).user(jihyun).status(MemberStatus.PENDING).requestedAt(LocalDateTime.now()).build());
+
+                memberRepo.save(GatheringMember.builder().gathering(g3).user(alex).status(MemberStatus.APPROVED).requestedAt(LocalDateTime.now()).build());
+                memberRepo.save(GatheringMember.builder().gathering(g3).user(jihyun).status(MemberStatus.APPROVED).requestedAt(LocalDateTime.now()).build());
+
+                // 채팅 메시지 
+                chatRepo.save(ChatMessage.builder().gathering(g3).sender(alex).content("안녕하세요! 강남역 어디서 뵐까요?").sentAt(LocalDateTime.now().minusMinutes(30)).build());
+                chatRepo.save(ChatMessage.builder().gathering(g3).sender(jihyun).content("이번 주 11번 출구 어떠세요?").sentAt(LocalDateTime.now().minusMinutes(20)).build());
+                chatRepo.save(ChatMessage.builder().gathering(g3).sender(alex).content("좋습니다 ㅎㅎ 6시까지 봬요").sentAt(LocalDateTime.now().minusMinutes(5)).build());
+            }
 
             if (itineraryRepo.count() == 0) {
-                // 서울 2박 3일 여행 — DAY별 여러 경유지
+                // 서울 2박 3일 여행
                 RoutePoint seoul_day1_p1 = RoutePoint.builder()
                         .dayNumber(1).dayLabel("Day 1 · 도착의 날")
                         .sequenceOrder(1).label("N서울타워")
@@ -173,8 +193,23 @@ public class DataInitializer {
                         .build();
                 jejuTrip.getRoutePoints().forEach(rp -> rp.setItinerary(jejuTrip));
                 itineraryRepo.save(jejuTrip);
+
+                // User Mission 데이터 추가
+                UserMission mission = UserMission.builder()
+                        .user(jihyun)
+                        .itinerary(seoulTrip)
+                        .status("ACTIVE")
+                        .startedAt(LocalDateTime.now().minusDays(1))
+                        .stampImageUrl("https://cdn-icons-png.flaticon.com/512/3715/3715013.png")
+                        .build();
+
+                UserMissionStep s1 = UserMissionStep.builder().userMission(mission).routePoint(seoul_day1_p1).isCompleted(true).photoUrl("").memo("타워 구경 완료!").build();
+                UserMissionStep s2 = UserMissionStep.builder().userMission(mission).routePoint(seoul_day1_p2).isCompleted(true).photoUrl("").memo("한복 입고 사진 찍음").build();
+                UserMissionStep s3 = UserMissionStep.builder().userMission(mission).routePoint(seoul_day1_p3).isCompleted(false).photoUrl("").memo("").build();
+
+                mission.getSteps().addAll(List.of(s1, s2, s3));
+                missionRepo.save(mission);
             }
         };
     }
 }
-
