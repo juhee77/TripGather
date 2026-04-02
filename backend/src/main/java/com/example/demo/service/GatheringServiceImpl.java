@@ -91,8 +91,14 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Transactional
     public void approveMember(Long gatheringId, Long userId) {
         validateHost(gatheringId);
+        
         GatheringMember member = gatheringMemberRepository.findByGatheringIdAndUserId(gatheringId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Member request not found"));
+                
+        if (member.getGathering().getHost().getId().equals(userId)) {
+            throw new IllegalArgumentException("호스트 본인을 승인/거절할 수 없습니다.");
+        }
+
         member.setStatus(MemberStatus.APPROVED);
         
         // Update currentJoining
@@ -106,6 +112,11 @@ public class GatheringServiceImpl implements GatheringUseCase {
         validateHost(gatheringId);
         GatheringMember member = gatheringMemberRepository.findByGatheringIdAndUserId(gatheringId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Member request not found"));
+                
+        if (member.getGathering().getHost().getId().equals(userId)) {
+            throw new IllegalArgumentException("호스트 본인을 승인/거절할 수 없습니다.");
+        }
+
         member.setStatus(MemberStatus.REJECTED);
     }
 

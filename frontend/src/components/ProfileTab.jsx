@@ -90,7 +90,7 @@ const ProfileTab = () => {
   };
 
   const pendingApplicants = hostedGatherings.flatMap(g => 
-    (g.members || []).filter(m => m.status === 'PENDING').map(m => ({ ...m, gatheringId: g.id, gatheringTitle: g.title }))
+    (g.members || []).filter(m => m.status === 'PENDING' && (!user || m.user.id !== user.id)).map(m => ({ ...m, gatheringId: g.id, gatheringTitle: g.title }))
   );
 
   return (
