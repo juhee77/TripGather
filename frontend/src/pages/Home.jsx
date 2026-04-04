@@ -23,6 +23,7 @@ const Home = () => {
 
   const [activeTab, setActiveTab] = useState('발견');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showOnlyHosted, setShowOnlyHosted] = useState(false);
   const [selectedGathering, setSelectedGathering] = useState(null);
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
   const [myJoinedIds, setMyJoinedIds] = useState(() => {
@@ -94,6 +95,19 @@ const Home = () => {
               <option key={r} value={r}>{r === '전체' ? '📍 전체 지역' : r}</option>
             ))}
           </select>
+          <button 
+            onClick={() => setShowOnlyHosted(!showOnlyHosted)}
+            className="icon-circle glass" 
+            style={{ 
+              width: '44px', height: '44px',
+              background: showOnlyHosted ? 'var(--primary-gradient)' : 'white',
+              border: showOnlyHosted ? 'none' : '1px solid var(--border-color)',
+              color: showOnlyHosted ? 'white' : 'var(--text-primary)'
+            }}
+            title="내가 주최한 모임만 보기"
+          >
+            <Plus size={20} style={{ transform: showOnlyHosted ? 'rotate(45deg)' : 'none', transition: 'transform 0.3s' }} />
+          </button>
           <button className="icon-circle glass" style={{ width: '44px', height: '44px' }}>
             <Search size={20} color="var(--text-primary)" />
           </button>
@@ -133,7 +147,16 @@ const Home = () => {
       <div style={{ padding: '0 20px', flex: 1 }}>
         {activeTab === '발견' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {gatherings.filter(g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))).map((g, idx) => (
+            {gatherings.filter(g => {
+              const regionMatch = selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion));
+              const hostMatch = !showOnlyHosted || (
+                currentUser && g.host && (
+                  (typeof g.host === 'string' && g.host === currentUser.name) ||
+                  (g.host.email === currentUser.email)
+                )
+              );
+              return regionMatch && hostMatch;
+            }).map((g, idx) => (
               <div 
                 key={g.id} 
                 onClick={() => setSelectedGathering(g)} 
@@ -177,8 +200,9 @@ const Home = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {gatherings.filter(g => {
               const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
-              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === 'APPROVED' || m.status === 'PENDING'));
-              return isHost || isApproved;
+              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === 'APPROVED'));
+              const isCompleted = g.currentJoining >= g.maxJoining;
+              return (isHost || isApproved) && isCompleted;
             }).map((g, idx) => (
               <div 
                 key={g.id} 
@@ -204,8 +228,9 @@ const Home = () => {
             ))}
             {gatherings.filter(g => {
               const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
-              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === 'APPROVED' || m.status === 'PENDING'));
-              return isHost || isApproved;
+              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === 'APPROVED'));
+              const isCompleted = g.currentJoining >= g.maxJoining;
+              return (isHost || isApproved) && isCompleted;
             }).length === 0 && (
               <div className="glass" style={{ 
                 textAlign: 'center', 
@@ -218,8 +243,11 @@ const Home = () => {
                 background: 'white',
                 border: '1px solid var(--border-color)'
               }}>
-                <div style={{ fontSize: '48px' }}>🔍</div>
-                <p style={{ fontWeight: 700, color: 'var(--text-primary)' }}>아직 참여 중인 모임이 없습니다.</p>
+                <div style={{ fontSize: '48px' }}>🚀</div>
+                <p style={{ fontWeight: 700, color: 'var(--text-primary)', textAlign: 'center' }}>
+                  모집이 완료되어 확정된 모임만 여기에 표시됩니다.<br/>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>진행 중인 모임은 '내 여권 &gt; 주최 관리'에서 확인하세요.</span>
+                </p>
                 <button className="primary-btn" onClick={() => setActiveTab('발견')}>모임 탐색하기</button>
               </div>
             )}
