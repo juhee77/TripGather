@@ -11,6 +11,8 @@ const CATEGORIES = [
   { label: '문화/취미', icon: '🎫' },
 ];
 
+const DEFAULT_BG = 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=800';
+
 const CreateGatheringModal = ({ onClose, onCreated }) => {
   const { user: currentUser } = useUser();
   const [formData, setFormData] = useState({
@@ -75,7 +77,7 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
       dates: `${formData.date} ${formData.time}`,
       maxJoining: parseInt(formData.maxJoining, 10),
       currentJoining: 1,
-      bgImageUrl: finalBgImageUrl || defaultBg
+      bgImageUrl: finalBgImageUrl || DEFAULT_BG
     };
 
     try {

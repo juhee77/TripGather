@@ -24,6 +24,12 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
     const isAuthor = currentUser && (currentUser.name === (localItinerary.author || localItinerary.itineraryAuthor));
     const isMission = !!localItinerary.steps;
 
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    };
+
     useEffect(() => {
         setIsVisible(true);
     }, []);
@@ -270,6 +276,25 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                                                 <p style={{ marginTop: '12px', fontSize: '14px', color: 'rgba(255,255,255,0.8)', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '12px', borderLeft: '3px solid #51CF66' }}>
                                                     {point.memo}
                                                 </p>
+                                            )}
+                                            
+                                            {isStepCompleted && point.completedAt && (
+                                                <div style={{ 
+                                                    marginTop: '12px', 
+                                                    fontSize: '11px', 
+                                                    color: 'rgba(81, 207, 102, 0.6)', 
+                                                    fontWeight: 700,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    padding: '4px 8px',
+                                                    background: 'rgba(81, 207, 102, 0.05)',
+                                                    borderRadius: '6px',
+                                                    width: 'fit-content'
+                                                }}>
+                                                    <Clock size={10} />
+                                                    COMPLETED AT {formatDate(point.completedAt)}
+                                                </div>
                                             )}
 
                                             {isMission && !isStepCompleted && !isCurrentlyChecking && (
