@@ -87,10 +87,13 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
             }
 
             const targetMissionId = localItinerary.itineraryId ? localItinerary.id : (localItinerary.missionId || localItinerary.id);
+            // If we have a previewUrl but no photoFile, it means we're reusing the existing photo
+            const finalPhotoUrlToSave = (previewUrl && !photoFile) ? previewUrl : finalPhotoUrl;
+
             const res = await authFetch(`/api/missions/${targetMissionId}/steps/${stepId}/complete`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ memo, photoUrl: finalPhotoUrl })
+                body: JSON.stringify({ memo, photoUrl: finalPhotoUrlToSave })
             });
 
             if (res.ok) {
@@ -263,7 +266,24 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                                                 <span style={{ fontSize: '11px', color: isStepCompleted ? '#51CF66' : 'var(--primary-orange)', fontWeight: 900, letterSpacing: '1px' }}>
                                                     {isStepCompleted ? `MISSION ACCOMPLISHED` : `STOP ${point.sequenceOrder}`}
                                                 </span>
-                                                {isStepCompleted ? <CheckCircle size={16} color="#51CF66" /> : <Navigation size={14} color="rgba(255,255,255,0.3)" />}
+                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                    {isStepCompleted && (
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setCheckingStepId(point.id);
+                                                                setMemo(point.memo || '');
+                                                                setPreviewUrl(point.photoUrl || null);
+                                                                // Note: we don't set photoFile here because we only have the URL
+                                                            }}
+                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                            title="수정하기"
+                                                        >
+                                                            <Edit3 size={14} color="rgba(255,255,255,0.5)" />
+                                                        </button>
+                                                    )}
+                                                    {isStepCompleted ? <CheckCircle size={16} color="#51CF66" /> : <Navigation size={14} color="rgba(255,255,255,0.3)" />}
+                                                </div>
                                             </div>
                                             <h4 style={{ fontSize: '17px', fontWeight: 800, color: 'white', marginBottom: '6px', position: 'relative', zIndex: 10 }}>
                                                 {point.label}
@@ -298,7 +318,12 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                                             )}
 
                                             {isMission && !isStepCompleted && !isCurrentlyChecking && (
-                                                <button onClick={() => setCheckingStepId(point.id)} className="glass" style={{ marginTop: '16px', width: '100%', padding: '12px', borderRadius: '12px', color: 'white', fontSize: '13px', fontWeight: 700, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', border: '1px dashed rgba(255,255,255,0.2)' }}>
+                                                <button onClick={() => {
+                                                    setCheckingStepId(point.id);
+                                                    setMemo('');
+                                                    setPreviewUrl(null);
+                                                    setPhotoFile(null);
+                                                }} className="glass" style={{ marginTop: '16px', width: '100%', padding: '12px', borderRadius: '12px', color: 'white', fontSize: '13px', fontWeight: 700, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', border: '1px dashed rgba(255,255,255,0.2)' }}>
                                                     <CheckCircle size={16} /> MARK AS REACHED
                                                 </button>
                                             )}
@@ -320,7 +345,12 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                                                     <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*" onChange={handlePhotoChange} />
 
                                                     <div style={{ display: 'flex', gap: '10px' }}>
-                                                        <button disabled={submittingStep} onClick={() => setCheckingStepId(null)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', fontWeight: 600 }}>CANCEL</button>
+                                                        <button disabled={submittingStep} onClick={() => {
+                                                            setCheckingStepId(null);
+                                                            setMemo('');
+                                                            setPhotoFile(null);
+                                                            setPreviewUrl(null);
+                                                        }} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', fontWeight: 600 }}>CANCEL</button>
                                                         <button disabled={submittingStep} onClick={() => handleCompleteStep(point.id)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: '#51CF66', color: 'black', border: 'none', fontWeight: 800, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
                                                             {submittingStep ? 'SAVING...' : <><Check size={16} /> CONFIRM</>}
                                                         </button>

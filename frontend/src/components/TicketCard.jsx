@@ -2,8 +2,11 @@ import React from 'react';
 import { Plane, Calendar, MapPin } from 'lucide-react';
 import TicketBase from './UI/TicketBase';
 import PrimaryButton from './UI/PrimaryButton';
+import { useAuth } from '../contexts/AuthContext';
 
-const TicketCard = ({ itinerary, onViewRoute, onStartMission }) => {
+const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit }) => {
+    const { user } = useAuth();
+    const isHost = user && itinerary.author === user.name;
     const { title, author, description, createdAt } = itinerary;
     const date = createdAt ? new Date(createdAt).toLocaleDateString() : '2026-03-12';
 
@@ -52,22 +55,35 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission }) => {
             >
                 상세 보기
             </PrimaryButton>
-            <PrimaryButton 
-                variant="primary"
-                onClick={async (e) => {
-                    if (e) e.stopPropagation();
-                    if (itinerary.steps) {
-                        handleView();
-                        return;
-                    }
-                    if (onStartMission) {
-                        await onStartMission(itinerary.id);
-                    }
-                }}
-                style={{ flex: 1.5, height: '48px', fontSize: '14px', whiteSpace: 'nowrap' }}
-            >
-                {itinerary.steps ? '미션 계속하기' : '챌린지 참여하기'}
-            </PrimaryButton>
+            {isHost ? (
+                <PrimaryButton 
+                    variant="primary"
+                    onClick={(e) => {
+                        if (e) e.stopPropagation();
+                        if (onEdit) onEdit(itinerary);
+                    }}
+                    style={{ flex: 1.5, height: '48px', fontSize: '14px' }}
+                >
+                    일정 수정하기
+                </PrimaryButton>
+            ) : (
+                <PrimaryButton 
+                    variant="primary"
+                    onClick={async (e) => {
+                        if (e) e.stopPropagation();
+                        if (itinerary.steps) {
+                            handleView();
+                            return;
+                        }
+                        if (onStartMission) {
+                            await onStartMission(itinerary.id);
+                        }
+                    }}
+                    style={{ flex: 1.5, height: '48px', fontSize: '14px', whiteSpace: 'nowrap' }}
+                >
+                    {itinerary.steps ? '미션 계속하기' : '챌린지 참여하기'}
+                </PrimaryButton>
+            )}
         </>
     );
 

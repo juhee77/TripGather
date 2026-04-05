@@ -6,7 +6,7 @@ import { Plus, RotateCcw } from 'lucide-react';
 import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
 import { useMissionsViewModel } from '../viewmodels/useMissionsViewModel';
 
-const ItineraryTab = ({ onMissionStart }) => {
+const ItineraryTab = ({ onMissionStart, onEdit }) => {
     const {
         itineraries,
         isLoading: loading,
@@ -122,6 +122,7 @@ const ItineraryTab = ({ onMissionStart }) => {
                                 itinerary={it}
                                 onViewRoute={(itinerary) => setSelectedItinerary(itinerary)}
                                 onStartMission={handleStartMission}
+                                onEdit={onEdit}
                             />
                         </div>
                     ))}
