@@ -9,7 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.usecase.DirectMessageUseCase;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -65,6 +68,9 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
     }
 
     public List<User> getChatPartners(String myEmail) {
-        return dmRepository.findChatPartners(myEmail);
+        Set<User> partners = new HashSet<>();
+        partners.addAll(dmRepository.findReceiversBySenderEmail(myEmail));
+        partners.addAll(dmRepository.findSendersByReceiverEmail(myEmail));
+        return new ArrayList<>(partners);
     }
 }

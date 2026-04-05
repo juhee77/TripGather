@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FeedCard from '../components/FeedCard';
 import CreateGatheringModal from '../components/CreateGatheringModal';
 import GatheringDetailModal from '../components/GatheringDetailModal';
+import ItineraryEditModal from '../components/ItineraryEditModal';
 import TicketCard from '../components/TicketCard';
 import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
@@ -23,6 +24,8 @@ const Home = () => {
 
   const [activeTab, setActiveTab] = useState('발견');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItinerary, setEditingItinerary] = useState(null);
   const [showOnlyHosted, setShowOnlyHosted] = useState(false);
   const [selectedGathering, setSelectedGathering] = useState(null);
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
@@ -49,6 +52,17 @@ const Home = () => {
   };
 
   const tabs = ['발견', '내 모임', '일정']; // This line will be replaced by the new nav structure
+
+  const handleUpdateItinerary = (updated) => {
+    // Refresh missions and itineraries after edit
+    fetchMissions();
+    alert('일정이 성공적으로 수정되었습니다.');
+  };
+
+  const handleEditItinerary = (itinerary) => {
+    setEditingItinerary(itinerary);
+    setIsEditModalOpen(true);
+  };
 
   return (
     <div className="app-container animate-fade">
@@ -255,7 +269,7 @@ const Home = () => {
         )}
 
         {activeTab === '일정' && (
-          <ItineraryTab onMissionStart={() => { fetchMissions(); setActiveTab('나의 미션'); }} />
+          <ItineraryTab onMissionStart={() => { fetchMissions(); setActiveTab('나의 미션'); }} onEdit={handleEditItinerary} />
         )}
 
         {activeTab === '내 여권' && (
@@ -310,6 +324,15 @@ const Home = () => {
             refreshGatherings();
             setSelectedGathering(updatedGathering);
           }}
+        />
+      )}
+
+      {isEditModalOpen && (
+        <ItineraryEditModal 
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          itinerary={editingItinerary}
+          onUpdate={handleUpdateItinerary}
         />
       )}
     </div>

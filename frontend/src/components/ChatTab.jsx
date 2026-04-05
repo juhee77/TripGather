@@ -176,7 +176,7 @@ const ChatTab = ({ joinedGatherings }) => {
                 )}
             </div>
 
-            <style jsx>{`
+            <style>{`
                 @keyframes slideUp {
                     from { transform: translateY(20px); opacity: 0; }
                     to { transform: translateY(0); opacity: 1; }

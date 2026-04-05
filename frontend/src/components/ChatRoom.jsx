@@ -215,7 +215,7 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                 </form>
             </footer>
 
-            <style jsx>{`
+            <style>{`
                 @keyframes bubbleUp {
                     from { transform: translateY(10px); opacity: 0; }
                     to { transform: translateY(0); opacity: 1; }
