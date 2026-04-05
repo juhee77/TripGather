@@ -1,55 +1,79 @@
 package com.example.demo.service;
 
+import io.minio.BucketExistsArgs;
+import io.minio.MakeBucketArgs;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class FileService {
 
-    @Value("${file.upload-dir:uploads}")
-    private String uploadDir;
+    private final MinioClient minioClient;
+
+    @Value("${minio.endpoint}")
+    private String endpoint;
+
+    @Value("${minio.bucket}")
+    private String bucket;
 
     public String storeFile(MultipartFile file) {
-        // Create upload directory if it doesn't exist
-        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
-            Files.createDirectories(uploadPath);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not create the directory where the uploaded files will be stored.", e);
-        }
-
-        // Normalize file name
-        String originalFileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
-        String extension = "";
-        int i = originalFileName.lastIndexOf('.');
-        if (i > 0) {
-            extension = originalFileName.substring(i);
-        }
-        String fileName = UUID.randomUUID().toString() + extension;
-
-        try {
-            // Check if the file's name contains invalid characters
-            if (fileName.contains("..")) {
-                throw new RuntimeException("Sorry! Filename contains invalid path sequence " + fileName);
+            // 버킷이 존재하지 않으면 생성
+            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+            if (!found) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
             }
 
-            // Copy file to the target location (Replacing existing file with the same name)
-            Path targetLocation = uploadPath.resolve(fileName);
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            // 파일명 생성
+            String originalFileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+            String extension = "";
+            int i = originalFileName.lastIndexOf('.');
+            if (i > 0) {
+                extension = originalFileName.substring(i);
+            }
+            String fileName = UUID.randomUUID().toString() + extension;
 
-            return "/uploads/" + fileName;
-        } catch (IOException ex) {
-            throw new RuntimeException("Could not store file " + fileName + ". Please try again!", ex);
+            // 파일 업로드
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(fileName)
+                            .stream(file.getInputStream(), file.getSize(), -1)
+                            .contentType(file.getContentType())
+                            .build()
+            );
+
+            // 전체 URL 반환 (예: http://localhost:9000/tripgather/filename.jpg)
+            return String.format("%s/%s/%s", endpoint, bucket, fileName);
+
+        } catch (Exception e) {
+            throw new RuntimeException("MinIO 파일 업로드 실패: " + e.getMessage(), e);
+        }
+    }
+
+    public void deleteFile(String fileUrl) {
+        try {
+            // URL에서 파일명 추출 (예: http://localhost:9000/tripgather/filename.jpg -> filename.jpg)
+            String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+            
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(fileName)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("MinIO 파일 삭제 실패: " + e.getMessage(), e);
         }
     }
 }
