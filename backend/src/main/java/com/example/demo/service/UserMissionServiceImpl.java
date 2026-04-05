@@ -19,6 +19,7 @@ import com.example.demo.repository.UserMissionStepRepository;
 import com.example.demo.dto.UserMissionStepResponse;
 import com.example.demo.domain.UserMissionStep;
 import com.example.demo.usecase.UserMissionUseCase;
+import com.example.demo.service.FileService;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,7 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
     private final UserRepository userRepository;
     private final ItineraryRepository itineraryRepository;
     private final UserMissionStepRepository stepRepository;
+    private final FileService fileService;
 
     @Transactional
     public UserMissionResponse startMission(Long itineraryId, String email) {
@@ -120,6 +122,16 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
             throw new IllegalArgumentException("Step does not belong to this mission");
         }
 
+        // 기존 사진이 있고 새로운 사진으로 교체되는 경우 기존 사진 삭제
+        if (step.getPhotoUrl() != null && !step.getPhotoUrl().equals(photoUrl)) {
+            try {
+                fileService.deleteFile(step.getPhotoUrl());
+            } catch (Exception e) {
+                // 삭제 실패는 비즈니스 로직에 영향을 주지 않도록 로그만 남기고 진행 (필요시 로그 라이브러리 사용)
+                System.err.println("기존 파일 삭제 실패: " + e.getMessage());
+            }
+        }
+
         step.setCompleted(true);
         step.setMemo(memo);
         step.setPhotoUrl(photoUrl);
@@ -195,6 +207,18 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
         // Itinerary.author가 작성자의 이름(Name)이라고 가정
         if (!mission.getItinerary().getAuthor().equals(host.getName())) {
             throw new IllegalStateException("해당 일정의 작성자만 승인할 수 있습니다.");
+        }
+
+        // 미션 삭제 전 연관된 모든 단계의 사진 삭제
+        List<UserMissionStep> steps = stepRepository.findByUserMissionId(mission.getId());
+        for (UserMissionStep step : steps) {
+            if (step.getPhotoUrl() != null && !step.getPhotoUrl().isEmpty()) {
+                try {
+                    fileService.deleteFile(step.getPhotoUrl());
+                } catch (Exception e) {
+                    System.err.println("미션 삭제 중 파일 삭제 실패: " + e.getMessage());
+                }
+            }
         }
         
         missionRepository.delete(mission);
