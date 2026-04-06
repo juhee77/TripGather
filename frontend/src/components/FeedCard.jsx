@@ -1,79 +1,95 @@
 import React from 'react';
-import { MapPin, Users, Calendar, MessageCircle, MoreHorizontal } from 'lucide-react';
+import { MapPin, Users, Calendar, MessageCircle, ArrowRight, Share2 } from 'lucide-react';
+import TicketContainer from './UI/TicketContainer';
 import './FeedCard.css';
 
-const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount = 0, pendingCount = 0 }) => {
-  return (
-    <div className="feed-card">
+const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount = 0, pendingCount = 0, onClick }) => {
+  const topSection = (
+    <div className="feed-header-wrapper">
       <div 
-        className="feed-header" 
+        className="feed-image" 
         style={{ backgroundImage: bgImage ? `url(${bgImage})` : 'none' }}
       >
-        <div className="feed-status-tag glass" style={{ color: 'var(--primary-orange)' }}>
-          모집 중
+        <div className="feed-overlay" />
+        <div className="feed-status-badge">
+          REC
         </div>
-        {pendingCount > 0 && (
-          <div className="feed-status-tag glass" style={{ 
-            color: 'white', 
-            background: 'var(--primary-orange)', 
-            right: '20px', 
-            left: 'auto',
-            border: 'none',
-            boxShadow: '0 4px 12px rgba(255, 92, 0, 0.3)'
-          }}>
-            참여 대기 {pendingCount}
-          </div>
-        )}
       </div>
       
-      <div className="feed-content">
-        <div className="feed-top-row">
-          <span className="feed-category">TRIP & GATHER</span>
-          <span className="text-s" style={{ fontSize: '11px' }}>15 hours ago</span>
+      <div className="feed-header-content">
+        <div className="flex-between w-full">
+          <span className="label-orange">BOARDING PASS • GATE 07</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {pendingCount > 0 && (
+              <div className="pending-badge">
+                WAITING {pendingCount}
+              </div>
+            )}
+            <div className="status-pill">OPEN</div>
+          </div>
         </div>
-        
         <h3 className="feed-title">{title}</h3>
-        
-        <div className="feed-host-section">
-          <div className="host-avatar"></div>
-          <div className="host-info">
-            <span>By <strong>{host}</strong></span>
-          </div>
-        </div>
-        
-        <div className="feed-details-grid">
-          <div className="detail-pill">
-            <Calendar size={16} color="var(--primary-orange)" strokeWidth={2.5} />
-            {date}
-          </div>
-          <div className="detail-pill">
-            <MapPin size={16} color="#EF4444" strokeWidth={2.5} />
-            {location}
-          </div>
-          <div className="detail-pill">
-            <Users size={16} color="var(--secondary-blue)" strokeWidth={2.5} />
-            {joining} participants
-          </div>
-          <div className="detail-pill">
-            <span style={{ fontSize: '16px' }}>🔥</span>
-            Lively crowd
-          </div>
-        </div>
+      </div>
+    </div>
+  );
 
-        <div className="feed-footer">
-          <div className="social-stats">
-            <div className="stat-item">
-              <MessageCircle size={16} />
-              {commentCount}
-            </div>
-            <div className="stat-item">
-              <MoreHorizontal size={16} />
-            </div>
+  const bottomSection = (
+    <div className="feed-info-wrapper">
+      <div className="host-section">
+        <div className="host-avatar-group">
+          <div className="host-avatar" />
+          <div className="host-name-tag">
+            <span className="label-muted">HOST</span>
+            <span className="info-value">{host}</span>
           </div>
-          <button className="view-detail-btn">상세 보기</button>
+        </div>
+        <button className="icon-btn">
+          <Share2 size={16} color="var(--text-muted)" />
+        </button>
+      </div>
+
+      <div className="ticket-details-grid">
+        <div className="detail-item">
+          <span className="label-muted">DEPARTURE</span>
+          <div className="detail-content">
+            <Calendar size={14} color="var(--primary-orange)" />
+            <span className="info-value">{date}</span>
+          </div>
+        </div>
+        <div className="detail-item text-right">
+          <span className="label-muted">DESTINATION</span>
+          <div className="detail-content" style={{ justifyContent: 'flex-end' }}>
+            <MapPin size={14} color="var(--secondary-blue)" />
+            <span className="info-value">{location}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="feed-action-bar">
+        <div className="participants-info">
+          <Users size={16} color="var(--text-muted)" />
+          <span className="text-s"><strong>{joining}</strong>/10 Traveling</span>
+        </div>
+        <div className="social-stats">
+          <div className="stat-item">
+            <MessageCircle size={16} color="var(--text-muted)" />
+            <span>{commentCount}</span>
+          </div>
+          <button className="go-btn" onClick={onClick}>
+            GO <ArrowRight size={14} />
+          </button>
         </div>
       </div>
     </div>
+  );
+
+  return (
+    <TicketContainer 
+      topSection={topSection} 
+      bottomSection={bottomSection}
+      onClick={onClick}
+      className="feed-ticket"
+    />
   );
 };
 

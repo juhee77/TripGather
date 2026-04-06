@@ -94,59 +94,71 @@ const ProfileTab = () => {
   );
 
   return (
-    <div style={{ paddingBottom: '100px' }}>
+    <div style={{ paddingBottom: '100px' }} className="animate-fade">
       
-      {/* Profile Actions */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '24px' }}>
-        <button className="glass text-s" style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}>
-          <Settings size={16} /> 설정
+      {/* Premium Profile Actions */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '28px' }}>
+        <button className="secondary-btn" style={{ padding: '10px 20px', borderRadius: '14px', fontSize: '13px' }}>
+          <Settings size={16} style={{ marginRight: '8px' }} /> SETTINGS
         </button>
-        <button onClick={logout} className="glass text-s" style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, border: '1px solid rgba(239, 68, 68, 0.2)', color: '#EF4444' }}>
-          <LogOut size={16} /> 로그아웃
+        <button onClick={logout} className="secondary-btn" style={{ padding: '10px 20px', borderRadius: '14px', fontSize: '13px', color: '#EF4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+          <LogOut size={16} style={{ marginRight: '8px' }} /> LOGOUT
         </button>
       </div>
 
       <PassportCard user={user} stampsCount={stamps.length} />
       
-      {/* Host Management Center */}
-      <div style={{ marginTop: '32px', marginBottom: '32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            주최 관리 <span style={{ background: 'var(--primary-orange)', color: 'white', fontSize: '12px', padding: '2px 8px', borderRadius: '10px' }}>{pendingApplicants.length + leaveRequests.length}</span>
-          </h3>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>신청 및 탈퇴 통합 관리</span>
+      {/* Management Terminal (Host Management Center) */}
+      <div style={{ marginTop: '40px', marginBottom: '40px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px' }}>
+          <div>
+            <span className="label-orange">MANAGEMENT TERMINAL</span>
+            <h3 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>
+              주최 및 요청 관리
+            </h3>
+          </div>
+          <div style={{ 
+            background: 'var(--text-primary)', color: 'white', 
+            padding: '6px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 800 
+          }}>
+            {pendingApplicants.length + leaveRequests.length} PENDING
+          </div>
         </div>
 
         {pendingApplicants.length + leaveRequests.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* Pending Applicants */}
+            {/* Pending Applicants List */}
             {pendingApplicants.map((app, idx) => (
-              <div key={`${app.gatheringId}-${app.user.id}`} className="glass" style={{ 
-                padding: '16px 20px', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '14px',
+              <div key={`${app.gatheringId}-${app.user.id}`} className="ticket-wrapper" style={{ 
+                padding: '20px 24px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '16px',
                 animation: 'fadeIn 0.4s ease-out forwards', animationDelay: `${idx * 0.05}s`, opacity: 0
               }}>
-                <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--text-primary)', fontSize: '15px', border: '1px solid var(--border-color)' }}>
+                <div style={{ 
+                  width: '48px', height: '48px', borderRadius: '12px', 
+                  background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  fontWeight: 900, color: 'var(--text-primary)', fontSize: '16px', border: '1px solid var(--border-color)' 
+                }}>
                   {app.user.name[0]}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: 800, fontSize: '15px' }}>{app.user.name}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--chat-me)', fontWeight: 800, background: 'rgba(74, 222, 128, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>참여 신청</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)' }}>{app.user.name}</span>
+                    <span className="status-pill" style={{ background: '#F0FDF4', color: '#10B981', fontSize: '10px' }}>APPLICANT</span>
                   </div>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>{app.gatheringTitle}</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>{app.gatheringTitle}</p>
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <button 
                     onClick={() => handleAction(app.gatheringId, app.user.id, 'approve')}
-                    className="glass" 
-                    style={{ padding: '8px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, color: 'white', background: 'var(--primary-orange)', border: 'none' }}
+                    className="primary-btn" 
+                    style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '13px', height: '40px' }}
                   >
                     승인
                   </button>
                   <button 
                     onClick={() => handleAction(app.gatheringId, app.user.id, 'reject')}
-                    className="glass" 
-                    style={{ padding: '8px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', border: '1px solid var(--border-color)' }}
+                    className="secondary-btn" 
+                    style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '13px', height: '40px' }}
                   >
                     거절
                   </button>
@@ -154,37 +166,43 @@ const ProfileTab = () => {
               </div>
             ))}
 
-            {/* Leave Requests (Missions) */}
+            {/* Leave Requests List */}
             {leaveRequests.map((req, idx) => (
-              <div key={`mission-${req.id}`} className="glass" style={{ 
-                padding: '16px 20px', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '14px',
+              <div key={`mission-${req.id}`} className="ticket-wrapper" style={{ 
+                padding: '20px 24px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '16px',
                 animation: 'fadeIn 0.4s ease-out forwards', animationDelay: `${(pendingApplicants.length + idx) * 0.05}s`, opacity: 0
               }}>
-                <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--text-primary)', fontSize: '15px', border: '1px solid var(--border-color)' }}>
+                <div style={{ 
+                  width: '48px', height: '48px', borderRadius: '12px', 
+                  background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                  fontWeight: 900, color: '#EF4444', fontSize: '16px', border: '1px solid #FEE2E2' 
+                }}>
                   {(req.userName || 'U')[0]}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: 800, fontSize: '15px' }}>{req.userName}</span>
-                    <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 800, background: 'rgba(239, 68, 68, 0.08)', padding: '2px 6px', borderRadius: '4px' }}>탈퇴 요청</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)' }}>{req.userName}</span>
+                    <span className="status-pill" style={{ background: '#FEF2F2', color: '#EF4444', fontSize: '10px' }}>LEAVE REQUEST</span>
                   </div>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>{req.itineraryTitle}</p>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '4px' }}>{req.itineraryTitle}</p>
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button 
-                    onClick={() => handleApproveLeave(req.id)}
-                    className="glass" 
-                    style={{ padding: '8px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: 800, color: 'white', background: '#EF4444', border: 'none' }}
-                  >
-                    승인
-                  </button>
-                </div>
+                <button 
+                  onClick={() => handleApproveLeave(req.id)}
+                  className="secondary-btn" 
+                  style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '13px', height: '40px', color: '#EF4444', borderColor: '#FEE2E2' }}
+                >
+                  탈퇴 승인
+                </button>
               </div>
             ))}
           </div>
         ) : (
-          <div className="glass" style={{ padding: '40px 20px', borderRadius: '24px', textAlign: 'center', border: '1px dashed var(--border-color)' }}>
-            <p style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '14px' }}>현재 대기 중인 요청이 없습니다.</p>
+          <div className="ticket-wrapper" style={{ 
+            padding: '48px 24px', borderRadius: '24px', textAlign: 'center', 
+            border: '2px dashed var(--border-color)', background: 'white' 
+          }}>
+            <p style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '15px' }}>현재 대기 중인 요청이 없습니다.</p>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', opacity: 0.7 }}>터미널이 한적합니다.</span>
           </div>
         )}
       </div>

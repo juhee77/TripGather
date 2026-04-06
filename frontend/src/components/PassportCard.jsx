@@ -1,66 +1,77 @@
 import React from 'react';
-import { Plane, Award, MapPin } from 'lucide-react';
-import Card from './UI/Card';
+import { Plane, Award, MapPin, ShieldCheck, Globe } from 'lucide-react';
 import './PassportCard.css';
 
 const PassportCard = ({ user, stampsCount }) => {
   return (
-    <Card className="passport-card-container" padding={false}>
-      <div className="passport-card">
-        {/* Holographic reflection overlay */}
-        <div className="hologram-overlay"></div>
-        
-        <div className="passport-header flex-center gap-sm">
-          <Plane size={24} color="rgba(255,255,255,0.8)" style={{ transform: 'rotate(45deg)' }} />
-          <span className="passport-type">TRIP & GATHER PASSPORT</span>
+    <div className="passport-card-wrapper animate-fade">
+      {/* Decorative Passport texture/background */}
+      <div className="passport-card-light">
+        <div className="passport-header-section">
+          <div className="flex-between">
+            <Globe size={24} color="var(--primary-orange)" />
+            <span className="passport-label">REPUBLIC OF TRIPGATHER</span>
+            <ShieldCheck size={20} color="var(--primary-orange)" />
+          </div>
+          <h2 className="passport-title">PASSPORT</h2>
         </div>
 
-        <div className="passport-body">
-          <div className="passport-photo-section">
+        <div className="passport-main-body">
+          <div className="passport-photo-container">
             <div 
-              className="passport-photo" 
+              className="passport-photo-frame" 
               style={{ 
                 backgroundImage: user?.profileImageUrl ? `url(${user.profileImageUrl})` : 'none',
               }}
             >
               {!user?.profileImageUrl && (
-                <span className="passport-photo-placeholder">{user?.name ? user.name[0] : 'U'}</span>
+                <div className="photo-placeholder">{user?.name ? user.name[0] : 'U'}</div>
               )}
             </div>
+            <div className="passport-stamp-seal">TG</div>
           </div>
           
-          <div className="passport-info-section">
-            <div className="info-group">
-              <label className="label-muted">Name</label>
-              <div className="info-value name-value">{user?.name || 'Traveler'}</div>
+          <div className="passport-details-grid">
+            <div className="detail-item">
+              <label>SURNAME / NAME</label>
+              <div className="detail-value highlight">{user?.name?.toUpperCase() || 'TRAVELER'}</div>
             </div>
             
-            <div className="info-group" style={{ marginTop: '12px' }}>
-              <label className="label-muted">Nationality</label>
-              <div className="info-value">Republic of Korea</div>
+            <div className="detail-item">
+              <label>NATIONALITY</label>
+              <div className="detail-value">TRIPPER</div>
             </div>
             
-            <div className="stats-row flex gap-sm" style={{ marginTop: '20px' }}>
-              <div className="stat-pill flex-center gap-xs">
-                <Award size={14} color="#FF5C00" />
-                <span>{stampsCount} Stamps</span>
+            <div className="detail-item">
+              <label>AUTHORITY</label>
+              <div className="detail-value">TripGather Center</div>
+            </div>
+
+            <div className="detail-row">
+              <div style={{ flex: 1 }}>
+                <label>STAMPS</label>
+                <div className="detail-value-pill">
+                  <Award size={14} /> {stampsCount} COLLECTED
+                </div>
               </div>
-              <div className="stat-pill flex-center gap-xs">
-                <MapPin size={14} color="#6366F1" />
-                <span>Explorer</span>
+              <div style={{ flex: 1 }}>
+                <label>RANK</label>
+                <div className="detail-value-pill rank">
+                  <MapPin size={14} /> EXPLORER
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="passport-footer">
-          <div className="mrz-code">
+        <div className="passport-mrz-zone">
+          <div className="mrz-text">
             P&lt;KOR{user?.name?.toUpperCase() || 'TRAVELER'}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;<br/>
-            TD00{stampsCount}9&lt;1KOR9001155M2612318&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;0
+            TG{stampsCount?.toString().padStart(4, '0')}PASS&lt;{user?.id ? user.id.toString().padStart(6, '0') : '000000'}KOR&lt;&lt;&lt;&lt;&lt;&lt;
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 

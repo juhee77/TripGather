@@ -1,117 +1,131 @@
 import React from 'react';
-import { Plane, Calendar, MapPin } from 'lucide-react';
-import TicketBase from './UI/TicketBase';
+import { Plane, Calendar, MapPin, ChevronRight, CheckCircle } from 'lucide-react';
+import TicketContainer from './UI/TicketContainer';
 import PrimaryButton from './UI/PrimaryButton';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '../contexts/UserContext';
 
 const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit }) => {
-    const { user } = useAuth();
-    const isHost = user && itinerary.author === user.name;
-    const { title, author, description, createdAt } = itinerary;
-    const date = createdAt ? new Date(createdAt).toLocaleDateString() : '2026-03-12';
+    const { user: currentUser } = useUser();
+    const isHost = currentUser && (itinerary.author === currentUser.name || itinerary.itineraryAuthor === currentUser.name);
+    const { title, author, itineraryAuthor, description, createdAt, status } = itinerary;
+    const date = createdAt ? new Date(createdAt).toLocaleDateString() : '2026-04-06';
+    const isMission = !!itinerary.steps;
 
-    const header = (
-        <div className="flex-column gap-md">
-            <div className="flex-between">
+    const topSection = (
+        <div style={{ padding: '24px 24px 0 24px' }}>
+            <div className="flex-between" style={{ marginBottom: '20px' }}>
                 <div style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: '8px',
                     color: 'var(--primary-orange)',
-                    fontSize: '12px',
+                    fontSize: '11px',
                     fontWeight: 900,
                     letterSpacing: '1.5px'
                 }}>
-                    <Plane size={18} fill="var(--primary-orange)" /> TRIP GATHER AIR
+                    <Plane size={16} fill="var(--primary-orange)" /> TRIPGATHER AIR
                 </div>
                 <div style={{ 
-                    background: 'var(--bg-color)', 
+                    background: 'rgba(99, 102, 241, 0.1)', 
                     padding: '6px 14px', 
-                    borderRadius: 'var(--radius-full)',
+                    borderRadius: '8px',
                     fontSize: '10px',
-                    fontWeight: 800,
-                    color: 'var(--text-muted)',
+                    fontWeight: 900,
+                    color: 'var(--secondary-purple)',
                     letterSpacing: '0.5px'
-                }}>BUSINESS CLASS</div>
+                }}>FIRST CLASS</div>
             </div>
 
-            <h3 className="heading-m" style={{ color: 'var(--text-primary)' }}>
-                {title}
-            </h3>
+            <div style={{ marginBottom: '8px' }}>
+                <span className="label-orange">FLIGHT TITLE</span>
+                <h3 className="heading-m" style={{ marginTop: '4px', lineHeight: 1.3 }}>
+                    {title || itinerary.itineraryTitle}
+                </h3>
+            </div>
         </div>
     );
 
-    const handleView = (e) => {
-        if (e) e.stopPropagation();
-        if (onViewRoute) onViewRoute(itinerary);
-    };
+    const bottomSection = (
+        <div className="flex-column" style={{ gap: '20px', paddingTop: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                <div>
+                    <span className="label-muted">PASSENGER</span>
+                    <p className="info-value" style={{ fontSize: '16px' }}>{author || itineraryAuthor}</p>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                    <span className="label-muted">BOARDING DATE</span>
+                    <p className="info-value" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
+                        <Calendar size={14} color="var(--primary-orange)" strokeWidth={2.5} /> {date}
+                    </p>
+                </div>
+            </div>
 
-    const footer = (
-        <>
-            <PrimaryButton 
-                variant="secondary"
-                onClick={handleView}
-                style={{ flex: 1, height: '48px', fontSize: '14px' }}
-            >
-                상세 보기
-            </PrimaryButton>
-            {isHost ? (
+            <div style={{ padding: '16px', background: 'var(--bg-color)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                <span className="label-muted">DESTINATION • LOG</span>
+                <p className="text-s" style={{ fontWeight: 600, display: 'flex', gap: '8px', marginTop: '6px', color: 'var(--text-main)' }}>
+                    <MapPin size={16} color="var(--secondary-blue)" strokeWidth={2.5} style={{ flexShrink: 0 }} />
+                    {description || (itinerary.itinerary && itinerary.itinerary.description)}
+                </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
                 <PrimaryButton 
-                    variant="primary"
+                    variant="secondary"
                     onClick={(e) => {
-                        if (e) e.stopPropagation();
-                        if (onEdit) onEdit(itinerary);
+                        e.stopPropagation();
+                        onViewRoute && onViewRoute(itinerary);
                     }}
-                    style={{ flex: 1.5, height: '48px', fontSize: '14px' }}
+                    style={{ flex: 1, height: '52px', borderRadius: '14px' }}
                 >
-                    일정 수정하기
+                    INFO
                 </PrimaryButton>
-            ) : (
-                <PrimaryButton 
-                    variant="primary"
-                    onClick={async (e) => {
-                        if (e) e.stopPropagation();
-                        if (itinerary.steps) {
-                            handleView();
-                            return;
-                        }
-                        if (onStartMission) {
-                            await onStartMission(itinerary.id);
-                        }
-                    }}
-                    style={{ flex: 1.5, height: '48px', fontSize: '14px', whiteSpace: 'nowrap' }}
-                >
-                    {itinerary.steps ? '미션 계속하기' : '챌린지 참여하기'}
-                </PrimaryButton>
-            )}
-        </>
+                {isHost && !isMission ? (
+                    <PrimaryButton 
+                        variant="primary"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit && onEdit(itinerary);
+                        }}
+                        style={{ flex: 2, height: '52px', borderRadius: '14px' }}
+                    >
+                        EDIT JOURNEY
+                    </PrimaryButton>
+                ) : (
+                    <PrimaryButton 
+                        variant="primary"
+                        onClick={async (e) => {
+                            e.stopPropagation();
+                            if (isMission) {
+                                onViewRoute && onViewRoute(itinerary);
+                                return;
+                            }
+                            onStartMission && await onStartMission(itinerary.id);
+                        }}
+                        style={{ 
+                            flex: 2, 
+                            height: '52px', 
+                            borderRadius: '14px',
+                            background: isMission ? 'var(--text-primary)' : 'var(--primary-gradient)'
+                        }}
+                    >
+                        {isMission ? (
+                            <><CheckCircle size={18} style={{ marginRight: '8px' }} /> CONTINUE</>
+                        ) : (
+                            <>BOARDING NOW <ChevronRight size={18} style={{ marginLeft: '4px' }} /></>
+                        )}
+                    </PrimaryButton>
+                )}
+            </div>
+        </div>
     );
 
     return (
-        <div className="animate-fade" style={{ marginBottom: '20px' }}>
-            <TicketBase header={header} footer={footer}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', padding: '24px 0' }}>
-                    <div>
-                        <span className="label-muted">Passenger</span>
-                        <p className="info-value">{author}</p>
-                    </div>
-                    <div>
-                        <span className="label-muted">Date of Flight</span>
-                        <p className="info-value" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Calendar size={14} color="var(--primary-orange)" strokeWidth={2.5} /> {date}
-                        </p>
-                    </div>
-                </div>
-
-                <div style={{ paddingBottom: '24px', borderTop: '1px solid var(--bg-color)', paddingTop: '20px' }}>
-                    <span className="label-muted">Flight Path</span>
-                    <p className="text-s" style={{ fontWeight: 600, display: 'flex', gap: '8px' }}>
-                        <MapPin size={16} color="var(--secondary-purple)" strokeWidth={2.5} style={{ flexShrink: 0 }} />
-                        {description}
-                    </p>
-                </div>
-            </TicketBase>
-        </div>
+        <TicketContainer 
+            topSection={topSection} 
+            bottomSection={bottomSection}
+            onClick={() => onViewRoute && onViewRoute(itinerary)}
+            className="itinerary-ticket"
+        />
     );
 };
 

@@ -19,8 +19,8 @@ const MissionTab = ({
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-      {activeMissions?.filter(m => m.status === 'ACTIVE').map((mission) => {
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+      {activeMissions?.filter(m => m.status === 'ACTIVE').map((mission, idx) => {
         const isCompleted = mission?.status === 'COMPLETED';
         const completedSteps = mission?.steps?.filter(s => s.isCompleted || s.completed).length || 0;
         const totalSteps = mission?.steps?.length || 0;
@@ -30,58 +30,73 @@ const MissionTab = ({
           <div
             key={mission?.id}
             onClick={() => setSelectedMissionId(mission.id)}
+            className="ticket-wrapper animate-fade"
             style={{
-              background: 'var(--surface)',
-              borderRadius: '16px',
-              overflow: 'hidden',
+              background: 'white',
               cursor: 'pointer',
               border: '1px solid var(--border-color)',
-              position: 'relative'
+              animationDelay: `${idx * 0.1}s`,
+              padding: 0
             }}
           >
-            {mission?.itineraryBgImageUrl && (
-              <div style={{ height: '140px', overflow: 'hidden' }}>
-                <img
-                  src={mission.itineraryBgImageUrl}
-                  alt={mission.itineraryTitle || 'Mission'}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+            {/* Ticket Header Area */}
+            <div style={{ 
+              background: progress === 100 ? '#10B981' : 'var(--primary-gradient)', 
+              padding: '12px 20px', 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <span style={{ color: 'white', fontSize: '11px', fontWeight: 900, letterSpacing: '1px' }}>
+                {progress === 100 ? 'MISSION CLEAR' : 'ACTIVE MISSION'}
+              </span>
+              <div style={{ background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '4px' }}>
+                <span style={{ color: 'white', fontSize: '10px', fontWeight: 900 }}>NO. {mission.id}</span>
               </div>
-            )}
-            
-            <div style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text-primary)' }}>
-                  {mission?.itineraryTitle || 'Unknown Mission'}
-                </h3>
-                {isCompleted && (
-                  <span style={{ 
-                    background: '#E8F5E9', 
-                    color: '#2E7D32', 
-                    padding: '4px 8px', 
-                    borderRadius: '8px', 
-                    fontSize: '12px',
-                    fontWeight: 600
-                  }}>
-                    CLEAR
-                  </span>
-                )}
+            </div>
+
+            <div style={{ padding: '20px' }}>
+              <div className="flex-between" style={{ alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <span className="label-muted">DESTINATION</span>
+                  <h3 style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)' }}>
+                    {mission?.itineraryTitle || 'Unknown Mission'}
+                  </h3>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span className="label-muted">STOPS</span>
+                  <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)' }}>{completedSteps}/{totalSteps}</div>
+                </div>
               </div>
               
-              <div style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' }}>
-                {mission?.itineraryLocation || 'Unknown Location'} • {mission?.itineraryDates || 'No Dates'}
+              <div className="ticket-divider" style={{ margin: '16px 0' }} />
+
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{ flex: 1 }}>
+                  <div className="flex-between" style={{ marginBottom: '6px' }}>
+                    <span className="label-muted">PROGRESS</span>
+                    <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--primary-orange)' }}>{progress}%</span>
+                  </div>
+                  <div style={{ background: 'var(--bg-color)', borderRadius: '4px', height: '6px', overflow: 'hidden' }}>
+                    <div style={{ 
+                      height: '100%', 
+                      background: progress === 100 ? '#10B981' : 'var(--primary-gradient)', 
+                      width: `${progress}%`,
+                      transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                    }} />
+                  </div>
+                </div>
+                <button 
+                  className="icon-circle" 
+                  style={{ width: '40px', height: '40px', background: 'var(--bg-lite)', border: '1px solid var(--border-color)' }}
+                >
+                  <ChevronRight size={18} color="var(--text-primary)" />
+                </button>
               </div>
 
-              <div style={{ background: 'var(--bg-color)', borderRadius: '8px', height: '8px', overflow: 'hidden' }}>
-                <div style={{ 
-                  height: '100%', 
-                  background: isCompleted ? '#2E7D32' : 'var(--primary)', 
-                  width: `${progress}%`,
-                  transition: 'width 0.3s ease'
-                }} />
-              </div>
-              <div style={{ textAlign: 'right', fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                {progress}% ({completedSteps}/{totalSteps})
+              <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>🏷️ {mission?.itineraryLocation || 'Location'}</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>📅 {mission?.itineraryDates || 'Dates'}</span>
               </div>
             </div>
           </div>
@@ -92,7 +107,7 @@ const MissionTab = ({
         <RouteDetailModal
           itinerary={{
             ...selectedMission.itinerary,
-            id: selectedMission.id, // Use Mission ID
+            id: selectedMission.id, 
             steps: selectedMission.steps,
             status: selectedMission.status,
             itineraryId: selectedMission.itineraryId
