@@ -125,123 +125,180 @@ const MyPage = () => {
   }
 
   return (
-    <div className="app-container animate-fade" style={{ background: 'var(--bg-color)', minHeight: '100vh', paddingBottom: '100px' }}>
-      <header className="page-header glass" style={{ padding: '24px 20px', position: 'sticky', top: 0, zIndex: 10, borderRadius: '0 0 var(--radius-lg) var(--radius-lg)' }}>
-        <h1 className="page-title">마이페이지 👤</h1>
-        <p className="page-subtitle">나의 프로필 및 설정</p>
+    <div className="app-container animate-fade" style={{ background: 'var(--bg-lite)', minHeight: '100vh', paddingBottom: '100px' }}>
+      <header className="page-header" style={{ padding: '30px 20px 20px', textAlign: 'center' }}>
+        <h1 className="page-title" style={{ fontSize: '24px', letterSpacing: '-0.5px' }}>디지털 패스포트 📖</h1>
+        <p className="page-subtitle">나의 여행 기록과 스탬프</p>
       </header>
-      <div style={{ padding: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <div
-            style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '30px',
-              backgroundColor: user?.profileImageUrl ? 'transparent' : '#e0e0e0',
-              backgroundImage: user?.profileImageUrl ? `url(${user.profileImageUrl})` : undefined,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
-          <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700 }}>{user?.name ?? '사용자'}</h3>
-            <p style={{ color: 'var(--text-sub)', fontSize: '14px', marginTop: '4px' }}>
-              {user?.bio || '소개를 입력해 주세요.'}
-            </p>
-            {typeof user?.points === 'number' && (
-              <p style={{ color: 'var(--primary)', fontSize: '13px', fontWeight: 600, marginTop: '6px' }}>
-                {user.points} pts
-              </p>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              type="button"
-              onClick={openEdit}
-              style={{
-                padding: '12px',
-                background: 'white',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                zIndex: 5,
-                cursor: 'pointer'
-              }}
-              title="프로필 수정"
-            >
-              <Pencil size={18} color="var(--primary-orange)" />
-            </button>
-            <button
-              type="button"
-              onClick={logout}
-              style={{
-                padding: '12px',
-                background: 'white',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                zIndex: 5,
-                cursor: 'pointer'
-              }}
-              title="로그아웃"
-            >
-              <LogOut size={18} color="var(--text-sub)" />
-            </button>
-          </div>
-        </div>
-      </div>
 
-      <div style={{ padding: '0 20px', marginTop: '20px' }}>
-        <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px' }}>나의 미션 히스토리 🗺️</h3>
-        
-        {missionsLoading ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>가져오는 중...</div>
-        ) : myMissions.length === 0 ? (
-            <div className="glass" style={{ textAlign: 'center', padding: '40px 20px', borderRadius: 'var(--radius-lg)', background: 'white' }}>
-              <MapPin size={32} color="var(--text-muted)" style={{ margin: '0 auto 12px auto' }} />
-              <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>아직 참여한 미션이 없습니다.</p>
+      <div style={{ padding: '0 20px' }}>
+        {/* Passport Spread View */}
+        <div className="glass" style={{ 
+          borderRadius: '24px', 
+          overflow: 'hidden', 
+          border: '1px solid rgba(255,255,255,0.4)',
+          boxShadow: 'var(--shadow-premium)',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))'
+        }}>
+          {/* ID PAGE (Upper Section) */}
+          <div style={{ 
+            padding: '24px', 
+            borderBottom: '2px dashed var(--border-color)',
+            position: 'relative',
+            background: 'rgba(255, 92, 0, 0.03)'
+          }}>
+            <div style={{ position: 'absolute', top: '15px', right: '20px', opacity: 0.2 }}>
+              <MapPin size={80} color="var(--primary-orange)" strokeWidth={1} />
             </div>
-        ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {myMissions.map((m, idx) => (
-                <div key={m.id} onClick={() => setSelectedMission(m)} style={{ cursor: 'pointer', background: 'var(--surface-solid)', padding: '20px', borderRadius: 'var(--radius-lg)', animationDelay: `${idx * 0.1}s`, border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-premium)' }} className="animate-fade">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>{m.itineraryTitle}</h4>
-                    <span style={{ 
-                      fontSize: '11px', fontWeight: 800, padding: '4px 10px', borderRadius: 'var(--radius-full)',
-                      background: m.status === 'COMPLETED' ? 'rgba(81, 207, 102, 0.1)' : 'rgba(255, 92, 0, 0.1)',
-                      color: m.status === 'COMPLETED' ? '#2B8A3E' : 'var(--primary-orange)',
-                      display: 'flex', alignItems: 'center', gap: '4px'
-                    }}>
-                      {m.status === 'COMPLETED' ? <CheckCircle size={12} /> : <Clock size={12} />}
-                      {m.status === 'COMPLETED' ? 'COMPLETED' : 'ACTIVE'}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '12px' }}>By {m.itineraryAuthor}</p>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    시작일: {new Date(m.startedAt).toLocaleDateString()}
-                    {m.completedAt && ` • 완료일: ${new Date(m.completedAt).toLocaleDateString()}`}
+            
+            <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+              {/* Profile Photo Area (Passport Style) */}
+              <div 
+                style={{
+                  width: '100px',
+                  height: '120px',
+                  borderRadius: '8px',
+                  backgroundColor: '#f0f0f0',
+                  backgroundImage: user?.profileImageUrl ? `url(${user.profileImageUrl})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  border: '4px solid white',
+                  boxShadow: 'var(--shadow-sm)',
+                  flexShrink: 0
+                }}
+              />
+              
+              <div style={{ flex: 1 }}>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-sub)', textTransform: 'uppercase' }}>Surname / Given Names</label>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '-2px' }}>{user?.name ?? 'TRAVELER'}</h3>
+                </div>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-sub)', textTransform: 'uppercase' }}>Nationality / Points</label>
+                  <p style={{ fontSize: '14px', fontWeight: 700, color: 'var(--primary-orange)' }}>EARTH / {user?.points ?? 0} PTS</p>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-sub)', textTransform: 'uppercase' }}>Personal Note</label>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    {user?.bio || '환영합니다! 당신의 여행을 기록해 보세요.'}
                   </p>
                 </div>
-              ))}
-              {selectedMission && (
-                <RouteDetailModal
-                  itinerary={{
-                      id: selectedMission.itineraryId,
-                      title: selectedMission.itineraryTitle,
-                      author: selectedMission.itineraryAuthor,
-                      description: 'Mission Details & Log',
-                      createdAt: selectedMission.startedAt,
-                      steps: selectedMission.steps
-                  }}
-                  onClose={() => setSelectedMission(null)}
-                />
-              )}
+              </div>
             </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '15px' }}>
+              <button 
+                onClick={openEdit}
+                style={{ padding: '8px 16px', background: 'white', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+              >
+                <Pencil size={14} /> EDIT ID
+              </button>
+              <button 
+                onClick={logout}
+                style={{ padding: '8px 16px', background: 'rgba(0,0,0,0.05)', borderRadius: 'var(--radius-full)', border: 'none', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: 'var(--text-sub)' }}
+              >
+                <LogOut size={14} /> EXIT
+              </button>
+            </div>
+          </div>
+
+          {/* STAMP PAGE (Lower Section) */}
+          <div style={{ padding: '30px 24px', background: 'white' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#333', letterSpacing: '1px' }}>VISAS / STAMPS 🔖</h3>
+              <span style={{ fontSize: '11px', color: 'var(--text-sub)', fontWeight: 600 }}>PAGE 01 OF 01</span>
+            </div>
+
+            {missionsLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>기록을 불러오는 중...</div>
+            ) : myMissions.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 20px', border: '2px dashed #eee', borderRadius: '16px' }}>
+                <MapPin size={32} color="#eee" style={{ marginBottom: '12px' }} />
+                <p style={{ color: '#bbb', fontSize: '14px' }}>아직 찍힌 스탬프가 없습니다.<br/>여행을 떠나 미션을 완료해 보세요!</p>
+              </div>
+            ) : (
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(2, 1fr)', 
+                gap: '20px', 
+                position: 'relative' 
+              }}>
+                {myMissions.map((m, idx) => {
+                  const isCompleted = m.status === 'COMPLETED';
+                  // 랜덤 회전각 계산 (도장 느낌)
+                  const rotation = ((idx * 7) % 20) - 10; 
+                  
+                  return (
+                    <div 
+                      key={m.id} 
+                      onClick={() => setSelectedMission(m)}
+                      style={{ 
+                        aspectRatio: '1/1',
+                        border: isCompleted ? '3px double rgba(255, 92, 0, 0.4)' : '1px solid #eee',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        transform: isCompleted ? `rotate(${rotation}deg)` : 'none',
+                        transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                        background: isCompleted ? 'rgba(255, 92, 0, 0.02)' : 'white',
+                        position: 'relative',
+                        padding: '10px'
+                      }}
+                      className={isCompleted ? "animate-pop" : ""}
+                    >
+                      {isCompleted ? (
+                        <div style={{ 
+                          width: '100%', 
+                          height: '100%', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          opacity: 0.8
+                        }}>
+                          <div style={{ color: 'var(--primary-orange)', fontWeight: 900, fontSize: '12px', textAlign: 'center' }}>
+                            {m.itineraryTitle.substring(0, 10)}
+                          </div>
+                          <CheckCircle size={36} color="var(--primary-orange)" strokeWidth={2.5} style={{ margin: '8px 0' }} />
+                          <div style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 800 }}>
+                            {new Date(m.completedAt || m.startedAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <Clock size={24} color="#eee" />
+                          <div style={{ fontSize: '10px', color: '#bbb', textAlign: 'center', fontWeight: 600 }}>
+                            {m.itineraryTitle.substring(0, 8)}...
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Selected Mission Details Modal */}
+        {selectedMission && (
+          <RouteDetailModal
+            itinerary={{
+                id: selectedMission.itineraryId,
+                title: selectedMission.itineraryTitle,
+                author: selectedMission.itineraryAuthor,
+                description: 'Mission Details & Log',
+                createdAt: selectedMission.startedAt,
+                steps: selectedMission.steps
+            }}
+            onClose={() => setSelectedMission(null)}
+          />
         )}
       </div>
 
