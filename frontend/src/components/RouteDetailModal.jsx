@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, MapPin, ChevronRight, Trash2, Edit3, Navigation, CheckCircle, Camera, Check } from 'lucide-react';
+import { X, MapPin, ChevronRight, Trash2, Edit3, Navigation, CheckCircle, Camera, Check, Clock, Image as ImageIcon } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { authFetch } from '../api/client';
 import ModalHeader from './UI/ModalHeader';
 import ModalFooter from './UI/ModalFooter';
 import PrimaryButton from './UI/PrimaryButton';
-import FormInput from './UI/FormInput';
 
-const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
+const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete, onStepComplete }) => {
     const [isVisible, setIsVisible] = useState(false);
     const { user: currentUser } = useUser();
     
@@ -21,8 +20,10 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
     
     const fileInputRef = useRef(null);
 
-    const isAuthor = currentUser && (currentUser.name === (localItinerary.author || localItinerary.itineraryAuthor));
+    // Identifiers
     const isMission = !!localItinerary.steps;
+    const userMissionId = localItinerary.itineraryId ? localItinerary.id : (localItinerary.missionId || localItinerary.id);
+    const isAuthor = currentUser && (currentUser.name === (localItinerary.author || localItinerary.itineraryAuthor));
 
     const formatDate = (dateStr) => {
         if (!dateStr) return '';
@@ -40,11 +41,9 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
 
     const groupedByDay = (() => {
         const sourcePoints = localItinerary.steps || localItinerary.routePoints || [];
-        const points = sourcePoints.length > 0
-            ? [...sourcePoints].sort((a, b) =>
-                a.dayNumber !== b.dayNumber ? a.dayNumber - b.dayNumber : a.sequenceOrder - b.sequenceOrder
-              )
-            : [];
+        const points = [...sourcePoints].sort((a, b) =>
+            a.dayNumber !== b.dayNumber ? a.dayNumber - b.dayNumber : a.sequenceOrder - b.sequenceOrder
+        );
 
         const map = {};
         points.forEach(p => {
@@ -69,10 +68,12 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
         }
     };
 
-    const handleCompleteStep = async (stepId) => {
+    const handleCompleteStepInternal = async (stepId) => {
+        if (submittingStep) return;
         setSubmittingStep(true);
         try {
-            let finalPhotoUrl = '';
+            let finalPhotoUrl = (previewUrl && !photoFile) ? previewUrl : '';
+            
             if (photoFile) {
                 const fd = new FormData();
                 fd.append('file', photoFile);
@@ -83,17 +84,15 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                 if (uploadRes.ok) {
                     const data = await uploadRes.json();
                     finalPhotoUrl = data.url;
+                } else {
+                    throw new Error("Photo upload failed");
                 }
             }
 
-            const targetMissionId = localItinerary.itineraryId ? localItinerary.id : (localItinerary.missionId || localItinerary.id);
-            // If we have a previewUrl but no photoFile, it means we're reusing the existing photo
-            const finalPhotoUrlToSave = (previewUrl && !photoFile) ? previewUrl : finalPhotoUrl;
-
-            const res = await authFetch(`/api/missions/${targetMissionId}/steps/${stepId}/complete`, {
+            const res = await authFetch(`/api/missions/${userMissionId}/steps/${stepId}/complete`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ memo, photoUrl: finalPhotoUrlToSave })
+                body: JSON.stringify({ memo, photoUrl: finalPhotoUrl })
             });
 
             if (res.ok) {
@@ -102,263 +101,200 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                     ...prev,
                     steps: prev.steps.map(s => s.id === stepId ? updatedStep : s)
                 }));
+                // Notify parent
+                if (onStepComplete) onStepComplete(userMissionId, stepId, updatedStep);
+                
                 setCheckingStepId(null);
                 setMemo('');
                 setPhotoFile(null);
                 setPreviewUrl(null);
             } else {
-                alert("Failed to complete step");
+                const errorText = await res.text();
+                alert(`인증 실패: ${errorText}`);
             }
         } catch (e) {
             console.error("Error completing step", e);
+            alert("인증 처리 중 오류가 발생했습니다.");
         } finally {
             setSubmittingStep(false);
         }
     };
 
-    const handleLeaveRequest = async () => {
-        if (!window.confirm("정말로 이 미션을 중단하고 나가시겠습니까? 호스트의 승인 후 최종 탈퇴 처리됩니다.")) return;
-        try {
-            const targetMissionId = localItinerary.itineraryId ? localItinerary.id : (localItinerary.missionId || localItinerary.id);
-            const res = await authFetch(`/api/missions/${targetMissionId}/leave/request`, {
-                method: 'POST'
-            });
-            if (res.ok) {
-                alert("탈퇴 요청을 보냈습니다. 호스트가 승인하면 목록에서 사라집니다.");
-                onClose();
-            } else {
-                alert("탈퇴 요청에 실패했습니다.");
-            }
-        } catch (e) {
-            console.error("Error requesting leave", e);
-        }
-    };
-
     return (
         <div className="modal-overlay">
-            <div className="modal-content-night" style={{ 
-                height: '100vh',
-                borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0'
-            }}>
+            <div className={`modal-content animate-fade`} style={{ height: '94vh' }}>
                 <ModalHeader 
-                    title={localItinerary.author || localItinerary.itineraryAuthor}
-                    subtitle="TRAVEL LOG • JOURNEY"
+                    title={localItinerary.title || localItinerary.itineraryTitle}
+                    subtitle={isMission ? "MISSION IN PROGRESS" : "ITINERARY DETAILS"}
                     onClose={onClose}
-                    dark
-                    actions={isAuthor ? (
-                        <>
-                            {!isMission && (
-                                <button onClick={onEdit} className="icon-circle glass" style={{ width: '40px', height: '40px' }}>
-                                    <Edit3 size={18} color="white" />
-                                </button>
-                            )}
-                            <button onClick={onDelete} className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,107,107,0.1)' }}>
-                                <Trash2 size={18} color="#FF6B6B" />
+                    actions={
+                        isAuthor && !isMission && (
+                            <button onClick={onEdit} className="icon-circle" style={{ width: '40px', height: '40px' }}>
+                                <Edit3 size={18} color="var(--text-primary)" />
                             </button>
-                        </>
-                    ) : isMission && (
-                        <button onClick={handleLeaveRequest} title="참여 취소 요청" className="icon-circle glass" style={{ width: '40px', height: '40px', background: 'rgba(255,107,107,0.1)' }}>
-                            <Trash2 size={18} color="#FF6B6B" />
-                        </button>
-                    )}
+                        )
+                    }
                 />
 
-                <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px 24px' }}>
-                    <div style={{ marginBottom: '32px', animation: 'fadeIn 0.6s ease-out' }}>
-                        <h1 className="heading-l" style={{ 
-                            marginBottom: '12px', background: 'linear-gradient(to bottom, #FFFFFF 0%, #A5B4FC 100%)', 
-                            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1.2
-                        }}>
-                            {localItinerary.title || localItinerary.itineraryTitle}
-                        </h1>
-                        <p className="text-s" style={{ color: 'rgba(255,255,255,0.85)', lineHeight: '1.7', fontSize: '15px' }}>
+                <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+                    {/* Header Info Card */}
+                    <div className="ticket-wrapper" style={{ padding: '24px', marginBottom: '32px', background: 'white' }}>
+                        <div className="flex-between" style={{ marginBottom: '12px' }}>
+                            <span className="label-orange">JOURNEY LOG</span>
+                            <div className="status-pill">{isMission ? 'ACTIVE' : 'PLANNED'}</div>
+                        </div>
+                        <p className="text-s" style={{ color: 'var(--text-main)', fontSize: '15px', lineHeight: 1.6 }}>
                             {localItinerary.description || localItinerary.itinerary?.description}
                         </p>
-                    </div>
-
-                    {isMission && (
-                        <div style={{ marginBottom: '40px', background: 'rgba(255,255,255,0.03)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(255, 92, 0, 0.2)', position: 'relative', overflow: 'hidden' }}>
-                            {/* Background glow for progress bar component */}
-                            <div style={{ position: 'absolute', top: 0, left: '-50%', width: '200%', height: '100%', background: 'radial-gradient(circle at top right, rgba(255, 92, 0, 0.1) 0%, transparent 60%)', zIndex: 0 }} />
-                            
-                            <div style={{ position: 'relative', zIndex: 1 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'flex-end' }}>
-                                    <div>
-                                        <h3 style={{ fontWeight: 900, color: 'var(--primary-orange)', fontSize: '16px', letterSpacing: '1px', marginBottom: '4px' }}>MISSION PROGRESS</h3>
-                                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{completedSteps} / {totalSteps} Stops Completed</p>
-                                    </div>
-                                    <span style={{ fontWeight: 900, color: progressPercent >= 100 ? '#51CF66' : 'white', fontSize: '24px' }}>{progressPercent}%</span>
+                        
+                        {isMission && (
+                            <div style={{ marginTop: '24px' }}>
+                                <div className="flex-between" style={{ marginBottom: '8px' }}>
+                                    <span className="label-muted">MISSION PROGRESS</span>
+                                    <span style={{ fontWeight: 900, color: 'var(--primary-orange)' }}>{progressPercent}%</span>
                                 </div>
-                                <div style={{ width: '100%', height: '10px', background: 'rgba(0,0,0,0.5)', borderRadius: '5px', overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div style={{ height: '8px', background: 'var(--bg-color)', borderRadius: '4px', overflow: 'hidden' }}>
                                     <div style={{ 
                                         width: `${progressPercent}%`, 
                                         height: '100%', 
-                                        background: progressPercent >= 100 ? '#51CF66' : 'var(--primary-gradient)', 
-                                        transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)', 
-                                        boxShadow: progressPercent >= 100 ? '0 0 15px rgba(81, 207, 102, 0.5)' : '0 0 10px rgba(255, 92, 0, 0.5)' 
+                                        background: 'var(--primary-gradient)',
+                                        transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)'
                                     }} />
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
-                    {groupedByDay.map((day, dayIdx) => (
-                        <div key={dayIdx} style={{ marginBottom: '48px', animation: `fadeIn 0.5s ease-out forwards ${dayIdx * 0.15}s`, opacity: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-                                <div style={{
-                                    background: 'var(--primary-gradient)', borderRadius: '12px', padding: '6px 16px',
-                                    fontSize: '12px', fontWeight: 900, letterSpacing: '1px', color: 'white',
-                                    boxShadow: '0 8px 20px rgba(255, 92, 0, 0.2)'
-                                }}>
-                                    DAY {dayIdx + 1}
+                    {groupedByDay.map((day, dIdx) => (
+                        <div key={dIdx} style={{ marginBottom: '40px' }}>
+                            <div className="flex-between" style={{ marginBottom: '20px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{ 
+                                        background: 'var(--text-primary)', color: 'white', 
+                                        padding: '4px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 900 
+                                    }}>DAY {dIdx + 1}</div>
+                                    <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{day.dayLabel}</span>
                                 </div>
-                                <span style={{ color: 'white', fontSize: '15px', fontWeight: 700 }}>{day.dayLabel}</span>
-                                <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                                <div style={{ flex: 1, height: '1px', background: 'var(--border-color)', marginLeft: '16px' }} />
                             </div>
 
-                            <div style={{ position: 'relative', paddingLeft: '40px' }}>
-                                <div style={{
-                                    position: 'absolute', left: '11px', top: '12px', bottom: '12px',
-                                    width: '2px', background: 'linear-gradient(to bottom, var(--primary-orange), var(--secondary-purple), transparent)'
-                                }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {day.points.map((point, pIdx) => {
+                                    const isDone = point.isCompleted || point.completed;
+                                    const isChecking = checkingStepId === point.id;
 
-                                {day.points.map((point, ptIdx) => {
-                                    const isStepCompleted = point.isCompleted === true || point.completed === true;
-                                    const isCurrentlyChecking = checkingStepId === point.id;
-                                    
                                     return (
-                                    <div key={ptIdx} style={{ position: 'relative', marginBottom: '20px', animation: `fadeIn 0.4s ease-out forwards ${(dayIdx * 0.1) + (ptIdx * 0.1)}s`, opacity: 0 }}>
-                                        <div style={{
-                                            position: 'absolute', left: '-35px', top: '18px',
-                                            width: '12px', height: '12px', borderRadius: '50%',
-                                            background: isStepCompleted ? 'var(--primary-orange)' : (ptIdx === 0 ? 'white' : 'transparent'),
-                                            border: '3px solid var(--primary-orange)',
-                                            boxShadow: isStepCompleted || ptIdx === 0 ? '0 0 15px var(--primary-orange)' : 'none',
-                                            zIndex: 2, transition: 'all 0.3s ease'
-                                        }} />
-
-                                        <div className="glass-dark" style={{
-                                            padding: '20px', borderRadius: 'var(--radius-md)',
-                                            border: isStepCompleted ? '2px solid rgba(81, 207, 102, 0.4)' : '1px solid rgba(255,255,255,0.08)',
-                                            background: isStepCompleted ? 'linear-gradient(145deg, rgba(81, 207, 102, 0.05) 0%, rgba(255,255,255,0.02) 100%)' : 'rgba(255,255,255,0.03)',
-                                            position: 'relative',
-                                            overflow: 'hidden'
+                                        <div key={pIdx} className="ticket-wrapper" style={{ 
+                                            padding: '20px', 
+                                            border: isDone ? '1px solid #A7F3D0' : '1px solid var(--border-color)',
+                                            background: isDone ? '#F0FDF4' : 'white'
                                         }}>
-                                            {/* Stamp Overlay */}
-                                            {isStepCompleted && (
-                                                <div style={{
-                                                    position: 'absolute', top: '10px', right: '10px', 
-                                                    width: '80px', height: '80px', 
-                                                    border: '4px solid rgba(81, 207, 102, 0.2)', borderRadius: '50%',
-                                                    display: 'flex', justifyContent: 'center', alignItems: 'center',
-                                                    transform: 'rotate(-15deg)', zIndex: 5, pointerEvents: 'none'
-                                                }}>
-                                                    <div style={{
-                                                        color: 'rgba(81, 207, 102, 0.4)', fontWeight: 900, fontSize: '14px', 
-                                                        letterSpacing: '2px', transform: 'rotate(-10deg)'
+                                            <div className="flex-between" style={{ marginBottom: '8px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ 
+                                                        width: '24px', height: '24px', borderRadius: '50%', 
+                                                        background: isDone ? '#10B981' : 'var(--bg-color)',
+                                                        color: isDone ? 'white' : 'var(--text-muted)',
+                                                        fontSize: '12px', fontWeight: 900, display: 'flex', justifyContent: 'center', alignItems: 'center'
                                                     }}>
-                                                        CLEAR
+                                                        {isDone ? <Check size={14} /> : point.sequenceOrder}
                                                     </div>
+                                                    <h4 style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{point.label}</h4>
                                                 </div>
-                                            )}
-
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', position: 'relative', zIndex: 10 }}>
-                                                <span style={{ fontSize: '11px', color: isStepCompleted ? '#51CF66' : 'var(--primary-orange)', fontWeight: 900, letterSpacing: '1px' }}>
-                                                    {isStepCompleted ? `MISSION ACCOMPLISHED` : `STOP ${point.sequenceOrder}`}
-                                                </span>
-                                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                    {isStepCompleted && (
-                                                        <button 
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setCheckingStepId(point.id);
-                                                                setMemo(point.memo || '');
-                                                                setPreviewUrl(point.photoUrl || null);
-                                                                // Note: we don't set photoFile here because we only have the URL
-                                                            }}
-                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                                                            title="수정하기"
-                                                        >
-                                                            <Edit3 size={14} color="rgba(255,255,255,0.5)" />
-                                                        </button>
-                                                    )}
-                                                    {isStepCompleted ? <CheckCircle size={16} color="#51CF66" /> : <Navigation size={14} color="rgba(255,255,255,0.3)" />}
-                                                </div>
+                                                {isDone && (
+                                                    <button 
+                                                        onClick={() => setCheckingStepId(point.id)} 
+                                                        style={{ background: 'none', color: 'var(--text-muted)' }}
+                                                    >
+                                                        <Edit3 size={14} />
+                                                    </button>
+                                                )}
                                             </div>
-                                            <h4 style={{ fontSize: '17px', fontWeight: 800, color: 'white', marginBottom: '6px', position: 'relative', zIndex: 10 }}>
-                                                {point.label}
-                                            </h4>
-                                            
-                                            {isStepCompleted && point.photoUrl && (
-                                                <img src={point.photoUrl} alt="memory" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '12px', marginTop: '12px', border: '1px solid rgba(255,255,255,0.1)' }} />
+
+                                            {isDone && point.photoUrl && (
+                                                <img src={point.photoUrl} alt="memory" style={{ 
+                                                    width: '100%', height: '180px', objectFit: 'cover', 
+                                                    borderRadius: '12px', marginTop: '12px', border: '1px solid var(--border-color)' 
+                                                }} />
                                             )}
-                                            {isStepCompleted && point.memo && (
-                                                <p style={{ marginTop: '12px', fontSize: '14px', color: 'rgba(255,255,255,0.8)', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '12px', borderLeft: '3px solid #51CF66' }}>
-                                                    {point.memo}
-                                                </p>
-                                            )}
-                                            
-                                            {isStepCompleted && point.completedAt && (
+
+                                            {isDone && point.memo && (
                                                 <div style={{ 
-                                                    marginTop: '12px', 
-                                                    fontSize: '11px', 
-                                                    color: 'rgba(81, 207, 102, 0.6)', 
-                                                    fontWeight: 700,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '4px',
-                                                    padding: '4px 8px',
-                                                    background: 'rgba(81, 207, 102, 0.05)',
-                                                    borderRadius: '6px',
-                                                    width: 'fit-content'
+                                                    marginTop: '12px', padding: '12px', background: 'white', 
+                                                    borderRadius: '12px', fontSize: '14px', borderLeft: '4px solid #10B981',
+                                                    color: 'var(--text-main)', fontWeight: 500
                                                 }}>
-                                                    <Clock size={10} />
-                                                    COMPLETED AT {formatDate(point.completedAt)}
+                                                    {point.memo}
                                                 </div>
                                             )}
 
-                                            {isMission && !isStepCompleted && !isCurrentlyChecking && (
-                                                <button onClick={() => {
-                                                    setCheckingStepId(point.id);
-                                                    setMemo('');
-                                                    setPreviewUrl(null);
-                                                    setPhotoFile(null);
-                                                }} className="glass" style={{ marginTop: '16px', width: '100%', padding: '12px', borderRadius: '12px', color: 'white', fontSize: '13px', fontWeight: 700, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', border: '1px dashed rgba(255,255,255,0.2)' }}>
-                                                    <CheckCircle size={16} /> MARK AS REACHED
+                                            {isMission && !isDone && !isChecking && (
+                                                <button 
+                                                    onClick={() => {
+                                                        setCheckingStepId(point.id);
+                                                        setMemo(point.memo || '');
+                                                        setPreviewUrl(point.photoUrl || null);
+                                                    }}
+                                                    className="secondary-btn w-full" 
+                                                    style={{ marginTop: '12px', height: '48px', fontSize: '13px' }}
+                                                >
+                                                    <Camera size={16} style={{ marginRight: '8px' }} /> 인증하고 스탬프 찍기
                                                 </button>
                                             )}
 
-                                            {isCurrentlyChecking && (
-                                                <div style={{ marginTop: '16px', background: 'rgba(0,0,0,0.4)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                                    <textarea value={memo} onChange={e => setMemo(e.target.value)} placeholder="Add a quick memory or note..." style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', minHeight: '80px', fontSize: '14px', marginBottom: '12px', resize: 'none' }} />
+                                            {isChecking && (
+                                                <div style={{ marginTop: '16px', borderTop: '1px dashed var(--border-color)', paddingTop: '16px' }}>
+                                                    <textarea 
+                                                        value={memo} 
+                                                        onChange={e => setMemo(e.target.value)} 
+                                                        placeholder="이곳에서의 추억을 기록해보세요..." 
+                                                        style={{ 
+                                                            width: '100%', padding: '12px', borderRadius: '12px', 
+                                                            background: 'var(--bg-color)', border: '1px solid var(--border-color)',
+                                                            fontSize: '14px', minHeight: '100px', resize: 'none'
+                                                        }} 
+                                                    />
                                                     
-                                                    {previewUrl ? (
-                                                        <div style={{ position: 'relative', marginBottom: '12px' }}>
-                                                            <img src={previewUrl} style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px' }} alt="preview" />
-                                                            <button onClick={() => { setPhotoFile(null); setPreviewUrl(null); }} style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', padding: '4px', cursor: 'pointer' }}><X size={14} /></button>
-                                                        </div>
-                                                    ) : (
-                                                        <button onClick={() => fileInputRef.current.click()} style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'var(--primary-orange)', border: '1px dashed rgba(255,255,255,0.2)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginBottom: '12px', cursor: 'pointer', fontWeight: 600 }}>
-                                                            <Camera size={16} /> ATTACH PHOTO
-                                                        </button>
-                                                    )}
-                                                    <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*" onChange={handlePhotoChange} />
+                                                    <div style={{ marginTop: '12px' }}>
+                                                        {previewUrl ? (
+                                                            <div style={{ position: 'relative' }}>
+                                                                <img src={previewUrl} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '12px' }} alt="preview" />
+                                                                <button 
+                                                                    onClick={() => { setPhotoFile(null); setPreviewUrl(null); }} 
+                                                                    style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.5)', color: 'white', borderRadius: '50%', padding: '6px' }}
+                                                                >
+                                                                    <X size={16} />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <button 
+                                                                onClick={() => fileInputRef.current.click()} 
+                                                                style={{ 
+                                                                    width: '100%', height: '100px', borderRadius: '12px', 
+                                                                    border: '2px dashed var(--border-color)', display: 'flex', flexDirection: 'column',
+                                                                    justifyContent: 'center', alignItems: 'center', gap: '8px', color: 'var(--text-muted)'
+                                                                }}
+                                                            >
+                                                                <ImageIcon size={24} />
+                                                                <span style={{ fontSize: '13px', fontWeight: 700 }}>사진 첨부 (옵션)</span>
+                                                            </button>
+                                                        )}
+                                                        <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*" onChange={handlePhotoChange} />
+                                                    </div>
 
-                                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                                        <button disabled={submittingStep} onClick={() => {
-                                                            setCheckingStepId(null);
-                                                            setMemo('');
-                                                            setPhotoFile(null);
-                                                            setPreviewUrl(null);
-                                                        }} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: 'white', border: 'none', fontWeight: 600 }}>CANCEL</button>
-                                                        <button disabled={submittingStep} onClick={() => handleCompleteStep(point.id)} style={{ flex: 1, padding: '12px', borderRadius: '8px', background: '#51CF66', color: 'black', border: 'none', fontWeight: 800, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px' }}>
-                                                            {submittingStep ? 'SAVING...' : <><Check size={16} /> CONFIRM</>}
-                                                        </button>
+                                                    <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+                                                        <button onClick={() => setCheckingStepId(null)} className="secondary-btn" style={{ flex: 1 }}>취소</button>
+                                                        <PrimaryButton 
+                                                            onClick={() => handleCompleteStepInternal(point.id)} 
+                                                            disabled={submittingStep}
+                                                            style={{ flex: 2 }}
+                                                        >
+                                                            {submittingStep ? '처리 중...' : '인증 완료'}
+                                                        </PrimaryButton>
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
                                     );
                                 })}
                             </div>
@@ -366,54 +302,37 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete }) => {
                     ))}
                 </div>
 
-                <ModalFooter dark>
-                    {isAuthor && !isMission ? (
-                        <div style={{ display: 'flex', gap: '14px' }}>
-                            <PrimaryButton onClick={onEdit} style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--night-border)' }}>
-                                <Edit3 size={18} style={{ marginRight: '8px' }} /> EDIT JOURNEY
-                            </PrimaryButton>
-                            <button onClick={onDelete} className="glass" style={{ width: '60px', height: '60px', borderRadius: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.05)' }}>
-                                <Trash2 size={20} color="#EF4444" />
-                            </button>
-                        </div>
-                    ) : isMission ? (
-                        progressPercent < 100 ? (
-                            <PrimaryButton disabled style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--night-text-muted)' }}>
-                                COMPLETE ALL STOPS FIRST
-                            </PrimaryButton>
-                        ) : (
-                            <PrimaryButton onClick={async () => {
-                                try {
-                                    const res = await authFetch(`/api/missions/complete/${localItinerary.id}`, { method: 'POST' });
+                <ModalFooter>
+                    {isMission ? (
+                        <div className="flex-between w-full">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+                                <Clock size={16} />
+                                <span style={{ fontSize: '13px', fontWeight: 600 }}>{progressPercent}% Completed</span>
+                            </div>
+                            <PrimaryButton 
+                                disabled={progressPercent < 100}
+                                onClick={async () => {
+                                    const res = await authFetch(`/api/missions/complete/${userMissionId}`, { method: 'POST' });
                                     if (res.ok) {
-                                        alert("축하합니다! 미션을 모두 완료하여 완료 처리되었습니다. 🏆✨");
+                                        alert("축하합니다! 여행의 모든 미션을 완료했습니다. 🏆");
                                         onClose();
-                                    } else {
-                                        const err = await res.text();
-                                        alert("실패: " + err);
                                     }
-                                } catch (e) {
-                                    console.error("Could not complete mission:", e);
-                                }
-                            }} style={{ background: '#51CF66', color: '#0D0D19' }}>
-                                🏆 미션 최종 완료하기 <ChevronRight size={20} />
+                                }}
+                            >
+                                미션 최종 완료
                             </PrimaryButton>
-                        )
+                        </div>
                     ) : (
                         <PrimaryButton 
                             onClick={async () => {
-                                try {
-                                    const res = await authFetch(`/api/missions/start/${localItinerary.id}`, { method: 'POST' });
-                                    if (res.ok) {
-                                        const missionData = await res.json();
-                                        setLocalItinerary(missionData);
-                                    }
-                                } catch (e) {
-                                    console.error("Could not start mission from modal:", e);
+                                const res = await authFetch(`/api/missions/start/${localItinerary.id}`, { method: 'POST' });
+                                if (res.ok) {
+                                    alert("챌린지가 시작되었습니다! 나의 미션 탭에서 확인하세요. 🚀");
+                                    onClose();
                                 }
                             }}
                         >
-                            🚀 이 챌린지에 참여하기
+                            챌린지 참여하기
                         </PrimaryButton>
                     )}
                 </ModalFooter>

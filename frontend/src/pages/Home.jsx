@@ -67,43 +67,38 @@ const Home = () => {
 
   return (
     <div className="app-container animate-fade">
-      {/* Premium Header with Glassmorphism */}
+      {/* Premium Header with Boarding Pass Aesthetic */}
       <header className="glass page-header" style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center',
-        padding: '24px 20px',
+        padding: '28px 20px',
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        borderRadius: '0 0 var(--radius-lg) var(--radius-lg)'
+        borderRadius: '0 0 var(--radius-xl) var(--radius-xl)',
+        background: 'rgba(255, 255, 255, 0.9)',
+        borderBottom: '1px solid var(--border-color)'
       }}>
         <div>
-          <h1 className="heading-l">모임</h1>
-          <p className="text-s" style={{ 
-            color: 'var(--primary-orange)', 
-            fontWeight: 800, 
-            textTransform: 'uppercase',
-            fontSize: '12px',
-            letterSpacing: '1px'
-          }}>Discover & Join</p>
+          <span className="label-orange">GATHERING TERMINAL</span>
+          <h1 className="heading-l" style={{ marginTop: '4px' }}>발견</h1>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
           <select 
             value={selectedRegion} 
             onChange={(e) => handleRegionChange(e.target.value)}
             style={{ 
-              background: 'var(--bg-color)', 
-              padding: '10px 16px', 
-              borderRadius: 'var(--radius-full)', 
+              background: 'white', 
+              padding: '12px 18px', 
+              borderRadius: '16px', 
               fontSize: '14px', 
-              fontWeight: 600,
+              fontWeight: 800,
               border: '1px solid var(--border-color)',
               color: 'var(--text-primary)',
               appearance: 'none',
               cursor: 'pointer',
-              outline: 'none',
-              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
+              boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
             }}
           >
             {regions.map(r => (
@@ -112,26 +107,23 @@ const Home = () => {
           </select>
           <button 
             onClick={() => setShowOnlyHosted(!showOnlyHosted)}
-            className="icon-circle glass" 
+            className="icon-circle" 
             style={{ 
-              width: '44px', height: '44px',
+              width: '48px', height: '48px',
               background: showOnlyHosted ? 'var(--primary-gradient)' : 'white',
-              border: showOnlyHosted ? 'none' : '1px solid var(--border-color)',
-              color: showOnlyHosted ? 'white' : 'var(--text-primary)'
+              border: '1px solid var(--border-color)',
+              color: showOnlyHosted ? 'white' : 'var(--text-primary)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
             }}
-            title="내가 주최한 모임만 보기"
           >
-            <Plus size={20} style={{ transform: showOnlyHosted ? 'rotate(45deg)' : 'none', transition: 'transform 0.3s' }} />
-          </button>
-          <button className="icon-circle glass" style={{ width: '44px', height: '44px' }}>
-            <Search size={20} color="var(--text-primary)" />
+            <Plus size={22} style={{ transform: showOnlyHosted ? 'rotate(45deg)' : 'none', transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
           </button>
         </div>
       </header>
 
-      {/* Next Trip Boarding Pass Dashboard [NEW Phase 2] */}
+      {/* Primary Boarding Pass Dashboard (Light Mode) */}
       {currentUser && (
-        <div style={{ padding: '0 20px', marginTop: '10px' }}>
+        <div style={{ padding: '0 20px', marginTop: '20px' }}>
           {(() => {
             const myUpcoming = gatherings
               .filter(g => {
@@ -146,58 +138,66 @@ const Home = () => {
             return (
               <div 
                 onClick={() => setSelectedGathering(myUpcoming)}
-                className="glass animate-pop" 
+                className="ticket-wrapper animate-fade" 
                 style={{ 
-                  borderRadius: '24px', 
-                  overflow: 'hidden', 
-                  cursor: 'pointer',
-                  border: '1px solid rgba(255, 92, 0, 0.2)',
-                  boxShadow: '0 12px 30px rgba(255, 92, 0, 0.1)'
+                  borderRadius: '28px',
+                  background: 'white',
+                  border: '1px solid var(--border-color)',
+                  padding: 0
                 }}
               >
                 <div style={{ 
                   background: 'var(--primary-gradient)', 
-                  padding: '12px 20px', 
+                  padding: '14px 24px', 
                   display: 'flex', 
                   justifyContent: 'space-between', 
                   alignItems: 'center' 
                 }}>
-                  <span style={{ color: 'white', fontSize: '11px', fontWeight: 900, letterSpacing: '1px' }}>BOARDING PASS</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#51cf66', boxShadow: '0 0 10px #51cf66' }} />
-                    <span style={{ color: 'white', fontSize: '11px', fontWeight: 800 }}>READY TO GO</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <MapIcon size={16} color="white" />
+                    <span style={{ color: 'white', fontSize: '11px', fontWeight: 900, letterSpacing: '1.2px' }}>UPCOMING BOARDING</span>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '6px' }}>
+                    <span style={{ color: 'white', fontSize: '10px', fontWeight: 900 }}>GATE {myUpcoming.id.toString().substring(0, 2)}</span>
                   </div>
                 </div>
-                <div style={{ padding: '20px', background: 'white', position: 'relative' }}>
-                  {/* Perforated Line Decoration */}
-                  <div style={{ position: 'absolute', left: '-10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--bg-lite)' }} />
-                  <div style={{ position: 'absolute', right: '-10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--bg-lite)' }} />
-                  
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+                <div style={{ padding: '24px' }}>
+                  <div className="flex-between">
                     <div style={{ flex: 1 }}>
-                      <h4 style={{ fontSize: '12px', color: 'var(--text-sub)', fontWeight: 800, marginBottom: '4px' }}>DESTINATION</h4>
-                      <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)' }}>{myUpcoming.location?.split(' ')[0] || 'SEOUL'}</div>
+                      <span className="label-muted">DEPARTURE</span>
+                      <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>SEOUL</div>
                     </div>
-                    <div style={{ flex: 1, textAlign: 'center', position: 'relative' }}>
-                      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '2px', background: '#eee', zIndex: 0 }} />
-                      <div style={{ position: 'relative', zIndex: 1, background: 'white', display: 'inline-block', padding: '0 10px' }}>
-                        <MapIcon size={20} color="var(--primary-orange)" />
+                    <div style={{ flex: 0.5, textAlign: 'center', position: 'relative' }}>
+                      <div className="ticket-divider" style={{ borderTop: '2px solid #F1F5F9', margin: 0 }}>
+                        <div style={{ 
+                          position: 'absolute', top: '-11px', left: '50%', transform: 'translateX(-50%)',
+                          background: 'white', padding: '0 10px'
+                        }}>
+                          <MapIcon size={20} color="var(--primary-orange)" />
+                        </div>
                       </div>
                     </div>
                     <div style={{ flex: 1, textAlign: 'right' }}>
-                      <h4 style={{ fontSize: '12px', color: 'var(--text-sub)', fontWeight: 800, marginBottom: '4px' }}>GATE</h4>
-                      <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)' }}>{myUpcoming.id.toString().substring(0, 3)}</div>
+                      <span className="label-muted">DESTINATION</span>
+                      <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>
+                        {myUpcoming.location?.split(' ')[0].toUpperCase() || 'TRIP'}
+                      </div>
                     </div>
                   </div>
 
-                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #eee', display: 'flex', justifyContent: 'space-between' }}>
+                  <div className="ticket-divider" style={{ margin: '20px 0' }} />
+
+                  <div className="flex-between">
                     <div>
-                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 800, display: 'block' }}>RESERVATION</label>
-                      <span style={{ fontSize: '13px', fontWeight: 700 }}>{myUpcoming.title}</span>
+                      <span className="label-muted">PASSENGER / FLIGHT</span>
+                      <p className="info-value" style={{ fontSize: '16px' }}>{currentUser.name} • {myUpcoming.title}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 800, display: 'block' }}>DATE</label>
-                      <span style={{ fontSize: '13px', fontWeight: 700 }}>{new Date(myUpcoming.dates).toLocaleDateString()}</span>
+                      <span className="label-muted">BOARDING DATE</span>
+                      <p className="info-value" style={{ fontSize: '16px', color: 'var(--primary-orange)' }}>
+                        {new Date(myUpcoming.dates).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -205,35 +205,35 @@ const Home = () => {
             );
           })()}
           
-          {/* AI Travel Insight Widget [NEW Phase 4] */}
+          {/* AI Travel Insight Widget */}
           <div style={{ marginTop: '20px' }}>
             <TravelInsightWidget user={currentUser} myMissions={activeMissions} />
           </div>
         </div>
       )}
 
-      {/* Modern High-End Tabs */}
+      {/* Premium Navigation Tabs (Light Mode) */}
       <div style={{ 
         padding: '0 20px', 
-        marginTop: '20px',
-        marginBottom: '24px'
+        marginTop: '28px',
+        marginBottom: '28px'
       }}>
-        <nav style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '10px' }} className="hide-scrollbar">
+        <nav style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }} className="hide-scrollbar">
           {['발견', '일정', '나의 미션', '내 모임', '내 여권'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={activeTab === tab ? 'glass' : ''}
               style={{
-                padding: '10px 20px',
-                borderRadius: 'var(--radius-full)',
-                background: activeTab === tab ? 'var(--primary-gradient)' : 'transparent',
+                padding: '12px 24px',
+                borderRadius: '16px',
+                background: activeTab === tab ? 'var(--text-primary)' : 'white',
                 color: activeTab === tab ? 'white' : 'var(--text-secondary)',
-                fontWeight: 700,
+                fontWeight: 800,
                 fontSize: '15px',
                 whiteSpace: 'nowrap',
-                border: activeTab === tab ? 'none' : '1px solid var(--border-color)',
-                boxShadow: activeTab === tab ? '0 10px 20px -5px rgba(255, 92, 0, 0.3)' : 'none'
+                border: '1px solid var(--border-color)',
+                boxShadow: activeTab === tab ? '0 8px 20px rgba(15, 23, 42, 0.15)' : 'none',
+                transition: 'all 0.3s ease'
               }}
             >
               {tab}

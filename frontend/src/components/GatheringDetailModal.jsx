@@ -1,3 +1,11 @@
+import React, { useState, useEffect } from 'react';
+import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle } from 'lucide-react';
+import { useUser } from '../contexts/UserContext';
+import { authFetch, apiUrl } from '../api/client';
+import ModalHeader from './UI/ModalHeader';
+import ModalFooter from './UI/ModalFooter';
+import FormInput from './UI/FormInput';
+import PrimaryButton from './UI/PrimaryButton';
 import GatheringFeed from './GatheringFeed';
 
 const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }) => {

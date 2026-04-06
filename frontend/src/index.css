@@ -1,45 +1,42 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
 
 :root {
-  /* Color Palette - Vibrant & Premium */
+  /* Color Palette - Vibrant & Premium (Day Travel Priority) */
   --primary-orange: #FF5C00;
   --primary-gradient: linear-gradient(135deg, #FF5C00 0%, #FF8533 100%);
   --secondary-purple: #6366F1;
   --secondary-blue: #3B82F6;
   
-  --bg-color: #F8F9FA;
-  --bg-dark: #0D0D19;
-  --surface: rgba(255, 255, 255, 0.95); /* Better opacity for visibility */
+  --bg-color: #F0F2F5; /* Slightly cleaner light gray */
+  --bg-dark: #0F172A;
+  --surface: rgba(255, 255, 255, 0.85); 
   --surface-solid: #FFFFFF;
   
-  --text-primary: #1A1D21;
-  --text-main: #1A1D21;
-  --text-secondary: #495057;
-  --text-muted: #868E96;
+  --text-primary: #0F172A;
+  --text-main: #1E293B;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
   
-  --border-color: rgba(206, 212, 218, 0.4);
-  --glass-border: rgba(255, 255, 255, 0.2);
-  --highlight-muted: rgba(0, 0, 0, 0.05);
+  --border-color: rgba(226, 232, 240, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --highlight-muted: rgba(0, 0, 0, 0.03);
   
   /* Shadows & Radius */
-  --shadow-premium: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 4px 12px -2px rgba(0, 0, 0, 0.02);
-  --shadow-hover: 0 20px 40px -8px rgba(0, 0, 0, 0.08);
+  --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
   --radius-sm: 8px;
   --radius-md: 16px;
   --radius-lg: 24px;
+  --radius-xl: 32px;
   --radius-full: 9999px;
   
   /* Glassmorphism Effects */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-blur: blur(12px);
-  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-blur: blur(16px);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.05);
 
-  /* Night Flight Theme Tokens */
-  --night-bg: #0D0D19;
-  --night-surface: rgba(255, 255, 255, 0.05);
-  --night-border: rgba(255, 255, 255, 0.1);
-  --night-text-muted: rgba(255, 255, 255, 0.5);
-  --night-overlay: rgba(0, 0, 0, 0.8);
+  /* Special UI Elements */
+  --ticket-dashed: 2px dashed var(--border-color);
 }
 
 * {
@@ -61,35 +58,65 @@ body {
   max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
-  background-color: var(--surface-solid);
+  background-color: var(--bg-color);
   position: relative;
-  box-shadow: 0 0 60px rgba(0,0,0,0.03);
+  box-shadow: 0 0 100px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
 }
 
 .app-container {
   flex: 1;
-  padding-bottom: 90px;
+  padding-bottom: 100px;
   overflow-y: auto;
   scroll-behavior: smooth;
+  background-color: var(--bg-color);
 }
 
-/* Glassmorphism Classes */
+/* Ticket & Boarding Pass Utility */
+.ticket-wrapper {
+  background: var(--surface-solid);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-premium);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.ticket-wrapper:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.ticket-divider {
+  height: 0;
+  border-top: var(--ticket-dashed);
+  margin: 16px 0;
+  position: relative;
+}
+
+.ticket-divider::before, 
+.ticket-divider::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  width: 20px;
+  height: 20px;
+  background: var(--bg-color);
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.ticket-divider::before { left: -34px; }
+.ticket-divider::after { right: -34px; }
+
+/* Custom Glassmorphism */
 .glass {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
-}
-
-.glass-dark {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
 }
 
 /* UI Elements */
@@ -100,7 +127,7 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  pointer-events: auto; /* Ensure events are captured */
+  pointer-events: auto;
 }
 
 button:active {
@@ -110,105 +137,41 @@ button:active {
 .primary-btn {
   background: var(--primary-gradient);
   color: white;
-  padding: 12px 24px;
+  padding: 14px 28px;
   border-radius: var(--radius-md);
-  font-weight: 600;
-  box-shadow: 0 4px 14px rgba(255, 92, 0, 0.3);
+  font-weight: 800;
+  font-size: 15px;
+  box-shadow: 0 8px 20px rgba(255, 92, 0, 0.25);
+  letter-spacing: -0.2px;
 }
 
 .secondary-btn {
-  background: #F1F3F5;
+  background: white;
   color: var(--text-primary);
-  padding: 12px 24px;
+  padding: 14px 28px;
   border-radius: var(--radius-md);
   font-weight: 700;
-  border: 1px solid #DEE2E6;
-}
-
-.glass-btn {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-}
-
-.night-btn {
-  background: var(--night-surface);
-  color: white;
-  border: 1px solid var(--night-border);
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-}
-
-.outline-btn {
-  background: transparent;
-  color: var(--text-primary);
-  border: 2px solid var(--border-color);
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  font-weight: 600;
+  border: 1px solid var(--border-color);
 }
 
 .icon-circle {
-  width: 40px;
-  height: 40px;
+  width: 44px; height: 44px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-color);
+  display: flex; align-items: center; justify-content: center;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 /* Typography Extensions */
-.heading-l { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
-.heading-m { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
-.text-s { font-size: 14px; color: var(--text-secondary); }
+.heading-l { font-size: 32px; font-weight: 900; letter-spacing: -0.7px; color: var(--text-primary); line-height: 1.2; }
+.heading-m { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: var(--text-primary); }
+.text-s { font-size: 14px; color: var(--text-secondary); font-weight: 500; }
+.label-orange { font-size: 11px; font-weight: 900; color: var(--primary-orange); letter-spacing: 1.5px; text-transform: uppercase; }
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-
-/* Standardized Form & Modal Elements */
-.modal-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: var(--night-overlay); backdrop-filter: blur(25px); z-index: 3000;
-  display: flex; justify-content: center; align-items: flex-end;
-}
-
-.modal-content-night {
-  width: 100%; max-width: 500px; height: 94vh;
-  background: var(--night-bg);
-  border-top-left-radius: 32px; border-top-right-radius: 32px;
-  display: flex; flex-direction: column; overflow: hidden;
-  box-shadow: 0 -20px 60px rgba(0,0,0,0.5);
-  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.input-night {
-  width: 100%; padding: 16px 16px 16px 48px; border-radius: 16px; 
-  border: 1px solid var(--night-border); background: var(--night-surface);
-  color: white; font-size: 16px; font-weight: 600; outline: none;
-  transition: border-color 0.2s;
-}
-
-.input-night:focus {
-  border-color: var(--primary-orange);
-}
-
-.label-orange {
-  font-size: 11px; font-weight: 900; color: var(--primary-orange); 
-  margin-bottom: 12px; display: block; letter-spacing: 1px; text-transform: uppercase;
 }
 
 @keyframes slideUp {
@@ -216,36 +179,31 @@ button:active {
   to { transform: translateY(0); }
 }
 
+.animate-fade {
+  animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Modal UI (Light Mode Priority) */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(20px); z-index: 3000;
+  display: flex; justify-content: center; align-items: flex-end;
+}
+
+.modal-content {
+  width: 100%; max-width: 500px; height: 92vh;
+  background: var(--bg-color);
+  border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl);
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 -10px 50px rgba(0,0,0,0.1);
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Layout Utilities */
+/* Utilities */
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
 .flex-center { display: flex; justify-content: center; align-items: center; }
-.flex-column { display: flex; flex-direction: column; }
-.gap-xs { gap: 4px; }
-.gap-sm { gap: 8px; }
 .gap-md { gap: 16px; }
-.gap-lg { gap: 24px; }
-
 .w-full { width: 100%; }
-.h-full { height: 100%; }
-
-.text-uppercase { text-transform: uppercase; }
-.text-bold { font-weight: 700; }
-.text-black { font-weight: 900; }
-
-.label-muted {
-  font-size: 10px; 
-  color: var(--text-muted); 
-  font-weight: 800; 
-  text-transform: uppercase; 
-  margin-bottom: 6px; 
-  display: block;
-}
-
-.info-value {
-  font-size: 15px; 
-  font-weight: 700; 
-  color: var(--text-primary);
-}
