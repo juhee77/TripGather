@@ -1,17 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle } from 'lucide-react';
-import { useUser } from '../contexts/UserContext';
-import { authFetch, apiUrl } from '../api/client';
-import ModalHeader from './UI/ModalHeader';
-import ModalFooter from './UI/ModalFooter';
-import FormInput from './UI/FormInput';
-import PrimaryButton from './UI/PrimaryButton';
+import GatheringFeed from './GatheringFeed';
 
 const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }) => {
   const { user: currentUser } = useUser();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
-  const [activeTab, setActiveTab] = useState('정보'); // '정보', '멤버', '댓글'
+  const [activeTab, setActiveTab] = useState('정보'); // '정보', '멤버', '대화', '스냅샷'
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ ...gathering });
 
@@ -21,6 +14,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
   );
 
   const myStatus = gathering.members?.find(m => m.user.email === currentUser?.email)?.status;
+  const isMember = isHost || myStatus === 'APPROVED';
 
   const fetchComments = async () => {
     try {
@@ -190,9 +184,13 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
         <div style={{ padding: '0 24px', borderBottom: '1px solid var(--border-color)' }}>
           {/* New Tabs */}
           <div style={{ display: 'flex', gap: '20px' }}>
-            {['정보', '멤버', `대화 (${comments.length})`].map((tab) => {
-              const tabName = tab.startsWith('대화') ? '대화' : tab;
+            {['정보', '멤버', `대화 (${comments.length})`, '스냅샷 📸'].map((tab) => {
+              const tabName = tab.startsWith('대화') ? '대화' : tab.startsWith('스냅샷') ? '스냅샷' : tab;
               const isActive = activeTab === tabName;
+              
+              // Only members can see Snapshots
+              if (tabName === '스냅샷' && !isMember) return null;
+
               return (
                 <button
                   key={tab}
@@ -220,6 +218,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
           {activeTab === '정보' && (
             <div className="animate-fade">
+              {/* Existing info content remains here */}
               {isEditing ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '20px', background: 'var(--bg-color)', borderRadius: '20px' }}>
                   <FormInput 
@@ -382,6 +381,12 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {activeTab === '스냅샷' && isMember && (
+            <div className="animate-fade" style={{ height: '100%', minHeight: '400px' }}>
+              <GatheringFeed gatheringId={gathering.id} currentUser={currentUser} />
             </div>
           )}
         </div>

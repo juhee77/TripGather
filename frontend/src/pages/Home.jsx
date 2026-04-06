@@ -8,6 +8,7 @@ import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
 import ProfileTab from '../components/ProfileTab';
 import MissionTab from '../components/MissionTab'; // Added
+import TravelInsightWidget from '../components/TravelInsightWidget'; // Added Phase 4
 import { useUser } from '../contexts/UserContext';
 import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
 import { useMissionsViewModel } from '../viewmodels/useMissionsViewModel'; // Added
@@ -127,6 +128,89 @@ const Home = () => {
           </button>
         </div>
       </header>
+
+      {/* Next Trip Boarding Pass Dashboard [NEW Phase 2] */}
+      {currentUser && (
+        <div style={{ padding: '0 20px', marginTop: '10px' }}>
+          {(() => {
+            const myUpcoming = gatherings
+              .filter(g => {
+                const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
+                const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === 'APPROVED'));
+                return (isHost || isApproved);
+              })
+              .sort((a, b) => new Date(a.dates) - new Date(b.dates))[0];
+
+            if (!myUpcoming) return null;
+
+            return (
+              <div 
+                onClick={() => setSelectedGathering(myUpcoming)}
+                className="glass animate-pop" 
+                style={{ 
+                  borderRadius: '24px', 
+                  overflow: 'hidden', 
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255, 92, 0, 0.2)',
+                  boxShadow: '0 12px 30px rgba(255, 92, 0, 0.1)'
+                }}
+              >
+                <div style={{ 
+                  background: 'var(--primary-gradient)', 
+                  padding: '12px 20px', 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center' 
+                }}>
+                  <span style={{ color: 'white', fontSize: '11px', fontWeight: 900, letterSpacing: '1px' }}>BOARDING PASS</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#51cf66', boxShadow: '0 0 10px #51cf66' }} />
+                    <span style={{ color: 'white', fontSize: '11px', fontWeight: 800 }}>READY TO GO</span>
+                  </div>
+                </div>
+                <div style={{ padding: '20px', background: 'white', position: 'relative' }}>
+                  {/* Perforated Line Decoration */}
+                  <div style={{ position: 'absolute', left: '-10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--bg-lite)' }} />
+                  <div style={{ position: 'absolute', right: '-10px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--bg-lite)' }} />
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{ fontSize: '12px', color: 'var(--text-sub)', fontWeight: 800, marginBottom: '4px' }}>DESTINATION</h4>
+                      <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)' }}>{myUpcoming.location?.split(' ')[0] || 'SEOUL'}</div>
+                    </div>
+                    <div style={{ flex: 1, textAlign: 'center', position: 'relative' }}>
+                      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '2px', background: '#eee', zIndex: 0 }} />
+                      <div style={{ position: 'relative', zIndex: 1, background: 'white', display: 'inline-block', padding: '0 10px' }}>
+                        <MapIcon size={20} color="var(--primary-orange)" />
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, textAlign: 'right' }}>
+                      <h4 style={{ fontSize: '12px', color: 'var(--text-sub)', fontWeight: 800, marginBottom: '4px' }}>GATE</h4>
+                      <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)' }}>{myUpcoming.id.toString().substring(0, 3)}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #eee', display: 'flex', justifyContent: 'space-between' }}>
+                    <div>
+                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 800, display: 'block' }}>RESERVATION</label>
+                      <span style={{ fontSize: '13px', fontWeight: 700 }}>{myUpcoming.title}</span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 800, display: 'block' }}>DATE</label>
+                      <span style={{ fontSize: '13px', fontWeight: 700 }}>{new Date(myUpcoming.dates).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          
+          {/* AI Travel Insight Widget [NEW Phase 4] */}
+          <div style={{ marginTop: '20px' }}>
+            <TravelInsightWidget user={currentUser} myMissions={activeMissions} />
+          </div>
+        </div>
+      )}
 
       {/* Modern High-End Tabs */}
       <div style={{ 
