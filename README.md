@@ -6,105 +6,82 @@
 </div>
 
 ## 🌟 프로젝트 개요
-나만의 여행 일정이나 루틴을 기록 및 공유하고, 관심사가 맞는 사람들을 가볍게 모을 수 있는 **소셜 모임 플랫폼**입니다.
-복잡한 절차 없이 카테고리별로 일정을 구경하고 모임에 참여할 수 있는 **직관적인 UI와 실시간 소통**을 제공합니다.
+나만의 여행 일정이나 루틴을 기록 및 공유하고, 관심사가 맞는 사람들을 가볍게 모을 수 있는 **프리미엄 소셜 모임 플랫폼**입니다.
+단순한 모임을 넘어 '보딩 패스' 테마의 일정 관리와 '스탬프 북' 형태의 미션 시스템을 통해 일상을 여행처럼 즐길 수 있는 경험을 제공합니다.
 
 ---
 
-## 📸 주요 화면 (Key Features)
+## 📸 주요 기능 (Key Features)
 
-![Feed](./docs/assets/screenshots/feed.png)
-**[발견]** 주변에서 열리는 다양한 모임과 여행 일정을 피드 형태로 구경합니다.
-<!-- slide -->
-![Detail](./docs/assets/screenshots/detail.png)
-**[상세보기]** 모임의 상세 위치, 일시, 호스트 정보를 확인하고 바로 참여 신청을 할 수 있습니다.
-<!-- slide -->
-![Map](./docs/assets/screenshots/map.png)
-**[지도 탐색]** 내 위치 기반으로 내 주변의 모임 핀을 시각적으로 확인합니다.
-<!-- slide -->
-![Chat](./docs/assets/screenshots/chat.png)
-**[실시간 채팅]** 참여된 모임원들과 그룹 채팅 및 1:1 DM을 통해 소통합니다.
-<!-- slide -->
-![Flights](./docs/assets/screenshots/flights.png)
-**[여행 일정]** 보딩 패스 스타일의 UI로 나만의 여행 계획을 관리합니다.
-<!-- slide -->
-![Passport](./docs/assets/screenshots/passport.png)
-**[나의 여권]** 참여한 미션과 챌린지 성취도에 따라 스탬프를 모으고 등급을 높입니다.
+### 1. 전 세계(동네)의 모임 발견 🔍
+- **[피드 탐색]** 내 주변에서 열리는 다양한 관심사 기반 모임을 카드 형태로 확인합니다.
+- **[지도 기반 탐색]** 지도 위 핀을 통해 내 위치 주변의 모임을 시각적으로 발견합니다.
+
+### 2. 프리미엄 일정 관리 (Boarding Pass UI) ✈️
+- **[항공권 테마 일정]** 여행 일정을 실제 보딩 패스 디자인으로 관리하여 여행의 설렘을 더합니다.
+- **[나이트 플라이트 에디터]** 세련된 어두운 테마의 에디터로 여행 경로(Flight Path)를 정교하게 설계합니다.
+
+### 3. 미션과 스탬프 북 (Gamification) 🎫
+- **[활동 미션]** 모임 참여 시 주어지는 미션을 완료하고 실시간으로 진행률을 확인합니다.
+- **[스탬프 북]** 완료된 미션은 나만의 스탬프 북에 기록되어 소장 가치를 높입니다.
+
+### 4. 실시간 소통 시스템 💬
+- **[그룹 및 1:1 대화]** 모임원들과 그룹 채팅은 물론, 관심 있는 에이전트와 1:1 DM을 통해 소통합니다.
+- **[실시간 알림]** 새로운 참여 요청이나 메시지를 놓치지 않도록 실시간 푸시를 제공합니다.
+
+### 5. AI 여행 인사이트 (Smart Widget) 🤖
+- **[개인화 통계]** 사용자의 활동 데이터를 분석하여 여행 성향과 인사이트를 제공하는 대시보드 위젯을 제공합니다.
 
 ---
 
 ## 🏗️ 시스템 아키텍처 (Architecture)
 
-### **[Backend] Layered Architecture**
-백엔드는 유지보수와 확장을 고려하여 책임이 명확히 분리된 계층형 구조를 따릅니다.
-- **Controller**: REST API 엔드포인트 노출 및 요청 검증.
-- **Service**: 비즈니스 로직 처리 및 트랜잭션 관리.
-- **Repository**: Spring Data JPA를 이용한 데이터 액세스.
-- **Domain (Entity)**: JPA 엔티티 및 비즈니스 객체 모델.
+### **[Backend] Layered Architecture & Clean Tech**
+- **Spring Boot 3.3**: 견고한 백엔드 프레임워크 기반.
+- **QueryDSL**: 복잡한 동적 쿼리를 타입 안정성 있게 처리.
+- **Spring Security & JWT**: OAuth2(카카오, 네이버) 연동 및 토큰 기반 보안 강화.
+- **WebSocket (STOMP)**: 저지연 실시간 채팅 처리.
+- **MinIO**: 이미지 및 파일 업로드를 위한 고성능 스토리지.
 
-### **[Frontend] MVVM (ViewModel) Pattern**
-프론트엔드는 UI 로직과 데이터 관리 로직을 분리하기 위해 **Custom Hook 기반의 ViewModel** 패턴을 채택했습니다.
-- **View (React Components)**: `Vanilla CSS`와 `Lucide-React` 아이콘을 활용한 프리미엄 글래스모피즘 디자인.
-- **ViewModel (Custom Hooks)**: `useChatViewModel`, `useAuthViewModel` 등 로직을 캡슐화하여 UI 재사용성 증대.
-- **Repository**: API 통신 및 데이터 매핑 로직 전담.
-
-```mermaid
-graph LR
-    subgraph "Frontend (React)"
-    V[View] <--> VM[ViewModel]
-    VM <--> R[Repository]
-    end
-    
-    subgraph "Backend (Spring Boot)"
-    C[Controller] <--> S[Service]
-    S <--> RE[Repository]
-    RE <--> DB[(PostgreSQL)]
-    end
-    
-    R <== "REST API / WebSocket" ==> C
-```
+### **[Frontend] ViewModel Pattern & Glassmorphism**
+- **React 19 & Vite**: 빠른 개발 속도와 최신 리액트 기능 활용.
+- **Custom Hook ViewModel**: UI 레이어와 비즈니스 로직(API 통신 등)을 완벽히 분리.
+- **Premium Design System**: Vanilla CSS를 활용한 글래스모피즘 및 'Night Flight' 특화 UI.
 
 ---
 
 ## 🛠️ 기술 스택 (Tech Stack)
 
 ### **Backend**
-- **Core**: Java 17, Spring Boot 3.x
-- **Persistence**: Spring Data JPA, PostgreSQL (Production), H2 (Local/Test)
-- **Security**: Spring Security, JWT (Token-based Auth)
-- **Messaging**: WebSocket (STOMP), SockJS
-- **Documentation**: Swagger (OpenAPI 3.0)
+- `Java 17`, `Spring Boot 3.3.4`
+- `Spring Data JPA`, `QueryDSL`, `PostgreSQL`, `H2`
+- `Spring Security`, `OAuth2 (Kakao/Naver)`, `JWT`
+- `WebSocket`, `STOMP`, `SockJS`
+- `MinIO` (S3 Compatible Storage)
+- `Lombok`, `Flyway` (Migration)
 
 ### **Frontend**
-- **Core**: React 18, Vite (Fast Bundling)
-- **State**: React Context API, Custom Hooks
-- **Styling**: Vanilla CSS (Global Design System)
-- **Communication**: Axios, StompJS
-- **Icons**: Lucide React
+- `JavaScript (ES6+)`, `React 19`
+- `Vite`, `React Router 7`
+- `Vanilla CSS` (Custom Design System)
+- `Lucide React` (Icons)
+- `StompJS`, `Axios`
 
 ---
 
-## 💡 주요 기술적 도전 및 트러블슈팅 (Troubleshooting)
+## 💡 트러블슈팅 및 기술적 도전
 
-### **1. 인증 정보 유지 (Auth Persistence)**
-- **문제**: 새로고침 시 `AuthContext`의 상태가 초기화되어 로그인 상태가 해제되는 문제 발생.
-- **해결**: `localStorage`에 JWT 토큰을 캐싱하고, 앱 초기화 시 토큰 유효성을 검증하여 Context 상태를 복구하는 로직을 구현했습니다.
+### **1. 다크 테마(Night Flight) 가독성 최적화**
+- **문제**: 어두운 배경의 모달 에디터 내에서 입력창 배경과 텍스트가 구분되지 않는 이슈.
+- **해결**: `--night-bg` 및 `--night-surface` 토큰을 정의하고, 전용 `input-night` 클래스를 구현하여 고대비 시인성을 확보했습니다.
 
-### **2. 채팅 탭 UI 통합 및 렌더링 최적화**
-- **문제**: 그룹 채팅과 1:1 DM 목록이 각기 다른 스타일로 구현되어 시각적 일관성이 부족하고, 데이터 지연 로딩 시 컴포넌트가 Crash되는 현상 발생.
-- **해결**: 
-    - 공통 `Card` 컴포넌트를 정의하여 리스트 UI를 통일(Premium Glass)했습니다.
-    - `currentUser` 및 `gathering` 정보에 대한 **Null Guard** 패턴을 적용하여 데이터 로드 전후의 안정성을 확보했습니다.
-
-### **3. 1:1 DM 파트너 식별 로직**
-- **문제**: DM 목록 조회 시 로그인한 사용자가 송신자 혹은 수신자 둘 다 될 수 있어, 상대방의 정보를 동적으로 식별하는 데 복잡도가 높음.
-- **해결**: Backend에서 송/수신자 관계를 정규화하여 처리하고, Frontend ViewModel에서 `otherUser` 필터를 통해 일관된 데이터를 뷰에 전달하도록 개선했습니다.
+### **2. 실시간 채팅 데이터 매핑**
+- **문제**: 그룹 대화 중 송신자 정보를 효율적으로 표시하고, DM 파트너를 식별하는 로직의 복잡성.
+- **해결**: `senderEmail` 기반의 캐싱 및 `useChatViewModel` 내 파트너 필터링 로직을 통해 렌더링 부하를 줄이고 로직의 간결함을 유지했습니다.
 
 ---
 
-## 🚀 실행 가이드 (Quick Start)
-
-상세 내용은 **[GUIDE.md](./GUIDE.md)**를 참고하세요.
+## 🚀 실행 가이드
 
 ### **Backend**
 ```bash
@@ -118,3 +95,9 @@ cd frontend
 npm install
 npm run dev
 ```
+
+---
+
+<p align="center">
+  <b>TripGather</b>: 나만의 여정을 기록하고 우리 동네의 새로운 친구를 만나보세요.
+</p>

@@ -168,7 +168,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content-night" style={{ background: 'white' }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content hide-scrollbar" onClick={(e) => e.stopPropagation()}>
         <ModalHeader 
           title={gathering.title}
           subtitle={`Host: ${typeof gathering.host === 'string' ? gathering.host : gathering.host?.name}`}
