@@ -4,8 +4,15 @@ import { authFetch } from '../api/client';
 const UserContext = createContext(null);
 
 export function UserProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user');
+    try {
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(false); // set to false because we start with local data
   const [error, setError] = useState(null);
 
   const fetchMe = useCallback(async () => {
@@ -19,6 +26,7 @@ export function UserProvider({ children }) {
       }
       const data = await res.json();
       setUser(data);
+      localStorage.setItem('user', JSON.stringify(data));
       return data;
     } catch (err) {
       console.error('Failed to fetch current user:', err);

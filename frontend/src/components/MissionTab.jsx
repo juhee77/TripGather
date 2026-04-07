@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import RouteDetailModal from './RouteDetailModal';
 
 const MissionTab = ({

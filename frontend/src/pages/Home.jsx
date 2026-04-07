@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FeedCard from '../components/FeedCard';
 import CreateGatheringModal from '../components/CreateGatheringModal';
 import GatheringDetailModal from '../components/GatheringDetailModal';
-import ItineraryEditModal from '../components/ItineraryEditModal';
+import ItineraryEditorModal from '../components/ItineraryEditorModal';
 import TicketCard from '../components/TicketCard';
 import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
@@ -55,9 +55,9 @@ const Home = () => {
   const tabs = ['발견', '내 모임', '일정']; // This line will be replaced by the new nav structure
 
   const handleUpdateItinerary = (updated) => {
-    // Refresh missions and itineraries after edit
+    // Refresh missions and other data after edit
     fetchMissions();
-    alert('일정이 성공적으로 수정되었습니다.');
+    refreshGatherings(); // Added to ensure UI consistency
   };
 
   const handleEditItinerary = (itinerary) => {
@@ -412,11 +412,10 @@ const Home = () => {
       )}
 
       {isEditModalOpen && (
-        <ItineraryEditModal 
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
+        <ItineraryEditorModal 
           itinerary={editingItinerary}
-          onUpdate={handleUpdateItinerary}
+          onClose={() => setIsEditModalOpen(false)}
+          onSaved={handleUpdateItinerary}
         />
       )}
     </div>
