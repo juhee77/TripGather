@@ -1,4 +1,13 @@
-/plan/
 .DS_Store
+node_modules/
+dist/
 .env
-backend/src/main/generated/
+.env.local
+build/
+bin/
+out/
+.gradle/
+*.log
+*.pid
+.idea/
+.vscode/

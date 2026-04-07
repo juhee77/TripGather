@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { authFetch } from '../api/client';
 import { Camera, Send, Image as ImageIcon, X } from 'lucide-react';
+import Skeleton from './UI/Skeleton';
 
 const GatheringFeed = ({ gatheringId, currentUser }) => {
   const [posts, setPosts] = useState([]);
@@ -155,7 +156,21 @@ const GatheringFeed = ({ gatheringId, currentUser }) => {
       {/* Feed List */}
       <div style={{ flex: 1, overflowY: 'auto' }} className="hide-scrollbar">
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-sub)' }}>소식을 불러오는 중...</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '16px' }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Skeleton width="36px" height="36px" borderRadius="18px" />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <Skeleton width="80px" height="12px" />
+                    <Skeleton width="40px" height="10px" />
+                  </div>
+                </div>
+                <Skeleton width="100%" height="200px" borderRadius="16px" />
+                <Skeleton width="60%" height="14px" />
+              </div>
+            ))}
+          </div>
         ) : posts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 0', color: '#bbb' }}>
             <ImageIcon size={48} style={{ opacity: 0.2, marginBottom: '12px' }} />
