@@ -197,7 +197,7 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete, onStepComplete
                                                         color: isDone ? 'white' : 'var(--text-muted)',
                                                         fontSize: '12px', fontWeight: 900, display: 'flex', justifyContent: 'center', alignItems: 'center'
                                                     }}>
-                                                        {isDone ? <Check size={14} /> : point.sequenceOrder}
+                                                        {isDone ? <span className="success-animation"><Check size={14} /></span> : point.sequenceOrder}
                                                     </div>
                                                     <h4 style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{point.label}</h4>
                                                 </div>
