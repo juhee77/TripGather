@@ -37,6 +37,13 @@
 
   /* Special UI Elements */
   --ticket-dashed: 2px dashed var(--border-color);
+
+  /* Night Flight Theme Tokens */
+  --night-bg: #0B0B15;
+  --night-surface: rgba(255, 255, 255, 0.03);
+  --night-border: rgba(255, 255, 255, 0.1);
+  --night-text-primary: #FFFFFF;
+  --night-text-muted: rgba(255, 255, 255, 0.4);
 }
 
 * {
@@ -197,6 +204,37 @@ button:active {
   display: flex; flex-direction: column; overflow: hidden;
   box-shadow: 0 -10px 50px rgba(0,0,0,0.1);
   animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-content-night {
+  width: 100%; max-width: 500px; height: 92vh;
+  background: var(--night-bg);
+  color: var(--night-text-primary);
+  border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl);
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 -10px 60px rgba(0,0,0,0.4);
+  border: 1px solid var(--night-border);
+  border-bottom: none;
+  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.input-night {
+  width: 100%;
+  padding: 16px 16px 16px 48px;
+  border-radius: 16px;
+  background: var(--night-surface);
+  border: 1px solid var(--night-border);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.input-night:focus {
+  border-color: var(--primary-orange);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 4px rgba(255, 92, 0, 0.1);
 }
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
