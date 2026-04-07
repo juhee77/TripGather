@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: fake_kakao_id
+            client-secret: fake_kakao_secret
+          naver:
+            client-id: fake_naver_id
+            client-secret: fake_naver_secret
+  mail:
+    host: smtp.fake.com
+    port: 587
+    username: fake_user
+    password: fake_password
+
+jwt:
+  secret: dummy_secret_key_at_least_256_bits_long_for_testing_purposes_only_1234567890
+
+minio:
+  endpoint: http://localhost:9000
+  access-key: dummy_access
+  secret-key: dummy_secret
+  bucket: test-bucket
+
+file:
+  upload-dir: test-uploads
