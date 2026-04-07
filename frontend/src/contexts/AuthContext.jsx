@@ -5,24 +5,21 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const saveAuth = (token, userData) => {
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    if (userData) {
+      localStorage.setItem('user', JSON.stringify(userData));
+    }
     setToken(token);
-    setUser(userData);
   };
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('myJoinedIds'); // Clean up related local storage
     setToken(null);
-    setUser(null);
     window.location.href = '/login'; 
   }, []);
 
@@ -72,33 +69,11 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (token && !user) {
-        try {
-          const res = await fetch(apiUrl('/api/users/me'), {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (res.ok) {
-            const userData = await res.json();
-            const updatedUser = { id: userData.id, name: userData.name, email: userData.email, profileImageUrl: userData.profileImageUrl };
-            setUser(updatedUser);
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-          } else if (res.status === 401) {
-            logout();
-          }
-        } catch (err) {
-          console.error('Auto-loading profile failed:', err);
-        }
-      }
-      setLoading(false);
-    };
-    fetchProfile();
-  }, [token, user, logout]);
+  // Simplified AuthContext doesn't need to auto-load profile anymore
+  // UserContext handles profile loading based on the token in localStorage
 
   const value = {
     token,
-    user,
     isAuthenticated: !!token,
     login,
     signup,
