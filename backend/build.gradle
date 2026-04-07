@@ -2,11 +2,12 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.3.4'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
 }
 
 group = 'com.example'
 version = '0.0.1-SNAPSHOT'
-description = 'Demo project for Spring Boot'
+description = 'TripGather Backend'
 
 java {
 	toolchain {
@@ -32,10 +33,12 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+	
 	// JWT
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+	
 	// Flyway
 	implementation 'org.flywaydb:flyway-core'
 	implementation 'org.flywaydb:flyway-database-postgresql'
@@ -49,37 +52,81 @@ dependencies {
 	// Dotenv
 	implementation 'io.github.cdimascio:dotenv-java:3.1.0'
 
+	// MinIO
+	implementation 'io.minio:minio:8.5.7'
+
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.h2database:h2'
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
-	// MinIO
-	implementation 'io.minio:minio:8.5.7'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// Jacoco 설정
+jacoco {
+	toolVersion = "0.8.11"
+}
+
+jacocoTestReport {
+	reports {
+		xml.required = true
+		csv.required = false
+		html.required = true
+	}
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: [
+				"**/Q*",
+				"**/*Application*",
+				"**/*dto*",
+				"**/*entity*",
+				"**/*config*",
+				"**/*repository*"
+			])
+		}))
+	}
+}
+
+jacocoTestCoverageVerification {
+	violationRules {
+		rule {
+			element = 'CLASS'
+			limit {
+				counter = 'LINE'
+				value = 'COVEREDRATIO'
+				minimum = 0.80
+			}
+			excludes = [
+				"**.Q*",
+				"**.*Application*",
+				"**.*dto*",
+				"**.*entity*",
+				"**.*config*",
+				"**.*repository*"
+			]
+		}
+	}
+}
+
 // Querydsl 설정부
 def generated = 'src/main/generated'
 
-// querydsl QClass 파일 생성 위치를 지정
 tasks.withType(JavaCompile) {
 	options.getGeneratedSourceOutputDirectory().set(file(generated))
 }
 
-// java 소스 셋에 querydsl QClass 위치 추가
 sourceSets {
 	main.java.srcDirs += [ generated ]
 }
 
-// gradle clean 시에 QClass 디렉토리 삭제
 clean {
 	delete file(generated)
 }
 
-
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport // 테스트 완료 후 리포트 생성
 }
