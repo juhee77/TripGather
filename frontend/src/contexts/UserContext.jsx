@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { authFetch } from '../api/client';
+import { useAuth } from './AuthContext';
 
 const UserContext = createContext(null);
 
 export function UserProvider({ children }) {
+  const { token } = useAuth();
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user');
     try {
@@ -12,16 +14,18 @@ export function UserProvider({ children }) {
       return null;
     }
   });
-  const [loading, setLoading] = useState(false); // set to false because we start with local data
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const fetchMe = useCallback(async () => {
+    if (!token) return;
+    
     setLoading(true);
     setError(null);
     try {
       const res = await authFetch('/api/users/me');
       if (!res.ok) {
-         if (res.status === 401) return null; // 미인증 시 에러 없이 null 반환
+         if (res.status === 401) return null;
          throw new Error(`서버 오류 ${res.status}`);
       }
       const data = await res.json();
@@ -36,11 +40,16 @@ export function UserProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
-    fetchMe();
-  }, [fetchMe]);
+    if (token) {
+      fetchMe();
+    } else {
+      setUser(null);
+      localStorage.removeItem('user');
+    }
+  }, [token, fetchMe]);
 
   const updateProfile = useCallback(async (id, payload) => {
     try {

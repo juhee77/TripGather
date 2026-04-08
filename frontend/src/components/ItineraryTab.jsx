@@ -71,45 +71,44 @@ const ItineraryTab = ({ onMissionStart, onEdit }) => {
 
     return (
         <div style={{
-            background: '#0B0B15', // Night Flight dark theme
-            color: 'white', 
-            minHeight: 'calc(100vh - 160px)', 
-            margin: '0 -20px', 
-            padding: '30px 20px', 
+            background: 'transparent', 
+            color: 'var(--text-primary)', 
+            minHeight: 'calc(100vh - 200px)', 
+            padding: '24px 0', 
             position: 'relative', 
-            overflow: 'hidden',
-            borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0'
+            overflow: 'hidden'
         }}>
-            {/* Ambient Background Glows */}
-            <div style={{ position: 'absolute', top: '0', right: '-100px', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(255, 92, 0, 0.15) 0%, transparent 70%)', filter: 'blur(80px)', borderRadius: '50%', zIndex: 0 }} />
-            <div style={{ position: 'absolute', bottom: '100px', left: '-100px', width: '250px', height: '250px', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)', filter: 'blur(60px)', borderRadius: '50%', zIndex: 0 }} />
+            {/* Ambient Background Glows - Subtle for Light Mode */}
+            <div style={{ position: 'absolute', top: '0', right: '-80px', width: '260px', height: '260px', background: 'radial-gradient(circle, rgba(255, 92, 0, 0.08) 0%, transparent 70%)', filter: 'blur(60px)', borderRadius: '50%', zIndex: 0 }} />
+            <div style={{ position: 'absolute', bottom: '100px', left: '-80px', width: '220px', height: '220px', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%)', filter: 'blur(50px)', borderRadius: '50%', zIndex: 0 }} />
 
             <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
                     <div>
-                        <h2 className="heading-m" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white' }}>
+                        <h2 className="heading-m" style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)' }}>
                             <span style={{ 
                                 width: '12px', 
                                 height: '12px', 
                                 borderRadius: '50%', 
                                 background: 'var(--primary-gradient)',
-                                boxShadow: '0 0 15px var(--primary-orange)'
+                                boxShadow: '0 0 15px rgba(255, 92, 0, 0.4)'
                             }}></span> 
                             MY FLIGHTS
                         </h2>
-                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '4px' }}>Upcoming & Past Itineraries</p>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '4px' }}>Upcoming & Past Itineraries</p>
                     </div>
                     <button onClick={refreshItineraries} style={{ 
-                        color: 'rgba(255,255,255,0.5)', 
+                        color: 'var(--text-secondary)', 
                         display: 'flex', 
                         alignItems: 'center', 
                         gap: '6px', 
                         fontSize: '11px', 
                         fontWeight: 700,
-                        background: 'rgba(255,255,255,0.05)', 
+                        background: 'white', 
                         padding: '8px 14px',
                         borderRadius: 'var(--radius-full)',
-                        border: '1px solid rgba(255,255,255,0.1)'
+                        border: '1px solid var(--border-color)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
                     }}>
                         <RotateCcw size={14} /> REFRESH
                     </button>
@@ -127,21 +126,22 @@ const ItineraryTab = ({ onMissionStart, onEdit }) => {
                         </div>
                     ))}
                     {!loading && mappedItineraries.length === 0 && (
-                        <div className="glass-dark animate-fade" style={{ 
+                        <div className="glass animate-fade" style={{ 
                             textAlign: 'center', 
                             padding: '80px 30px', 
                             borderRadius: 'var(--radius-lg)',
-                            border: '1px dashed rgba(255, 255, 255, 0.15)'
+                            border: '1px dashed var(--border-color)',
+                            background: 'white'
                         }}>
                             <div style={{ fontSize: '56px', marginBottom: '20px' }}>✈️</div>
-                            <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '24px', fontWeight: 600 }}>아직 등록된 여행 항공권이 없습니다.</p>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontWeight: 600 }}>아직 등록된 여행 항공권이 없습니다.</p>
                             <button className="primary-btn" onClick={() => openEditor()}>
                                 첫 비행기표 발권하기
                             </button>
                         </div>
                     )}
                     {loading && (
-                        <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+                        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)', fontWeight: 600 }}>
                             <span className="animate-pulse">Loading Flight Data...</span>
                         </div>
                     )}

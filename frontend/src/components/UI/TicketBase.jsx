@@ -6,7 +6,7 @@ const TicketBase = ({
   header, 
   footer, 
   className = '', 
-  cutoutColor = '#0B0B15',
+  cutoutColor = 'var(--bg-color)',
   glass = false 
 }) => {
   return (
