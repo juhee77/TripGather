@@ -83,22 +83,27 @@ public class User implements UserDetails {
 
     // ── UserDetails 구현 ──────────────────────────────────────
     @Override
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role));
     }
 
     @Override
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public String getUsername() {
         return email;
     }
 
     @Override
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public boolean isAccountNonExpired()    { return true; }
     @Override
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public boolean isAccountNonLocked()     { return true; }
     @Override
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public boolean isCredentialsNonExpired(){ return true; }
     @Override
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public boolean isEnabled()              { return true; }
 }
-
