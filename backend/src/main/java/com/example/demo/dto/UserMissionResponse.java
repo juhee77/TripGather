@@ -1,12 +1,16 @@
 package com.example.demo.dto;
 
 import com.example.demo.domain.UserMission;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class UserMissionResponse {
     private Long id;
