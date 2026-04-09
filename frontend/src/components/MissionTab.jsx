@@ -21,7 +21,13 @@ const MissionTab = ({
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+    <div style={{ 
+      display: 'grid', 
+      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+      gap: '24px',
+      background: 'var(--bg-color)',
+      minHeight: '100%'
+    }}>
       {activeMissions?.filter(m => m.status === 'ACTIVE').map((mission, idx) => {
         const isCompleted = mission?.status === 'COMPLETED';
         const completedSteps = mission?.steps?.filter(s => s.isCompleted || s.completed).length || 0;
@@ -79,7 +85,7 @@ const MissionTab = ({
               </div>
               <button 
                 className="icon-circle" 
-                style={{ width: '40px', height: '40px', background: 'var(--bg-lite)', border: '1px solid var(--border-color)' }}
+                style={{ width: '40px', height: '40px', background: 'white', border: '1px solid var(--border-color)' }}
               >
                 <ChevronRight size={18} color="var(--text-primary)" />
               </button>

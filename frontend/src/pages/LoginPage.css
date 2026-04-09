@@ -3,7 +3,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: var(--night-bg);
+  background: var(--bg-color);
   padding: 20px;
   position: relative;
   overflow: hidden;
@@ -22,14 +22,14 @@
 }
 
 .login-card {
-  background: var(--night-surface);
+  background: var(--surface-solid);
   width: 100%;
   max-width: 400px;
   padding: 40px 30px;
   border-radius: 28px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.08);
   text-align: center;
-  border: 1px solid var(--night-border);
+  border: 1px solid var(--border-color);
   backdrop-filter: blur(20px);
   position: relative;
   z-index: 2;
@@ -47,7 +47,7 @@
 }
 
 .brand-subtitle {
-  color: var(--night-text-muted);
+  color: var(--text-secondary);
   font-size: 0.95rem;
   font-weight: 600;
   margin-bottom: 30px;
@@ -55,11 +55,11 @@
 
 .tab-buttons {
   display: flex;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-color);
   padding: 5px;
   border-radius: 16px;
   margin-bottom: 32px;
-  border: 1px solid var(--night-border);
+  border: 1px solid var(--border-color);
 }
 
 .tab-btn {
@@ -68,16 +68,16 @@
   border: none;
   background: transparent;
   font-weight: 700;
-  color: var(--night-text-muted);
+  color: var(--text-secondary);
   cursor: pointer;
   border-radius: 12px;
   transition: all 0.3s ease;
 }
 
 .tab-btn.active {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  background: white;
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .auth-form {
@@ -101,11 +101,11 @@
 .input-group input {
   width: 100%;
   padding: 14px 18px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1.5px solid var(--night-border);
+  background: white;
+  border: 1.5px solid var(--border-color);
   border-radius: 12px;
   font-size: 1rem;
-  color: white;
+  color: var(--text-primary);
   outline: none;
   transition: all 0.3s ease;
 }
@@ -141,7 +141,7 @@
 }
 
 .submit-btn:disabled {
-  background: var(--night-text-muted);
+  background: var(--text-muted);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -183,10 +183,10 @@
 
 .sns-login-divider span {
   position: relative;
-  background: #1a1a2e; /* approximate card bg */
+  background: var(--surface-solid);
   padding: 0 12px;
   font-size: 0.8rem;
-  color: var(--night-text-muted);
+  color: var(--text-muted);
   font-weight: 600;
 }
 
