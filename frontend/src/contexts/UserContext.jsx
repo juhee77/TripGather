@@ -17,15 +17,19 @@ export function UserProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchMe = useCallback(async () => {
-    if (!token) return;
+  const fetchMe = useCallback(async (explicitToken) => {
+    const activeToken = explicitToken || token;
+    if (!activeToken) return;
     
     setLoading(true);
     setError(null);
     try {
       const res = await authFetch('/api/users/me');
       if (!res.ok) {
-         if (res.status === 401) return null;
+         if (res.status === 401) {
+           setError('인증 세션이 만료되었습니다.');
+           return null;
+         }
          throw new Error(`서버 오류 ${res.status}`);
       }
       const data = await res.json();
@@ -35,7 +39,12 @@ export function UserProvider({ children }) {
     } catch (err) {
       console.error('Failed to fetch current user:', err);
       setError(err.message);
-      setUser(null);
+      // Don't immediately clear user if it's a network error
+      if (err.message.includes('Network') || err.message.includes('Failed to fetch')) {
+        // keep old user if exists
+      } else {
+        setUser(null);
+      }
       return null;
     } finally {
       setLoading(false);
@@ -44,7 +53,7 @@ export function UserProvider({ children }) {
 
   useEffect(() => {
     if (token) {
-      fetchMe();
+      fetchMe(token);
     } else {
       setUser(null);
       localStorage.removeItem('user');
