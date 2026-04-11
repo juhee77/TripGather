@@ -16,6 +16,8 @@ description: TripGather의 여행 테마 UI 시스템(글래스모피즘, 티켓
 
 ## 표준 컴포넌트
 
+**주의**: 디자인 요소는 FSD-lite 아키텍처에 맞게 기능 도메인(`src/features/[feature]/components/`) 내부에 배치하거나, 재사용 가능한 코어 컴포넌트인 경우 `src/components/ui/` 경로의 `shadcn/ui` 방식을 우선 준수하여 관리합니다.
+
 ### 1. 카드 컨테이너 (`Card.jsx`)
 일반적인 콘텐츠 섹션에 사용합니다. 공통 글래스모피즘, 그림자 및 호버 애니메이션을 처리합니다.
 
