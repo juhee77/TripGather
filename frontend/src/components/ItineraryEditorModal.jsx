@@ -184,7 +184,7 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
                                         type="button"
                                         onClick={() => stampInputRef.current.click()}
                                         className="glass"
-                                        style={{ fontSize: '12px', padding: '8px 16px', borderRadius: '8px', color: 'var(--text-secondary)', border: '1px solid var(--border-color)", fontWeight: 'bold' }}
+                                        style={{ fontSize: '12px', padding: '8px 16px', borderRadius: '8px', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontWeight: 'bold' }}
                                     >
                                         CHOOSE IMAGE
                                     </button>

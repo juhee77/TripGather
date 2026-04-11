@@ -5,7 +5,7 @@ export const MemberStatus = Object.freeze({
 });
 
 export const MissionStatus = Object.freeze({
-    STARTED: 'STARTED',
+    ACTIVE: 'ACTIVE',
     COMPLETED: 'COMPLETED',
-    FAILED: 'FAILED'
+    LEAVE_REQUESTED: 'LEAVE_REQUESTED'
 });

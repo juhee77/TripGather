@@ -29,7 +29,7 @@ const MissionTab = ({
       background: 'var(--bg-color)',
       minHeight: '100%'
     }}>
-      {activeMissions?.filter(m => m.status === 'ACTIVE').map((mission, idx) => {
+      {activeMissions?.filter(m => m.status === MissionStatus.ACTIVE).map((mission, idx) => {
         const isCompleted = mission?.status === MissionStatus.COMPLETED;
         const completedSteps = mission?.steps?.filter(s => s.isCompleted || s.completed).length || 0;
         const totalSteps = mission?.steps?.length || 0;
