@@ -25,6 +25,12 @@ public class UserMissionController {
         return ResponseEntity.ok(res);
     }
 
+    @PostMapping("/start/bulk")
+    public ResponseEntity<List<UserMissionResponse>> startMissions(@RequestBody List<Long> itineraryIds, Authentication authentication) {
+        List<UserMissionResponse> res = missionService.startMissions(itineraryIds, authentication.getName());
+        return ResponseEntity.ok(res);
+    }
+
     @PostMapping("/complete/{missionId}")
     public ResponseEntity<UserMissionResponse> completeMission(@PathVariable Long missionId, Authentication authentication) {
         UserMissionResponse res = missionService.completeMission(missionId, authentication.getName());

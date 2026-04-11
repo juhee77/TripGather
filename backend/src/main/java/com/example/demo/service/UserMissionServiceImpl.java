@@ -20,6 +20,9 @@ import com.example.demo.dto.UserMissionStepResponse;
 import com.example.demo.domain.UserMissionStep;
 import com.example.demo.usecase.UserMissionUseCase;
 import com.example.demo.service.FileService;
+import com.example.demo.exception.CustomException;
+import com.example.demo.exception.ErrorCode;
+import com.example.demo.domain.MissionStatus;
 
 @Service
 @RequiredArgsConstructor
@@ -34,10 +37,10 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
     @Transactional
     public UserMissionResponse startMission(Long itineraryId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         Itinerary itinerary = itineraryRepository.findById(itineraryId)
-                .orElseThrow(() -> new IllegalArgumentException("Itinerary not found: " + itineraryId));
+                .orElseThrow(() -> new CustomException(ErrorCode.ITINERARY_NOT_FOUND));
 
         // 이미 미션이 존재하는지 확인
         return missionRepository.findByUserIdAndItineraryId(user.getId(), itineraryId)
@@ -51,7 +54,7 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
                     UserMission mission = UserMission.builder()
                             .user(user)
                             .itinerary(itinerary)
-                            .status("ACTIVE")
+                            .status(MissionStatus.ACTIVE)
                             .startedAt(LocalDateTime.now())
                             .stampImageUrl(itinerary.getStampImageUrl()) // Inherit stamp image if pre-defined
                             .build();
@@ -73,19 +76,69 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
     }
 
     @Transactional
+    public List<UserMissionResponse> startMissions(List<Long> itineraryIds, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        List<Itinerary> itineraries = itineraryRepository.findAllById(itineraryIds);
+        
+        List<Long> existingItineraryIds = missionRepository.findByUserId(user.getId()).stream()
+                .map(m -> m.getItinerary().getId())
+                .collect(Collectors.toList());
+
+        List<Itinerary> newItineraries = itineraries.stream()
+                .filter(it -> !existingItineraryIds.contains(it.getId()))
+                .collect(Collectors.toList());
+
+        List<UserMission> newMissions = newItineraries.stream().map(itinerary -> 
+            UserMission.builder()
+                .user(user)
+                .itinerary(itinerary)
+                .status(MissionStatus.ACTIVE)
+                .startedAt(LocalDateTime.now())
+                .stampImageUrl(itinerary.getStampImageUrl())
+                .build()
+        ).collect(Collectors.toList());
+
+        List<UserMission> savedMissions = missionRepository.saveAll(newMissions);
+
+        List<UserMissionStep> allSteps = new java.util.ArrayList<>();
+        for (UserMission mission : savedMissions) {
+            List<UserMissionStep> steps = mission.getItinerary().getRoutePoints().stream().map(rp -> 
+                UserMissionStep.builder()
+                    .userMission(mission)
+                    .routePoint(rp)
+                    .isCompleted(false)
+                    .build()
+            ).collect(Collectors.toList());
+            allSteps.addAll(steps);
+        }
+        stepRepository.saveAll(allSteps);
+
+        return savedMissions.stream().map(mission -> {
+            UserMissionResponse res = UserMissionResponse.from(mission);
+            res.setSteps(allSteps.stream()
+                .filter(step -> step.getUserMission().getId().equals(mission.getId()))
+                .map(UserMissionStepResponse::from)
+                .collect(Collectors.toList()));
+            return res;
+        }).collect(Collectors.toList());
+    }
+
+    @Transactional
     public UserMissionResponse completeMission(Long missionId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         UserMission mission = missionRepository.findById(missionId)
-                .orElseThrow(() -> new IllegalArgumentException("Mission not found: " + missionId));
+                .orElseThrow(() -> new CustomException(ErrorCode.MISSION_NOT_FOUND));
 
         if (!mission.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("Not your mission");
+            throw new CustomException(ErrorCode.NOT_YOUR_MISSION);
         }
 
-        if (!"COMPLETED".equals(mission.getStatus())) {
-            mission.setStatus("COMPLETED");
+        if (mission.getStatus() != MissionStatus.COMPLETED) {
+            mission.setStatus(MissionStatus.COMPLETED);
             mission.setCompletedAt(LocalDateTime.now());
             
             // Auto-generate stamp image if not exists and not already inherited/set
@@ -106,20 +159,20 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
     @Transactional
     public UserMissionStepResponse completeStep(Long missionId, Long stepId, String memo, String photoUrl, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         UserMission mission = missionRepository.findById(missionId)
-                .orElseThrow(() -> new IllegalArgumentException("Mission not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.MISSION_NOT_FOUND));
 
         if (!mission.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("Not your mission");
+            throw new CustomException(ErrorCode.NOT_YOUR_MISSION);
         }
 
         UserMissionStep step = stepRepository.findById(stepId)
-                .orElseThrow(() -> new IllegalArgumentException("Step not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.STEP_NOT_FOUND));
 
         if (!step.getUserMission().getId().equals(mission.getId())) {
-            throw new IllegalArgumentException("Step does not belong to this mission");
+            throw new CustomException(ErrorCode.STEP_NOT_BELONG_TO_MISSION);
         }
 
         // 기존 사진이 있고 새로운 사진으로 교체되는 경우 기존 사진 삭제
@@ -143,7 +196,7 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
     @Transactional(readOnly = true)
     public List<UserMissionResponse> getMyMissions(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         return missionRepository.findByUserId(user.getId()).stream()
                 .map(mission -> {
@@ -158,10 +211,10 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
     @Transactional(readOnly = true)
     public List<StampResponse> getMyStamps(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         return missionRepository.findByUserId(user.getId()).stream()
-                .filter(m -> "COMPLETED".equals(m.getStatus()))
+                .filter(m -> m.getStatus() == MissionStatus.COMPLETED)
                 .map(StampResponse::from)
                 .toList();
     }
@@ -169,22 +222,22 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
     @Transactional
     public void requestLeave(Long missionId, String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         UserMission mission = missionRepository.findById(missionId)
-                .orElseThrow(() -> new IllegalArgumentException("Mission not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.MISSION_NOT_FOUND));
         
         if (!mission.getUser().getId().equals(user.getId())) {
-            throw new IllegalStateException("본인의 챌린지만 중단 요청을 할 수 있습니다.");
+            throw new CustomException(ErrorCode.NOT_YOUR_MISSION, "본인의 챌린지만 중단 요청을 할 수 있습니다.");
         }
         
-        mission.setStatus("LEAVE_REQUESTED");
+        mission.setStatus(MissionStatus.LEAVE_REQUESTED);
         missionRepository.save(mission);
     }
 
     @Transactional(readOnly = true)
     public List<UserMissionResponse> getLeaveRequests(String hostEmail) {
         User host = userRepository.findByEmail(hostEmail)
-                .orElseThrow(() -> new IllegalArgumentException("Host not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Host not found"));
         
         return missionRepository.findLeaveRequestsByHost(host.getName()).stream()
                 .map(mission -> {
@@ -199,14 +252,14 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
     @Transactional
     public void approveLeave(Long missionId, String hostEmail) {
         User host = userRepository.findByEmail(hostEmail)
-                .orElseThrow(() -> new IllegalArgumentException("Host not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Host not found"));
         
         UserMission mission = missionRepository.findById(missionId)
-                .orElseThrow(() -> new IllegalArgumentException("Mission not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.MISSION_NOT_FOUND));
         
         // Itinerary.author가 작성자의 이름(Name)이라고 가정
         if (!mission.getItinerary().getAuthor().equals(host.getName())) {
-            throw new IllegalStateException("해당 일정의 작성자만 승인할 수 있습니다.");
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "해당 일정의 작성자만 승인할 수 있습니다.");
         }
 
         // 미션 삭제 전 연관된 모든 단계의 사진 삭제
