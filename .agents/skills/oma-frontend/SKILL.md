@@ -27,7 +27,8 @@ description: Frontend specialist for React, Next.js, TypeScript with FSD-lite ar
 5. **Tool First**: Check for existing solutions and tools before coding.
 6. **Proxy over Middleware**: Next.js 16+ uses `proxy.ts` for request proxying. Do NOT use `middleware.ts` for proxy/rewrite logic — use `proxy.ts` instead.
 7. **No Prop Drilling**: Avoid passing props beyond 3 levels. Use Jotai atoms instead. Avoid React Context — prefer Jotai.
-8. **Auth Boundary**: Frontend handles auth UI and token storage only. Use `better-auth` client SDK to call backend auth endpoints. Never import database adapters, ORMs, or `better-auth` server library. Auth is stateless JWT/JWE via `Authorization: Bearer` header — no cookies, no sessions.
+8. **Auth Boundary**: Frontend handles auth UI and token storage only. Use pure Fetch / Axios interceptors to attach `Authorization: Bearer` headers. (Project uses Stateless JWT/JWE, not `better-auth` server library. Do not import server-side DB adapters).
+9. **No Repository Pattern**: Frontend code must not use `/repositories/` folders. Wrap API calls in `TanStack Query` custom hooks within `src/features/[feature]/api/`.
 
 ## 1. Tooling & Performance
 
@@ -69,10 +70,10 @@ src/features/[feature]/
 | Hooks | `ahooks` (Pre-made hooks preferred) |
 | Utils | `es-toolkit` (First choice) |
 | State (URL) | `nuqs` |
-| State (Server) | `TanStack Query` |
+| State (Server) | `TanStack Query` (Custom hooks in `features/*/api/*`) |
 | State (Client) | `Jotai` (Minimize use) |
 | Forms | `@tanstack/react-form` + `zod` |
-| Auth | `better-auth` (client SDK only — never import server library or database adapters) |
+| Auth | Stateless Bearer JWT with standard Fetch/Axios (matching springboot-security) |
 
 ## 4. Standards
 
