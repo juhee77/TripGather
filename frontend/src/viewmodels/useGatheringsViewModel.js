@@ -11,7 +11,7 @@ export const useGatheringsViewModel = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await GatheringRepository.fetchAll(region);
+      const data = await GatheringRepository.search(filters);
       setGatherings(data || []);
     } catch (err) {
       console.error(err);
@@ -22,17 +22,29 @@ export const useGatheringsViewModel = () => {
   }, []);
 
   useEffect(() => {
-    fetchGatherings(selectedRegion);
-  }, [selectedRegion, fetchGatherings]);
+    // debounce would be ideal, but direct call for now
+    const timer = setTimeout(() => {
+      fetchGatherings({ location: selectedRegion, query: searchQuery, availableOnly });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [selectedRegion, searchQuery, availableOnly, fetchGatherings]);
 
   const handleRegionChange = useCallback((newRegion) => {
     setSelectedRegion(newRegion);
   }, []);
 
+  const handleSearchQueryChange = useCallback((query) => {
+    setSearchQuery(query);
+  }, []);
+
+  const handleAvailableOnlyChange = useCallback((available) => {
+    setAvailableOnly(available);
+  }, []);
+
   const createGathering = useCallback(async (gatheringData) => {
     await GatheringRepository.create(gatheringData);
-    await fetchGatherings(selectedRegion);
-  }, [selectedRegion, fetchGatherings]);
+    await fetchGatherings({ location: selectedRegion, query: searchQuery, availableOnly });
+  }, [selectedRegion, searchQuery, availableOnly, fetchGatherings]);
 
   const deleteGathering = useCallback(async (gatheringId) => {
     await GatheringRepository.delete(gatheringId);
@@ -40,19 +52,23 @@ export const useGatheringsViewModel = () => {
   }, []);
 
   const refreshGatherings = useCallback(() => {
-    return fetchGatherings(selectedRegion);
-  }, [selectedRegion, fetchGatherings]);
+    return fetchGatherings({ location: selectedRegion, query: searchQuery, availableOnly });
+  }, [selectedRegion, searchQuery, availableOnly, fetchGatherings]);
 
   const actions = useMemo(() => ({
     handleRegionChange,
+    handleSearchQueryChange,
+    handleAvailableOnlyChange,
     createGathering,
     deleteGathering,
     refreshGatherings
-  }), [handleRegionChange, createGathering, deleteGathering, refreshGatherings]);
+  }), [handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, createGathering, deleteGathering, refreshGatherings]);
 
   return {
     gatherings,
     selectedRegion,
+    searchQuery,
+    availableOnly,
     isLoading,
     error,
     actions

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MemberStatus } from '../constants/enums';
 import PassportCard from './PassportCard';
 import StampBook from './StampBook';
 import { authFetch } from '../api/client';
@@ -90,7 +91,7 @@ const ProfileTab = () => {
   };
 
   const pendingApplicants = hostedGatherings.flatMap(g => 
-    (g.members || []).filter(m => m.status === 'PENDING' && (!user || m.user.id !== user.id)).map(m => ({ ...m, gatheringId: g.id, gatheringTitle: g.title }))
+    (g.members || []).filter(m => m.status === MemberStatus.PENDING && (!user || m.user.id !== user.id)).map(m => ({ ...m, gatheringId: g.id, gatheringTitle: g.title }))
   );
 
   return (

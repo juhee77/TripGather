@@ -130,13 +130,12 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
     if (days.length === 0) days.push(1);
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content-night">
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content hide-scrollbar" onClick={(e) => e.stopPropagation()}>
                 <ModalHeader 
                     title={isEdit ? 'EDIT VOYAGE ✈️' : 'NEW CHECK-IN 🎫'}
                     subtitle="Configure your travel mission"
                     onClose={onClose}
-                    dark
                 />
 
                 <form onSubmit={handleSubmit} className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -148,7 +147,6 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
                             value={formData.title}
                             onChange={handleChange}
                             placeholder="Enter your trip title..."
-                            dark
                         />
 
                         <FormInput 
@@ -158,36 +156,35 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
                             value={formData.description}
                             onChange={handleChange}
                             placeholder="Briefly describe the journey..."
-                            dark
                             as="textarea"
                             style={{ height: '120px', resize: 'none', lineHeight: '1.6' }}
                         />
 
                         <div>
-                            <label className="label-orange">STAMP DESIGN (REWARD)</label>
+                            <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>STAMP DESIGN (REWARD)</label>
                             <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                                 <div 
                                     onClick={() => stampInputRef.current.click()}
                                     style={{ 
-                                        width: '80px', height: '80px', borderRadius: '16px', background: 'var(--night-surface)', border: '2px dashed var(--night-border)',
+                                        width: '80px', height: '80px', borderRadius: '16px', background: 'var(--bg-color)', border: '2px dashed var(--border-color)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', position: 'relative'
                                     }}
                                 >
                                     {stampPreview ? (
                                         <img src={stampPreview} alt="stamp preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
-                                        <Plus size={24} color="var(--night-text-muted)" />
+                                        <Plus size={24} color="var(--text-muted)" />
                                     )}
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <p style={{ fontSize: '13px', color: 'var(--night-text-muted)', marginBottom: '8px' }}>
+                                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>
                                         {stampPreview ? 'Custom stamp selected' : 'No custom stamp. Auto-generated bottt will be used.'}
                                     </p>
                                     <button 
                                         type="button"
                                         onClick={() => stampInputRef.current.click()}
                                         className="glass"
-                                        style={{ fontSize: '12px', padding: '8px 16px', borderRadius: '8px', color: 'white', border: '1px solid var(--night-border)' }}
+                                        style={{ fontSize: '12px', padding: '8px 16px', borderRadius: '8px', color: 'var(--text-secondary)', border: '1px solid var(--border-color)", fontWeight: 'bold' }}
                                     >
                                         CHOOSE IMAGE
                                     </button>
@@ -199,28 +196,28 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
 
                     <div style={{ marginTop: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <label className="text-s" style={{ color: 'var(--secondary-purple)', fontWeight: 900, letterSpacing: '1px' }}>FLIGHT PATH (STOPS)</label>
+                            <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 800, letterSpacing: '1px' }}>FLIGHT PATH (STOPS)</label>
                             <button 
                                 type="button" 
                                 onClick={addDay} 
                                 className="glass"
                                 style={{ 
-                                    fontSize: '11px', fontWeight: 800, color: 'white', padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid rgba(99, 102, 241, 0.4)',
+                                    fontSize: '11px', fontWeight: 800, color: 'var(--primary-orange)', padding: '8px 16px', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-color)',
                                     display: 'flex', alignItems: 'center', gap: '6px'
                                 }}
                             >
-                                <Plus size={14} color="var(--secondary-purple)" /> NEXT DAY
+                                <Plus size={14} color="var(--primary-orange)" /> NEXT DAY
                             </button>
                         </div>
 
                         {days.map(dayNum => (
-                            <div key={dayNum} className="glass" style={{ marginBottom: '24px', padding: '20px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}>
+                            <div key={dayNum} className="glass" style={{ marginBottom: '24px', padding: '20px', borderRadius: '24px', border: '1px solid var(--border-color)', background: 'var(--bg-color)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                    <h4 className="text-s" style={{ color: 'white', fontWeight: 900, letterSpacing: '0.5px' }}>DAY {dayNum}</h4>
+                                    <h4 style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 800, letterSpacing: '0.5px', margin: 0 }}>DAY {dayNum}</h4>
                                     <button 
                                         type="button" 
                                         onClick={() => addPoint(dayNum)} 
-                                        style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer' }}
+                                        style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
                                     >
                                         + ADD TARGET
                                     </button>
@@ -240,19 +237,19 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
                                                         placeholder="Location target..." 
                                                         className="glass"
                                                         style={{ 
-                                                            width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)',
-                                                            color: 'white', fontSize: '14px', fontWeight: 600, outline: 'none'
+                                                            width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px', border: '1px solid var(--border-color)',
+                                                            color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, outline: 'none', background: 'var(--surface)'
                                                         }} 
                                                     />
                                                 </div>
-                                                <button type="button" onClick={() => removePoint(globalIndex)} className="icon-circle" style={{ width: '36px', height: '36px', background: 'rgba(239, 68, 68, 0.1)' }}>
+                                                <button type="button" onClick={() => removePoint(globalIndex)} className="icon-circle" style={{ width: '36px', height: '36px', background: 'rgba(239, 68, 68, 0.1)', cursor: 'pointer' }}>
                                                     <Trash2 size={16} color="#EF4444" />
                                                 </button>
                                             </div>
                                         );
                                     })}
                                     {formData.routePoints.filter(p => (p.dayNumber || 1) === dayNum).length === 0 && (
-                                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.2)', textAlign: 'center', padding: '12px', fontWeight: 600, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '12px' }}>No targets assigned for this day</p>
+                                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '12px', fontWeight: 600, border: '1px dashed var(--border-color)', borderRadius: '12px' }}>No targets assigned for this day</p>
                                     )}
                                 </div>
                             </div>
@@ -260,7 +257,7 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
                     </div>
                 </form>
 
-                <ModalFooter dark>
+                <ModalFooter>
                     <PrimaryButton 
                         onClick={handleSubmit}
                         loading={saving}

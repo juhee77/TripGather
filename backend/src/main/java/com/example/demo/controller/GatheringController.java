@@ -23,6 +23,17 @@ public class GatheringController {
                 .collect(java.util.stream.Collectors.toList()));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<GatheringResponse>> searchGatherings(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Boolean availableOnly) {
+        return ResponseEntity.ok(gatheringService.searchGatherings(query, category, location, availableOnly).stream()
+                .map(GatheringResponse::from)
+                .collect(java.util.stream.Collectors.toList()));
+    }
+
     @GetMapping("/my/hosted")
     public ResponseEntity<List<GatheringResponse>> getMyHostedGatherings() {
         return ResponseEntity.ok(gatheringService.getHostedGatherings().stream()

@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
+import { MissionStatus } from '../constants/enums';
 import { Sparkles, Lightbulb, TrendingUp, Compass } from 'lucide-react';
 
 const TravelInsightWidget = ({ user, myMissions }) => {
-  const completedMissions = useMemo(() => myMissions?.filter(m => m.status === 'COMPLETED') || [], [myMissions]);
+  const completedMissions = useMemo(() => myMissions?.filter(m => m.status === MissionStatus.COMPLETED) || [], [myMissions]);
   const points = user?.points || 0;
 
   const insight = useMemo(() => {

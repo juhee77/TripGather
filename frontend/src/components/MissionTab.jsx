@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { MissionStatus } from '../constants/enums';
 import { ChevronRight } from 'lucide-react';
 import RouteDetailModal from './RouteDetailModal';
 import TicketContainer from './UI/TicketContainer';
@@ -29,7 +30,7 @@ const MissionTab = ({
       minHeight: '100%'
     }}>
       {activeMissions?.filter(m => m.status === 'ACTIVE').map((mission, idx) => {
-        const isCompleted = mission?.status === 'COMPLETED';
+        const isCompleted = mission?.status === MissionStatus.COMPLETED;
         const completedSteps = mission?.steps?.filter(s => s.isCompleted || s.completed).length || 0;
         const totalSteps = mission?.steps?.length || 0;
         const progress = isCompleted ? 100 : (totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0);

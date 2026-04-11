@@ -16,7 +16,7 @@ public class GatheringRepositoryCustomImpl implements GatheringRepositoryCustom 
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<Gathering> searchGatherings(String query, String category, String location) {
+    public List<Gathering> searchGatherings(String query, String category, String location, Boolean availableOnly) {
         QGathering gathering = QGathering.gathering;
         BooleanBuilder builder = new BooleanBuilder();
 
@@ -31,6 +31,10 @@ public class GatheringRepositoryCustomImpl implements GatheringRepositoryCustom 
 
         if (location != null && !location.isEmpty()) {
             builder.and(gathering.location.containsIgnoreCase(location));
+        }
+
+        if (Boolean.TRUE.equals(availableOnly)) {
+            builder.and(gathering.currentJoining.lt(gathering.maxJoining));
         }
 
         return queryFactory.selectFrom(gathering)

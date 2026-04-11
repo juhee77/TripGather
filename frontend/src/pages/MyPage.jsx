@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Pencil, X, MapPin, CheckCircle, Clock, LogOut } from 'lucide-react';
 import { authFetch } from '../api/client';
 import RouteDetailModal from '../components/RouteDetailModal';
+import { MissionStatus } from '../constants/enums';
 
 const MyPage = () => {
   const { logout } = useAuth();
@@ -226,7 +227,7 @@ const MyPage = () => {
                 position: 'relative' 
               }}>
                 {myMissions.map((m, idx) => {
-                  const isCompleted = m.status === 'COMPLETED';
+                  const isCompleted = m.status === MissionStatus.COMPLETED;
                   // 랜덤 회전각 계산 (도장 느낌)
                   const rotation = ((idx * 7) % 20) - 10; 
                   
