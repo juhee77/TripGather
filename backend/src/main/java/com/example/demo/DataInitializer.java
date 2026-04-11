@@ -198,7 +198,7 @@ public class DataInitializer {
                 UserMission mission = UserMission.builder()
                         .user(jihyun)
                         .itinerary(seoulTrip)
-                        .status("ACTIVE")
+                        .status(MissionStatus.ACTIVE)
                         .startedAt(LocalDateTime.now().minusDays(1))
                         .stampImageUrl("https://cdn-icons-png.flaticon.com/512/3715/3715013.png")
                         .build();

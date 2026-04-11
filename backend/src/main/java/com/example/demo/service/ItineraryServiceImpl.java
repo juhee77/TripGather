@@ -5,6 +5,8 @@ import com.example.demo.repository.ItineraryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.demo.exception.CustomException;
+import com.example.demo.exception.ErrorCode;
 import com.example.demo.usecase.ItineraryUseCase;
 
 import java.util.List;
@@ -23,7 +25,7 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     @Transactional(readOnly = true)
     public Itinerary getById(Long id) {
         return itineraryRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Itinerary not found: " + id));
+                .orElseThrow(() -> new CustomException(ErrorCode.ITINERARY_NOT_FOUND));
     }
 
     @Transactional

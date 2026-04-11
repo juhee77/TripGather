@@ -9,6 +9,8 @@ import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.demo.exception.CustomException;
+import com.example.demo.exception.ErrorCode;
 import com.example.demo.usecase.ChatUseCase;
 
 import java.util.List;
@@ -24,9 +26,9 @@ public class ChatServiceImpl implements ChatUseCase {
     @Transactional
     public ChatMessage saveMessage(Long gatheringId, String email, String content) {
         Gathering gathering = gatheringRepository.findById(gatheringId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid gathering ID"));
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         ChatMessage message = ChatMessage.builder()
                 .content(content)

@@ -11,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.example.demo.usecase.AuthUseCase;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.demo.exception.CustomException;
+import com.example.demo.exception.ErrorCode;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +29,7 @@ public class AuthServiceImpl implements AuthUseCase {
      */
     public AuthResponse signup(SignupRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다: " + request.getEmail());
+            throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         String verificationToken = java.util.UUID.randomUUID().toString();
@@ -65,12 +67,12 @@ public class AuthServiceImpl implements AuthUseCase {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseGet(() -> {
                     loginAttemptService.loginFailed(request.getEmail());
-                    throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
+                    throw new CustomException(ErrorCode.INVALID_CREDENTIALS);
                 });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             loginAttemptService.loginFailed(request.getEmail());
-            throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
+            throw new CustomException(ErrorCode.INVALID_CREDENTIALS);
         }
 
         if (!user.isEmailVerified()) {
@@ -91,7 +93,7 @@ public class AuthServiceImpl implements AuthUseCase {
     @Transactional
     public void verifyEmail(String token) {
         User user = userRepository.findByVerificationToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 인증 토큰입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.UNAUTHORIZED_ACCESS));
 
         user.setEmailVerified(true);
         user.setVerificationToken(null);

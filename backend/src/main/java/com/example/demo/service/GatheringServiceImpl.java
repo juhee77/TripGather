@@ -12,6 +12,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.usecase.GatheringUseCase;
+import com.example.demo.exception.CustomException;
+import com.example.demo.exception.ErrorCode;
 
 import java.util.List;
 
@@ -39,7 +41,7 @@ public class GatheringServiceImpl implements GatheringUseCase {
     public Gathering createGathering(Gathering gathering) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User host = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Host user not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Host user not found"));
         
         gathering.setHost(host);
         // Save the gathering first to get the ID
@@ -64,14 +66,14 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Transactional
     public Gathering joinGathering(Long id) {
         Gathering gathering = gatheringRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid gathering ID"));
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND, "Invalid gathering ID"));
         
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         if (gathering.getHost().equals(user)) {
-            throw new IllegalStateException("호스트는 이미 멤버입니다.");
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "호스트는 이미 멤버입니다.");
         }
 
         boolean alreadyApplied = gathering.getMembers().stream()
@@ -87,7 +89,7 @@ public class GatheringServiceImpl implements GatheringUseCase {
                 gathering.getMembers().add(member);
                 gatheringMemberRepository.save(member);
             } else {
-                throw new IllegalStateException("모임 정원이 초과되었습니다.");
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 정원이 초과되었습니다.");
             }
         }
         
@@ -99,10 +101,10 @@ public class GatheringServiceImpl implements GatheringUseCase {
         validateHost(gatheringId);
         
         GatheringMember member = gatheringMemberRepository.findByGatheringIdAndUserId(gatheringId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Member request not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_REQUEST_NOT_FOUND));
                 
         if (member.getGathering().getHost().getId().equals(userId)) {
-            throw new IllegalArgumentException("호스트 본인을 승인/거절할 수 없습니다.");
+            throw new CustomException(ErrorCode.SELF_ACTION_NOT_ALLOWED, "호스트 본인을 승인/거절할 수 없습니다.");
         }
 
         member.setStatus(MemberStatus.APPROVED);
@@ -117,10 +119,10 @@ public class GatheringServiceImpl implements GatheringUseCase {
     public void rejectMember(Long gatheringId, Long userId) {
         validateHost(gatheringId);
         GatheringMember member = gatheringMemberRepository.findByGatheringIdAndUserId(gatheringId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Member request not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_REQUEST_NOT_FOUND));
                 
         if (member.getGathering().getHost().getId().equals(userId)) {
-            throw new IllegalArgumentException("호스트 본인을 승인/거절할 수 없습니다.");
+            throw new CustomException(ErrorCode.SELF_ACTION_NOT_ALLOWED, "호스트 본인을 승인/거절할 수 없습니다.");
         }
 
         member.setStatus(MemberStatus.REJECTED);
@@ -161,14 +163,14 @@ public class GatheringServiceImpl implements GatheringUseCase {
     public void leaveGathering(Long id) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         
         GatheringMember member = gatheringMemberRepository.findByGatheringIdAndUserId(id, user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("해당 모임의 멤버가 아닙니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.FORBIDDEN_ACTION, "해당 모임의 멤버가 아닙니다."));
         
         Gathering gathering = member.getGathering();
         if (gathering.getHost().getId().equals(user.getId())) {
-            throw new IllegalStateException("호스트는 모임을 나갈 수 없습니다. 모임을 삭제해주십시오.");
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "호스트는 모임을 나갈 수 없습니다. 모임을 삭제해주십시오.");
         }
         
         boolean wasApproved = member.getStatus() == MemberStatus.APPROVED;
@@ -185,10 +187,10 @@ public class GatheringServiceImpl implements GatheringUseCase {
 
     private void validateHost(Long gatheringId) {
         Gathering gathering = gatheringRepository.findById(gatheringId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid gathering ID"));
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND, "Invalid gathering ID"));
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         if (!gathering.getHost().getEmail().equals(email)) {
-            throw new IllegalStateException("호스트만 접근 가능합니다.");
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "호스트만 접근 가능합니다.");
         }
     }
 }
