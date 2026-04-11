@@ -24,7 +24,8 @@ public class UserMission {
     @JoinColumn(name = "itinerary_id")
     private Itinerary itinerary;
 
-    private String status; // "ACTIVE" or "COMPLETED"
+    @Enumerated(EnumType.STRING)
+    private MissionStatus status; // ACTIVE, COMPLETED, LEAVE_REQUESTED
     private String stampImageUrl;
 
     @OneToMany(mappedBy = "userMission", cascade = CascadeType.ALL, orphanRemoval = true)

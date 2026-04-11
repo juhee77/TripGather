@@ -36,7 +36,7 @@ public class UserMissionResponse {
                 .itineraryLocation(mission.getItinerary().getLocation())
                 .itineraryDates(mission.getItinerary().getDates())
                 .itineraryBgImageUrl(mission.getItinerary().getBgImageUrl())
-                .status(mission.getStatus())
+                .status(mission.getStatus() != null ? mission.getStatus().name() : null)
                 .startedAt(mission.getStartedAt())
                 .completedAt(mission.getCompletedAt())
                 .itinerary(ItineraryResponse.from(mission.getItinerary()))

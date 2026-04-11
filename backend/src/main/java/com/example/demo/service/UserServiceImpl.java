@@ -8,6 +8,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.usecase.UserUseCase;
+import com.example.demo.exception.CustomException;
+import com.example.demo.exception.ErrorCode;
 
 @Service
 @RequiredArgsConstructor
@@ -18,7 +20,7 @@ public class UserServiceImpl implements UserUseCase {
     @Transactional(readOnly = true)
     public User getById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
     /**

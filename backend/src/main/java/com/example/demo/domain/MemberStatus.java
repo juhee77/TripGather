@@ -4,5 +4,5 @@ public enum MemberStatus {
     PENDING,
     APPROVED,
     REJECTED,
-    LEAVE_REQUESTED
+    LEFT
 }
