@@ -26,7 +26,13 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Transactional(readOnly = true)
     public List<Gathering> getAllGatherings(String location) {
         String filterLocation = (location != null && !location.trim().isEmpty() && !location.equals("전체")) ? location.trim() : null;
-        return gatheringRepository.searchGatherings(null, null, filterLocation);
+        return gatheringRepository.searchGatherings(null, null, filterLocation, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Gathering> searchGatherings(String query, String category, String location, Boolean availableOnly) {
+        String filterLocation = (location != null && !location.trim().isEmpty() && !location.equals("전체")) ? location.trim() : null;
+        return gatheringRepository.searchGatherings(query, category, filterLocation, availableOnly);
     }
 
     @Transactional

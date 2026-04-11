@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MissionStatus } from '../constants/enums';
 import TicketCard from './TicketCard';
 import ItineraryEditorModal from './ItineraryEditorModal';
 import RouteDetailModal from './RouteDetailModal';
@@ -20,7 +21,7 @@ const ItineraryTab = ({ onMissionStart, onEdit }) => {
  
     // Map itineraries to include mission data if already participating
     const mappedItineraries = itineraries.map(it => {
-        const mission = activeMissions.find(m => m.itineraryId === it.id && m.status !== 'COMPLETED');
+        const mission = activeMissions.find(m => m.itineraryId === it.id && m.status !== MissionStatus.COMPLETED);
         return mission ? { ...it, ...mission, isParticipating: true } : it;
     });
 

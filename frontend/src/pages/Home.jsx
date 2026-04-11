@@ -20,7 +20,9 @@ const Home = () => {
   const {
     gatherings,
     selectedRegion,
-    actions: { handleRegionChange, refreshGatherings }
+    searchQuery,
+    availableOnly,
+    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, refreshGatherings }
   } = useGatheringsViewModel();
 
   const [activeTab, setActiveTab] = useState('발견');
@@ -85,6 +87,19 @@ const Home = () => {
           <h1 className="heading-l" style={{ marginTop: '4px' }}>발견</h1>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
+          <input 
+            type="text" 
+            placeholder="모임 검색..." 
+            value={searchQuery || ''}
+            onChange={(e) => handleSearchQueryChange(e.target.value)}
+            style={{ 
+              background: 'white', padding: '12px 18px', borderRadius: '16px', fontSize: '14px',
+              border: '1px solid var(--border-color)', outline: 'none', flex: '1 1 150px',
+              maxWidth: '250px',
+              fontWeight: 600,
+              color: 'var(--text-primary)'
+            }}
+          />
           <select 
             value={selectedRegion} 
             onChange={(e) => handleRegionChange(e.target.value)}
@@ -106,10 +121,28 @@ const Home = () => {
             ))}
           </select>
           <button 
+            title="모집 중 모임만 보기"
+            onClick={() => handleAvailableOnlyChange(!availableOnly)}
+            className="icon-circle" 
+            style={{ 
+              width: '48px', height: '48px',
+              flexShrink: 0,
+              background: availableOnly ? 'var(--primary-gradient)' : 'white',
+              border: '1px solid var(--border-color)',
+              color: availableOnly ? 'white' : 'var(--text-primary)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+              transition: 'all 0.3s'
+            }}
+          >
+            <Search size={20} />
+          </button>
+          <button 
+            title="내가 호스트인 모임만 보기 (작업 예정)"
             onClick={() => setShowOnlyHosted(!showOnlyHosted)}
             className="icon-circle" 
             style={{ 
               width: '48px', height: '48px',
+              flexShrink: 0,
               background: showOnlyHosted ? 'var(--primary-gradient)' : 'white',
               border: '1px solid var(--border-color)',
               color: showOnlyHosted ? 'white' : 'var(--text-primary)',
@@ -128,7 +161,7 @@ const Home = () => {
             const myUpcoming = gatherings
               .filter(g => {
                 const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
-                const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === 'APPROVED'));
+                const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === MemberStatus.APPROVED));
                 return (isHost || isApproved);
               })
               .sort((a, b) => new Date(a.dates) - new Date(b.dates))[0];
@@ -246,14 +279,15 @@ const Home = () => {
         {activeTab === '발견' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {gatherings.filter(g => {
-              const regionMatch = selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion));
+              // The QueryDSL backend already handles location, searchQuery, and availableOnly.
+              // We only apply the showOnlyHosted filter on the client side since it strictly checks current user matching.
               const hostMatch = !showOnlyHosted || (
                 currentUser && g.host && (
                   (typeof g.host === 'string' && g.host === currentUser.name) ||
                   (g.host.email === currentUser.email)
                 )
               );
-              return regionMatch && hostMatch;
+              return hostMatch;
             }).map((g, idx) => (
               <div 
                 key={g.id} 
@@ -272,7 +306,7 @@ const Home = () => {
                     (currentUser && g.host && (
                       (typeof g.host === 'string' && g.host === currentUser.name) ||
                       (g.host.email === currentUser.email)
-                    )) ? g.members?.filter(m => m.status === 'PENDING').length || 0 : 0
+                    )) ? g.members?.filter(m => m.status === MemberStatus.PENDING).length || 0 : 0
                   }
                 />
               </div>
@@ -298,7 +332,7 @@ const Home = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {gatherings.filter(g => {
               const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
-              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === 'APPROVED'));
+              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === MemberStatus.APPROVED));
               const isCompleted = g.currentJoining >= g.maxJoining;
               return (isHost || isApproved) && isCompleted;
             }).map((g, idx) => (
@@ -319,14 +353,14 @@ const Home = () => {
                     (currentUser && g.host && (
                       (typeof g.host === 'string' && g.host === currentUser.name) ||
                       (g.host.email === currentUser.email)
-                    )) ? g.members?.filter(m => m.status === 'PENDING').length || 0 : 0
+                    )) ? g.members?.filter(m => m.status === MemberStatus.PENDING).length || 0 : 0
                   }
                 />
               </div>
             ))}
             {gatherings.filter(g => {
               const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
-              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === 'APPROVED'));
+              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === MemberStatus.APPROVED));
               const isCompleted = g.currentJoining >= g.maxJoining;
               return (isHost || isApproved) && isCompleted;
             }).length === 0 && (

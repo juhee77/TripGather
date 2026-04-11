@@ -39,3 +39,6 @@ out/
 ### Uploaded Files ###
 uploads/
 /uploads/
+
+### QueryDSL ###
+src/main/generated/

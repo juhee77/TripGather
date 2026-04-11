@@ -1,4 +1,5 @@
 import React from 'react';
+import { MemberStatus } from '../constants/enums';
 import { ArrowLeft, Users, MoreHorizontal, Shield, Send } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { useChatViewModel } from '../viewmodels/useChatViewModel';
@@ -134,7 +135,7 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                     <div style={{ padding: '32px 24px', minWidth: '280px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                             <h4 style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 900, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                요원 목록 <span style={{ background: 'var(--primary-orange)', color: 'white', fontSize: '11px', padding: '2px 8px', borderRadius: '10px' }}>{(gathering.members?.filter(m => m.status === 'APPROVED').length || 0) + 1}</span>
+                                요원 목록 <span style={{ background: 'var(--primary-orange)', color: 'white', fontSize: '11px', padding: '2px 8px', borderRadius: '10px' }}>{(gathering.members?.filter(m => m.status === MemberStatus.APPROVED).length || 0) + 1}</span>
                             </h4>
                         </div>
                         
@@ -156,7 +157,7 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                             <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }}></div>
 
                             {/* Members */}
-                            {gathering.members?.filter(m => m.status === 'APPROVED').map(m => (
+                            {gathering.members?.filter(m => m.status === MemberStatus.APPROVED).map(m => (
                                 <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '4px 8px' }}>
                                     <div style={{ 
                                         width: '40px', height: '40px', borderRadius: '14px', 

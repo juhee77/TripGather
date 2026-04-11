@@ -15,6 +15,20 @@ class GatheringRepository {
     return response.json();
   }
 
+  async search(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.location && filters.location !== '전체') params.append('location', filters.location);
+    if (filters.query) params.append('query', filters.query);
+    if (filters.availableOnly) params.append('availableOnly', 'true');
+    
+    const queryString = params.toString();
+    const path = `/api/gatherings/search${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await fetch(apiUrl(path));
+    if (!response.ok) throw new Error('Failed to search gatherings');
+    return response.json();
+  }
+
   async create(gatheringData) {
     const response = await authFetch('/api/gatherings', {
       method: 'POST',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MemberStatus } from '../constants/enums';
 import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { authFetch, apiUrl } from '../api/client';
@@ -22,7 +23,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
   );
 
   const myStatus = gathering.members?.find(m => m.user.email === currentUser?.email)?.status;
-  const isMember = isHost || myStatus === 'APPROVED';
+  const isMember = isHost || myStatus === MemberStatus.APPROVED;
 
   const fetchComments = async () => {
     try {
@@ -182,7 +183,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
                 <Trash2 size={18} />
               </button>
             </>
-          ) : (myStatus === 'APPROVED' && (
+          ) : (myStatus === MemberStatus.APPROVED && (
             <button onClick={handleLeave} title="모임 나가기" className="icon-circle" style={{ background: 'var(--bg-color)', color: '#FF6B6B' }}>
               <XCircle size={18} />
             </button>
@@ -301,14 +302,14 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
                       disabled={gathering.currentJoining >= gathering.maxJoining || myStatus}
                       style={{
                         width: '100%', padding: '18px',
-                        background: (gathering.currentJoining >= gathering.maxJoining && !myStatus) ? 'var(--text-muted)' : myStatus === 'PENDING' ? '#FFD43B' : myStatus === 'APPROVED' ? '#51CF66' : 'var(--primary-gradient)',
+                        background: (gathering.currentJoining >= gathering.maxJoining && !myStatus) ? 'var(--text-muted)' : myStatus === MemberStatus.PENDING ? '#FFD43B' : myStatus === MemberStatus.APPROVED ? '#51CF66' : 'var(--primary-gradient)',
                         color: 'white', border: 'none', borderRadius: '20px', fontSize: '17px', fontWeight: 800, marginTop: '24px', cursor: 'pointer',
                         boxShadow: (gathering.currentJoining < gathering.maxJoining && !myStatus) ? '0 10px 20px rgba(255, 92, 0, 0.3)' : 'none'
                       }}
                     >
-                      {myStatus === 'PENDING' ? '신청 대기 중...' :
-                        myStatus === 'APPROVED' ? '참여 확정됨!' :
-                          myStatus === 'REJECTED' ? '거절된 모임입니다' :
+                      {myStatus === MemberStatus.PENDING ? '신청 대기 중...' :
+                        myStatus === MemberStatus.APPROVED ? '참여 확정됨!' :
+                          myStatus === MemberStatus.REJECTED ? '거절된 모임입니다' :
                             gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참여 신청하기'}
                     </button>
                   )}
@@ -324,7 +325,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
                 <div style={{ marginBottom: '32px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>참여 신청 관리</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {gathering.members?.filter(m => m.status === 'PENDING' && (!currentUser || m.user.id !== currentUser.id)).map(req => (
+                    {gathering.members?.filter(m => m.status === MemberStatus.PENDING && (!currentUser || m.user.id !== currentUser.id)).map(req => (
                       <div key={req.user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-color)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div style={{ width: '40px', height: '40px', borderRadius: '20px', background: 'var(--border-color)', overflow: 'hidden' }}>
@@ -342,7 +343,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
                         </div>
                       </div>
                     ))}
-                    {gathering.members?.filter(m => m.status === 'PENDING').length === 0 && (
+                    {gathering.members?.filter(m => m.status === MemberStatus.PENDING).length === 0 && (
                       <p style={{ fontSize: '14px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px', background: 'var(--bg-color)', borderRadius: '16px' }}>새로운 참가 신청이 없습니다.</p>
                     )}
                   </div>
@@ -352,7 +353,7 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
               {/* Confirmed Members Section */}
               <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>참여 중인 멤버</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
-                {gathering.members?.filter(m => m.status === 'APPROVED').map(req => (
+                {gathering.members?.filter(m => m.status === MemberStatus.APPROVED).map(req => (
                   <div key={req.user.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: 'var(--bg-color)', borderRadius: '12px' }}>
                     <div style={{ width: '32px', height: '32px', borderRadius: '16px', background: 'var(--border-color)', overflow: 'hidden' }}>
                       {req.user.profileImageUrl ? <img src={req.user.profileImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E2E8F0', fontSize: '14px' }}>👤</div>}
