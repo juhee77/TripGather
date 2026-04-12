@@ -42,3 +42,8 @@ uploads/
 
 ### QueryDSL ###
 src/main/generated/
+
+### Logs and Temp Files ###
+*.log
+*.pid
+bin/

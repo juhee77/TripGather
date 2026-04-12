@@ -9,5 +9,17 @@ out/
 .gradle/
 *.log
 *.pid
+backend.log
+backend_startup.log
 .idea/
 .vscode/
+
+# JVM temporary files
+hs_err_pid*
+
+# Build and temporary files
+/build/
+/out/
+/bin/
+.gradle/
+hs_err_pid*
