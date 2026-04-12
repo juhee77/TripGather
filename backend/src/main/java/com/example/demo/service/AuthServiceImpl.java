@@ -99,4 +99,30 @@ public class AuthServiceImpl implements AuthUseCase {
         user.setVerificationToken(null);
         userRepository.save(user);
     }
+
+    @Override
+    @Transactional
+    public AuthResponse mockKakaoLogin() {
+        String mockEmail = "kakao_mock@example.com";
+        User user = userRepository.findByEmail(mockEmail)
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .name("KakaoMock")
+                            .email(mockEmail)
+                            .password(passwordEncoder.encode("kakao_mock_pwd_123!"))
+                            .provider("kakao")
+                            .role("ROLE_USER")
+                            .emailVerified(true)
+                            .build();
+                    return userRepository.save(newUser);
+                });
+
+        String token = jwtTokenProvider.generateAccessToken(user.getEmail());
+        return AuthResponse.builder()
+                .accessToken(token)
+                .userId(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
+    }
 }

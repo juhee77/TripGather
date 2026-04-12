@@ -185,6 +185,12 @@ public class GatheringServiceImpl implements GatheringUseCase {
         }
     }
 
+    @Transactional(readOnly = true)
+    public Gathering getGathering(Long id) {
+        return gatheringRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND, "Invalid gathering ID"));
+    }
+
     private void validateHost(Long gatheringId) {
         Gathering gathering = gatheringRepository.findById(gatheringId)
                 .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND, "Invalid gathering ID"));

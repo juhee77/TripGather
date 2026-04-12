@@ -8,4 +8,5 @@ public interface AuthUseCase {
     AuthResponse signup(SignupRequest request);
     AuthResponse login(LoginRequest request);
     void verifyEmail(String token);
+    AuthResponse mockKakaoLogin();
 }

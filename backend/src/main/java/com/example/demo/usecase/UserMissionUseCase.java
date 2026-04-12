@@ -15,4 +15,5 @@ public interface UserMissionUseCase {
     void requestLeave(Long missionId, String email);
     List<UserMissionResponse> getLeaveRequests(String hostEmail);
     void approveLeave(Long missionId, String hostEmail);
+    UserMissionResponse getMission(Long missionId, String email);
 }

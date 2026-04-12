@@ -17,6 +17,8 @@ public class UserResponse {
     private String profileImageUrl;
     private String role;
     private String bio;
+    private int points;
+    private int stampsCount;
 
     public static UserResponse from(User user) {
         if (user == null) return null;
@@ -27,6 +29,8 @@ public class UserResponse {
                 .profileImageUrl(user.getProfileImageUrl())
                 .role(user.getRole())
                 .bio(user.getBio())
+                .points(user.getPoints())
+                .stampsCount(user.getStampsCount())
                 .build();
     }
 }

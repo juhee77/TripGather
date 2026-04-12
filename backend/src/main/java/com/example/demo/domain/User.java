@@ -54,6 +54,10 @@ public class User implements UserDetails {
     private int points = 0;
 
     @Builder.Default
+    @Column(name = "stamps_count")
+    private int stampsCount = 0;
+
+    @Builder.Default
     @Column(name = "email_verified")
     private boolean emailVerified = false;
 
