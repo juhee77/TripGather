@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import UserMissionRepository from '../repositories/UserMissionRepository';
+import { useAuth } from '../contexts/AuthContext';
 
 export const useMissionsViewModel = () => {
+  const { isAuthenticated } = useAuth();
   const [activeMissions, setActiveMissions] = useState([]);
   const [myStamps, setMyStamps] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,9 +33,14 @@ export const useMissionsViewModel = () => {
   }, []);
 
   useEffect(() => {
-    fetchMissions();
-    fetchStamps();
-  }, [fetchMissions, fetchStamps]);
+    if (isAuthenticated) {
+      fetchMissions();
+      fetchStamps();
+    } else {
+      setActiveMissions([]);
+      setMyStamps([]);
+    }
+  }, [fetchMissions, fetchStamps, isAuthenticated]);
 
   const startMission = useCallback(async (itineraryId) => {
     await UserMissionRepository.startMission(itineraryId);
