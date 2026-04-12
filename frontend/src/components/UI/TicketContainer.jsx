@@ -26,13 +26,6 @@ const TicketContainer = ({ topSection, bottomSection, className = '', onClick })
       <div className="ticket-bottom" style={{ padding: '0 20px 20px 20px' }}>
         {bottomSection}
       </div>
-
-      <style jsx>{`
-        .ticket-top {
-          position: relative;
-          width: 100%;
-        }
-      `}</style>
     </div>
   );
 };

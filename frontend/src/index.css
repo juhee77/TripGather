@@ -110,6 +110,11 @@ body {
   box-shadow: var(--shadow-hover);
 }
 
+.ticket-top {
+  position: relative;
+  width: 100%;
+}
+
 .ticket-divider {
   height: 0;
   border-top: var(--ticket-dashed);
