@@ -1,28 +1,58 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
 import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { authFetch, apiUrl } from '../api/client';
-import ModalHeader from './UI/ModalHeader';
-import ModalFooter from './UI/ModalFooter';
-import FormInput from './UI/FormInput';
-import PrimaryButton from './UI/PrimaryButton';
-import GatheringFeed from './GatheringFeed';
+import ModalHeader from '../components/UI/ModalHeader';
+import ModalFooter from '../components/UI/ModalFooter';
+import FormInput from '../components/UI/FormInput';
+import PrimaryButton from '../components/UI/PrimaryButton';
+import GatheringFeed from '../components/GatheringFeed';
 
-const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }) => {
+const GatheringDetailPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [gathering, setGathering] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch gathering details on load
+  const loadGathering = async () => {
+    try {
+      const res = await authFetch(`/api/gatherings/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setGathering(data);
+        setEditData(data);
+      }
+    } catch (err) {
+      console.error('Failed to load gathering', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (id) loadGathering();
+  }, [id]);
+
+  const onClose = () => navigate(-1);
+  const onUpdate = (updated) => { if(updated) { setGathering(updated); setEditData(updated); } else loadGathering(); };
+  const onJoin = (updated) => { if(updated) setGathering(updated); else loadGathering(); };
+  const onDelete = () => navigate('/gather', { replace: true });
   const { user: currentUser } = useUser();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [activeTab, setActiveTab] = useState('정보'); // '정보', '멤버', '대화', '스냅샷'
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ ...gathering });
+  const [editData, setEditData] = useState({});
 
-  const isHost = currentUser && gathering.host && (
+  const isHost = currentUser && gathering?.host && (
     (typeof gathering.host === 'string' && gathering.host === currentUser.name) ||
     (gathering.host.email === currentUser.email)
   );
 
-  const myStatus = gathering.members?.find(m => m.user.email === currentUser?.email)?.status;
+  const myStatus = gathering?.members?.find(m => m.user.email === currentUser?.email)?.status;
   const isMember = isHost || myStatus === MemberStatus.APPROVED;
 
   const fetchComments = async () => {
@@ -165,11 +195,12 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
     }
   };
 
-  if (!gathering) return null;
+  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>로딩 중...</div>;
+  if (!gathering) return <div style={{ padding: '40px', textAlign: 'center' }}>모임을 찾을 수 없습니다.</div>;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content hide-scrollbar" onClick={(e) => e.stopPropagation()}>
+    <div className="animate-fade" style={{ background: 'var(--bg-lite)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: '100px' }}>
         <ModalHeader 
           title={gathering.title}
           subtitle={`Host: ${typeof gathering.host === 'string' ? gathering.host : gathering.host?.name}`}
@@ -429,4 +460,4 @@ const GatheringDetailModal = ({ gathering, onClose, onJoin, onUpdate, onDelete }
   );
 };
 
-export default GatheringDetailModal;
+export default GatheringDetailPage;

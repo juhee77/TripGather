@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, Type, FileText, Send, Plus, Trash2, MapPin, Clock } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { X, Type, FileText, Send, Plus, Trash2, MapPin, Clock, ChevronLeft } from 'lucide-react';
 import { authFetch } from '../api/client';
-import ModalHeader from './UI/ModalHeader';
-import ModalFooter from './UI/ModalFooter';
-import FormInput from './UI/FormInput';
-import PrimaryButton from './UI/PrimaryButton';
+import FormInput from '../components/UI/FormInput';
+import PrimaryButton from '../components/UI/PrimaryButton';
 
-const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
-    const isEdit = !!itinerary;
+const ItineraryEditorPage = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const isEdit = !!id;
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -19,18 +20,29 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
     const stampInputRef = React.useRef(null);
 
     useEffect(() => {
-        if (itinerary) {
-            setFormData({
-                title: itinerary.title || '',
-                description: itinerary.description || '',
-                stampImageUrl: itinerary.stampImageUrl || '',
-                routePoints: itinerary.routePoints ? [...itinerary.routePoints].sort((a, b) => 
-                    a.dayNumber !== b.dayNumber ? a.dayNumber - b.dayNumber : a.sequenceOrder - b.sequenceOrder
-                ) : []
-            });
-            if (itinerary.stampImageUrl) setStampPreview(itinerary.stampImageUrl);
+        if (id) {
+            const fetchItinerary = async () => {
+                try {
+                    const res = await authFetch(`/api/itineraries/${id}`);
+                    if (res.ok) {
+                        const itinerary = await res.json();
+                        setFormData({
+                            title: itinerary.title || '',
+                            description: itinerary.description || '',
+                            stampImageUrl: itinerary.stampImageUrl || '',
+                            routePoints: itinerary.routePoints ? [...itinerary.routePoints].sort((a, b) => 
+                                a.dayNumber !== b.dayNumber ? a.dayNumber - b.dayNumber : a.sequenceOrder - b.sequenceOrder
+                            ) : []
+                        });
+                        if (itinerary.stampImageUrl) setStampPreview(itinerary.stampImageUrl);
+                    }
+                } catch (err) {
+                    console.error("Failed to load itinerary for edit", err);
+                }
+            };
+            fetchItinerary();
         }
-    }, [itinerary]);
+    }, [id]);
 
     const handleStampUpload = async (e) => {
         const file = e.target.files[0];
@@ -104,16 +116,14 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
         e.preventDefault();
         setSaving(true);
         try {
-            const url = isEdit ? `/api/itineraries/${itinerary.id}` : '/api/itineraries';
+            const url = isEdit ? `/api/itineraries/${id}` : '/api/itineraries';
             const method = isEdit ? 'PATCH' : 'POST';
             const response = await authFetch(url, {
                 method,
                 body: JSON.stringify(formData),
             });
             if (response.ok) {
-                const saved = await response.json();
-                onSaved(saved);
-                onClose();
+                navigate(-1);
             } else {
                 const errText = await response.text();
                 alert(`저장에 실패했습니다: ${errText}`);
@@ -130,15 +140,19 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
     if (days.length === 0) days.push(1);
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content hide-scrollbar" onClick={(e) => e.stopPropagation()}>
-                <ModalHeader 
-                    title={isEdit ? 'EDIT VOYAGE ✈️' : 'NEW CHECK-IN 🎫'}
-                    subtitle="Configure your travel mission"
-                    onClose={onClose}
-                />
+        <div className="animate-fade" style={{ background: 'var(--bg-lite)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <header style={{ 
+                display: 'flex', alignItems: 'center', padding: '20px', gap: '16px', background: 'white', 
+                position: 'sticky', top: 0, zIndex: 100, borderBottom: '1px solid var(--border-color)',
+                borderRadius: '0 0 24px 24px'
+            }}>
+                <button type="button" onClick={() => navigate(-1)} className="icon-circle" style={{ width: '40px', height: '40px', padding: 0 }}>
+                  <ChevronLeft size={24} color="var(--text-primary)" />
+                </button>
+                <h1 className="heading-m" style={{ margin: 0, fontSize: '20px' }}>{isEdit ? 'EDIT VOYAGE ✈️' : 'NEW CHECK-IN 🎫'}</h1>
+            </header>
 
-                <form onSubmit={handleSubmit} className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <form onSubmit={handleSubmit} className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         <FormInput 
                             label="VOYAGE TITLE"
@@ -255,25 +269,18 @@ const ItineraryEditorModal = ({ itinerary, onClose, onSaved }) => {
                             </div>
                         ))}
                     </div>
-                </form>
 
-                <ModalFooter>
+                <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '20px', background: 'white', borderTop: '1px solid var(--border-color)', zIndex: 10 }}>
                     <PrimaryButton 
                         onClick={handleSubmit}
                         loading={saving}
                     >
                         {isEdit ? 'CONFIRM UPDATE' : 'BOARDING PASS ISSUED'} <Send size={20} style={{ marginLeft: '8px' }} />
                     </PrimaryButton>
-                </ModalFooter>
-            </div>
-            <style>{`
-                @keyframes slideUp {
-                    from { transform: translateY(100%); }
-                    to { transform: translateY(0); }
-                }
-            `}</style>
+                </div>
+            </form>
         </div>
     );
 };
 
-export default ItineraryEditorModal;
+export default ItineraryEditorPage;

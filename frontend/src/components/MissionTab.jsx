@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MissionStatus } from '../constants/enums';
 import { ChevronRight } from 'lucide-react';
-import RouteDetailModal from './RouteDetailModal';
 import TicketContainer from './UI/TicketContainer';
 
 const MissionTab = ({
@@ -9,8 +9,7 @@ const MissionTab = ({
   onMissionComplete,
   onStepComplete
 }) => {
-  const [selectedMissionId, setSelectedMissionId] = useState(null);
-  const selectedMission = activeMissions?.find(m => m.id === selectedMissionId);
+  const navigate = useNavigate();
 
   if (!activeMissions || activeMissions.length === 0) {
     return (
@@ -102,7 +101,7 @@ const MissionTab = ({
         return (
           <TicketContainer
             key={mission?.id}
-            onClick={() => setSelectedMissionId(mission.id)}
+            onClick={() => navigate('/mission/' + mission.id)}
             topSection={topSection}
             bottomSection={bottomSection}
             className="mission-ticket"
@@ -110,19 +109,6 @@ const MissionTab = ({
         );
       })}
 
-      {selectedMission && (
-        <RouteDetailModal
-          itinerary={{
-            ...selectedMission.itinerary,
-            id: selectedMission.id, 
-            steps: selectedMission.steps,
-            status: selectedMission.status,
-            itineraryId: selectedMission.itineraryId
-          }}
-          onClose={() => setSelectedMissionId(null)}
-          onStepComplete={onStepComplete}
-        />
-      )}
     </div>
   );
 };

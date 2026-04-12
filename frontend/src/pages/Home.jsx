@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import FeedCard from '../components/FeedCard';
-import CreateGatheringModal from '../components/CreateGatheringModal';
-import GatheringDetailModal from '../components/GatheringDetailModal';
-import ItineraryEditorModal from '../components/ItineraryEditorModal';
 import TicketCard from '../components/TicketCard';
 import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
@@ -14,8 +11,11 @@ import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
 import { useMissionsViewModel } from '../viewmodels/useMissionsViewModel'; // Added
 import { Search, Map as MapIcon, Plus, MessageCircle } from 'lucide-react';
 import { authFetch } from '../api/client';
+import { useNavigate } from 'react-router-dom';
+import { MemberStatus } from '../constants/enums';
 
 const Home = () => {
+  const navigate = useNavigate();
   const { user: currentUser } = useUser();
   const {
     gatherings,
@@ -26,11 +26,7 @@ const Home = () => {
   } = useGatheringsViewModel();
 
   const [activeTab, setActiveTab] = useState('발견');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingItinerary, setEditingItinerary] = useState(null);
   const [showOnlyHosted, setShowOnlyHosted] = useState(false);
-  const [selectedGathering, setSelectedGathering] = useState(null);
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
   const [myJoinedIds, setMyJoinedIds] = useState(() => {
     try {
@@ -63,12 +59,11 @@ const Home = () => {
   };
 
   const handleEditItinerary = (itinerary) => {
-    setEditingItinerary(itinerary);
-    setIsEditModalOpen(true);
+    navigate(`/itinerary/edit/${itinerary.id}`);
   };
 
   return (
-    <div className="app-container animate-fade">
+    <div className="animate-fade" style={{ background: 'var(--bg-lite)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Premium Header with Boarding Pass Aesthetic */}
       <header className="glass page-header" style={{ 
         display: 'flex', 
@@ -170,7 +165,7 @@ const Home = () => {
 
             return (
               <div 
-                onClick={() => setSelectedGathering(myUpcoming)}
+                onClick={() => navigate(`/gathering/${myUpcoming.id}`)}
                 className="ticket-wrapper animate-fade" 
                 style={{ 
                   borderRadius: '28px',
@@ -291,7 +286,7 @@ const Home = () => {
             }).map((g, idx) => (
               <div 
                 key={g.id} 
-                onClick={() => setSelectedGathering(g)} 
+                onClick={() => navigate(`/gathering/${g.id}`)} 
                 style={{ cursor: 'pointer', animationDelay: `${idx * 0.1}s` }}
                 className="animate-fade"
               >
@@ -338,7 +333,7 @@ const Home = () => {
             }).map((g, idx) => (
               <div 
                 key={g.id} 
-                onClick={() => setSelectedGathering(g)} 
+                onClick={() => navigate(`/gathering/${g.id}`)} 
                 style={{ cursor: 'pointer', animationDelay: `${idx * 0.1}s` }}
                 className="animate-fade"
               >
@@ -398,60 +393,17 @@ const Home = () => {
       {/* Floating Action Button - Enhanced */}
       {activeTab === '발견' && (
         <button
-          onClick={() => setIsModalOpen(true)}
-          className="primary-btn"
+          onClick={() => navigate('/create')}
+          className="primary-btn fab-button"
           style={{
-            position: 'fixed',
-            bottom: '110px',
-            right: 'calc(50% - 240px + 24px)',
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
             padding: 0,
             zIndex: 90,
-            boxShadow: '0 20px 40px rgba(255, 92, 0, 0.4)'
           }}
         >
           <Plus size={32} strokeWidth={3} />
         </button>
       )}
 
-      {/* Modals remain the same but will eventually need updates */}
-      {isModalOpen && (
-        <CreateGatheringModal
-          onClose={() => setIsModalOpen(false)}
-          onCreated={handleGatheringCreated}
-        />
-      )}
-
-      {selectedGathering && (
-        <GatheringDetailModal
-          gathering={selectedGathering}
-          onClose={() => setSelectedGathering(null)}
-          onUpdate={() => {
-            refreshGatherings();
-            // Refresh local selectedGathering to show new member status immediately
-            const updated = gatherings.find(g => g.id === selectedGathering.id);
-            if (updated) setSelectedGathering(updated);
-          }}
-          onDelete={(id) => {
-            refreshGatherings();
-            setSelectedGathering(null);
-          }}
-          onJoin={(updatedGathering) => {
-            refreshGatherings();
-            setSelectedGathering(updatedGathering);
-          }}
-        />
-      )}
-
-      {isEditModalOpen && (
-        <ItineraryEditorModal 
-          itinerary={editingItinerary}
-          onClose={() => setIsEditModalOpen(false)}
-          onSaved={handleUpdateItinerary}
-        />
-      )}
     </div>
   );
 };
