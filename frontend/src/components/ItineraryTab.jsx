@@ -44,7 +44,7 @@ const ItineraryTab = ({ onMissionStart, onEdit }) => {
     }, [refreshItineraries]);
 
     const handleDelete = async (id) => {
-        if (!window.confirm('정말 이 일정을 삭제하시겠습니까?')) return;
+        if (!window.confirm('정말 이 비행 계획을 삭제하시겠습니까?')) return;
         try {
             await deleteItinerary(id);
         } catch (err) {
@@ -78,7 +78,7 @@ const ItineraryTab = ({ onMissionStart, onEdit }) => {
                             }}></span> 
                             MY FLIGHTS
                         </h2>
-                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '4px' }}>Upcoming & Past Itineraries</p>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, marginTop: '4px' }}>Upcoming & Past Flight Plans</p>
                     </div>
                     <button onClick={refreshItineraries} style={{ 
                         color: 'var(--text-secondary)', 
@@ -120,7 +120,7 @@ const ItineraryTab = ({ onMissionStart, onEdit }) => {
                             background: 'white'
                         }}>
                             <div style={{ fontSize: '56px', marginBottom: '20px' }}>✈️</div>
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontWeight: 600 }}>아직 등록된 여행 항공권이 없습니다.</p>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontWeight: 600 }}>아직 등록된 비행 계획이 없습니다.</p>
                             <button className="primary-btn" onClick={() => openEditor()}>
                                 첫 비행기표 발권하기
                             </button>

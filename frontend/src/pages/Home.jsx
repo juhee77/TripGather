@@ -25,7 +25,7 @@ const Home = () => {
     actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, refreshGatherings }
   } = useGatheringsViewModel();
 
-  const [activeTab, setActiveTab] = useState('발견');
+  const [activeTab, setActiveTab] = useState('라운지');
   const [showOnlyHosted, setShowOnlyHosted] = useState(false);
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
   const [myJoinedIds, setMyJoinedIds] = useState(() => {
@@ -79,7 +79,7 @@ const Home = () => {
       }}>
         <div>
           <span className="label-orange">GATHERING TERMINAL</span>
-          <h1 className="heading-l" style={{ marginTop: '4px' }}>발견</h1>
+          <h1 className="heading-l" style={{ marginTop: '4px' }}>라운지</h1>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <input 
@@ -247,7 +247,7 @@ const Home = () => {
         marginBottom: '28px'
       }}>
         <nav style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }} className="hide-scrollbar">
-          {['발견', '일정', '나의 미션', '내 모임', '내 여권'].map((tab) => (
+          {['라운지', '비행 계획', '챌린지', '내 여정', '내 여권'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -271,7 +271,7 @@ const Home = () => {
       </div>
 
       <div style={{ padding: '0 20px', flex: 1 }}>
-        {activeTab === '발견' && (
+        {activeTab === '라운지' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {gatherings.filter(g => {
               // The QueryDSL backend already handles location, searchQuery, and availableOnly.
@@ -315,7 +315,7 @@ const Home = () => {
           </div>
         )}
 
-        {activeTab === '나의 미션' && (
+        {activeTab === '챌린지' && (
           <MissionTab 
             activeMissions={activeMissions} 
             onMissionComplete={completeMission}
@@ -323,7 +323,7 @@ const Home = () => {
           />
         )}
 
-        {activeTab === '내 모임' && (
+        {activeTab === '내 여정' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {gatherings.filter(g => {
               const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
@@ -375,14 +375,14 @@ const Home = () => {
                   모집이 완료되어 확정된 모임만 여기에 표시됩니다.<br/>
                   <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>진행 중인 모임은 '내 여권 &gt; 주최 관리'에서 확인하세요.</span>
                 </p>
-                <button className="primary-btn" onClick={() => setActiveTab('발견')}>모임 탐색하기</button>
+                <button className="primary-btn" onClick={() => setActiveTab('라운지')}>모임 탐색하기</button>
               </div>
             )}
           </div>
         )}
 
-        {activeTab === '일정' && (
-          <ItineraryTab onMissionStart={() => { fetchMissions(); setActiveTab('나의 미션'); }} onEdit={handleEditItinerary} />
+        {activeTab === '비행 계획' && (
+          <ItineraryTab onMissionStart={() => { fetchMissions(); setActiveTab('챌린지'); }} onEdit={handleEditItinerary} />
         )}
 
         {activeTab === '내 여권' && (
@@ -391,10 +391,10 @@ const Home = () => {
       </div>
 
       {/* Unified Floating Action Button */}
-      {['발견', '일정', '나의 미션'].includes(activeTab) && (
+      {['라운지', '비행 계획', '챌린지'].includes(activeTab) && (
         <button
           onClick={() => {
-            if (activeTab === '발견') navigate('/create');
+            if (activeTab === '라운지') navigate('/create');
             else navigate('/itinerary/create');
           }}
           className="primary-btn fab-button"
