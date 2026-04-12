@@ -14,8 +14,8 @@ const MissionTab = ({
   if (!activeMissions || activeMissions.length === 0) {
     return (
       <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-        <p>현재 참여 중인 미션이 없습니다.</p>
-        <p style={{ fontSize: '14px', marginTop: '8px' }}>일정 탭에서 새로운 미션을 시작해보세요!</p>
+        <p>현재 도전 중인 챌린지가 없습니다.</p>
+        <p style={{ fontSize: '14px', marginTop: '8px' }}>비행 계획 탭에서 새로운 챌린지를 시작해보세요!</p>
       </div>
     );
   }
@@ -43,7 +43,7 @@ const MissionTab = ({
             alignItems: 'center'
           }}>
             <span style={{ color: 'white', fontSize: '11px', fontWeight: 900, letterSpacing: '1px' }}>
-              {progress === 100 ? 'MISSION CLEAR' : 'ACTIVE MISSION'}
+              {progress === 100 ? 'CHALLENGE CLEAR' : 'ACTIVE CHALLENGE'}
             </span>
             <div style={{ background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '4px' }}>
               <span style={{ color: 'white', fontSize: '10px', fontWeight: 900 }}>NO. {mission.id}</span>

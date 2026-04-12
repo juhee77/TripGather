@@ -43,7 +43,7 @@ const GatheringDetailPage = () => {
   const { user: currentUser } = useUser();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
-  const [activeTab, setActiveTab] = useState('정보'); // '정보', '멤버', '대화', '스냅샷'
+  const [activeTab, setActiveTab] = useState('브리핑'); // '브리핑', '크루', '무전', '갤러리'
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
 
@@ -224,12 +224,12 @@ const GatheringDetailPage = () => {
         <div style={{ padding: '0 24px', borderBottom: '1px solid var(--border-color)' }}>
           {/* New Tabs */}
           <div style={{ display: 'flex', gap: '20px' }}>
-            {['정보', '멤버', `대화 (${comments.length})`, '스냅샷 📸'].map((tab) => {
-              const tabName = tab.startsWith('대화') ? '대화' : tab.startsWith('스냅샷') ? '스냅샷' : tab;
+            {['브리핑', '크루', `무전 (${comments.length})`, '갤러리 📸'].map((tab) => {
+              const tabName = tab.startsWith('무전') ? '무전' : tab.startsWith('갤러리') ? '갤러리' : tab;
               const isActive = activeTab === tabName;
               
               // Only members can see Snapshots
-              if (tabName === '스냅샷' && !isMember) return null;
+              if (tabName === '갤러리' && !isMember) return null;
 
               return (
                 <button
@@ -256,7 +256,7 @@ const GatheringDetailPage = () => {
 
         {/* Scrollable Content */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-          {activeTab === '정보' && (
+          {activeTab === '브리핑' && (
             <div className="animate-fade">
               {/* Existing info content remains here */}
               {isEditing ? (
@@ -349,7 +349,7 @@ const GatheringDetailPage = () => {
             </div>
           )}
 
-          {activeTab === '멤버' && (
+          {activeTab === '크루' && (
             <div className="animate-fade">
               {/* Host Section */}
               {isHost && (
@@ -396,7 +396,7 @@ const GatheringDetailPage = () => {
             </div>
           )}
 
-          {activeTab === '대화' && (
+          {activeTab === '무전' && (
             <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '80px' }}>
                 {comments.map(c => (
@@ -424,7 +424,7 @@ const GatheringDetailPage = () => {
             </div>
           )}
 
-          {activeTab === '스냅샷' && isMember && (
+          {activeTab === '갤러리' && isMember && (
             <div className="animate-fade" style={{ height: '100%', minHeight: '400px' }}>
               <GatheringFeed gatheringId={gathering.id} currentUser={currentUser} />
             </div>
@@ -432,7 +432,7 @@ const GatheringDetailPage = () => {
         </div>
 
         {/* Comment Input Wrapper - Only shown for Taik tab */}
-        {activeTab === '대화' && (
+        {activeTab === '무전' && (
           <div style={{
             padding: '12px 24px 24px 24px', background: 'var(--surface)', borderTop: '1px solid var(--border-color)',
             display: 'flex', gap: '8px'
