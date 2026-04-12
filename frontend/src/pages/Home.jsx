@@ -390,10 +390,13 @@ const Home = () => {
         )}
       </div>
 
-      {/* Floating Action Button - Enhanced */}
-      {activeTab === '발견' && (
+      {/* Unified Floating Action Button */}
+      {['발견', '일정', '나의 미션'].includes(activeTab) && (
         <button
-          onClick={() => navigate('/create')}
+          onClick={() => {
+            if (activeTab === '발견') navigate('/create');
+            else navigate('/itinerary/create');
+          }}
           className="primary-btn fab-button"
           style={{
             padding: 0,
