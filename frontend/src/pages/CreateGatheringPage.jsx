@@ -12,7 +12,7 @@ const CATEGORIES = [
   { label: '문화/취미', icon: '🎫' },
 ];
 
-const DEFAULT_BG = 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=800';
+const DEFAULT_BG = gatheringPlaceholder;
 
 const CreateGatheringPage = () => {
   const navigate = useNavigate();

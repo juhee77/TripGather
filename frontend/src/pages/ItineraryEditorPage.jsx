@@ -4,6 +4,7 @@ import { X, Type, FileText, Send, Plus, Trash2, MapPin, Clock, ChevronLeft } fro
 import { authFetch } from '../api/client';
 import FormInput from '../components/UI/FormInput';
 import PrimaryButton from '../components/UI/PrimaryButton';
+import stampPlaceholder from '../assets/stamp-placeholder.png';
 
 const ItineraryEditorPage = () => {
     const { id } = useParams();
@@ -187,12 +188,12 @@ const ItineraryEditorPage = () => {
                                     {stampPreview ? (
                                         <img src={stampPreview} alt="stamp preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
-                                        <Plus size={24} color="var(--text-muted)" />
+                                        <img src={stampPlaceholder} alt="default stamp" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.5 }} />
                                     )}
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                                        {stampPreview ? 'Custom stamp selected' : 'No custom stamp. Auto-generated bottt will be used.'}
+                                        {stampPreview ? 'Custom stamp selected' : 'Default TripGather stamp will be used.'}
                                     </p>
                                     <button 
                                         type="button"
