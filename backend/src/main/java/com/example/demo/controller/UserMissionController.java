@@ -43,6 +43,11 @@ public class UserMissionController {
         return ResponseEntity.ok(res);
     }
 
+    @GetMapping("/{missionId}")
+    public ResponseEntity<UserMissionResponse> getMission(@PathVariable Long missionId, Authentication authentication) {
+        return ResponseEntity.ok(missionService.getMission(missionId, authentication.getName()));
+    }
+
     @GetMapping("/me/stamps")
     public ResponseEntity<List<com.example.demo.dto.StampResponse>> getMyStamps(Authentication authentication) {
         List<com.example.demo.dto.StampResponse> res = missionService.getMyStamps(authentication.getName());

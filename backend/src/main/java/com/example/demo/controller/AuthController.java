@@ -33,4 +33,9 @@ public class AuthController {
         authService.verifyEmail(token);
         return new org.springframework.web.servlet.view.RedirectView(frontendUrl + "/login?verified=true");
     }
+
+    @GetMapping("/mock/kakao")
+    public ResponseEntity<AuthResponse> mockKakaoLogin() {
+        return ResponseEntity.ok(authService.mockKakaoLogin());
+    }
 }

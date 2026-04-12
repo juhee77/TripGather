@@ -33,6 +33,7 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
     private final ItineraryRepository itineraryRepository;
     private final UserMissionStepRepository stepRepository;
     private final FileService fileService;
+    private final PointService pointService;
 
     @Transactional
     public UserMissionResponse startMission(Long itineraryId, String email) {
@@ -148,6 +149,9 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
             }
             
             missionRepository.save(mission);
+            
+            // 포인트와 스탬프 지급
+            pointService.addPoints(user.getId(), 100, 1, "미션 완수 보상 (" + mission.getItinerary().getTitle() + ")");
         }
 
         UserMissionResponse res = UserMissionResponse.from(mission);
@@ -275,5 +279,21 @@ public class UserMissionServiceImpl implements UserMissionUseCase {
         }
         
         missionRepository.delete(mission);
+    }
+    @Transactional(readOnly = true)
+    public UserMissionResponse getMission(Long missionId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        UserMission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MISSION_NOT_FOUND));
+
+        if (!mission.getUser().getId().equals(user.getId())) {
+            throw new CustomException(ErrorCode.NOT_YOUR_MISSION);
+        }
+
+        UserMissionResponse res = UserMissionResponse.from(mission);
+        res.setSteps(stepRepository.findByUserMissionId(mission.getId()).stream()
+                .map(UserMissionStepResponse::from).collect(Collectors.toList()));
+        return res;
     }
 }

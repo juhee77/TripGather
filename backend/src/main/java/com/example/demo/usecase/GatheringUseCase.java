@@ -15,4 +15,5 @@ public interface GatheringUseCase {
     List<Gathering> getJoinedGatherings();
     List<Gathering> getHostedGatherings();
     void leaveGathering(Long id);
+    Gathering getGathering(Long id);
 }

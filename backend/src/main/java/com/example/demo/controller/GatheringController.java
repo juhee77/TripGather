@@ -23,6 +23,11 @@ public class GatheringController {
                 .collect(java.util.stream.Collectors.toList()));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<GatheringResponse> getGathering(@PathVariable Long id) {
+        return ResponseEntity.ok(GatheringResponse.from(gatheringService.getGathering(id)));
+    }
+
     @GetMapping("/search")
     public ResponseEntity<List<GatheringResponse>> searchGatherings(
             @RequestParam(required = false) String query,
@@ -41,7 +46,7 @@ public class GatheringController {
                 .collect(java.util.stream.Collectors.toList()));
     }
 
-    @GetMapping("/my/joined")
+    @GetMapping({"/my/joined", "/my/participating"})
     public ResponseEntity<List<GatheringResponse>> getMyJoinedGatherings() {
         return ResponseEntity.ok(gatheringService.getJoinedGatherings().stream()
                 .map(GatheringResponse::from)
