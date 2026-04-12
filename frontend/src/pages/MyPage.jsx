@@ -3,10 +3,11 @@ import { useUser } from '../contexts/UserContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Pencil, X, MapPin, CheckCircle, Clock, LogOut } from 'lucide-react';
 import { authFetch } from '../api/client';
-import RouteDetailModal from '../components/RouteDetailModal';
 import { MissionStatus } from '../constants/enums';
+import { useNavigate } from 'react-router-dom';
 
 const MyPage = () => {
+  const navigate = useNavigate();
   const { logout } = useAuth();
   const { user, loading, error, refetch, updateProfile } = useUser();
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -20,7 +21,6 @@ const MyPage = () => {
   
   const [myMissions, setMyMissions] = useState([]);
   const [missionsLoading, setMissionsLoading] = useState(false);
-  const [selectedMission, setSelectedMission] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -234,7 +234,7 @@ const MyPage = () => {
                   return (
                     <div 
                       key={m.id} 
-                      onClick={() => setSelectedMission(m)}
+                      onClick={() => navigate(`/mission/${m.id}`)}
                       style={{ 
                         aspectRatio: '1/1',
                         border: isCompleted ? '3px double rgba(255, 92, 0, 0.4)' : '1px solid #eee',
@@ -286,21 +286,6 @@ const MyPage = () => {
             )}
           </div>
         </div>
-
-        {/* Selected Mission Details Modal */}
-        {selectedMission && (
-          <RouteDetailModal
-            itinerary={{
-                id: selectedMission.itineraryId,
-                title: selectedMission.itineraryTitle,
-                author: selectedMission.itineraryAuthor,
-                description: 'Mission Details & Log',
-                createdAt: selectedMission.startedAt,
-                steps: selectedMission.steps
-            }}
-            onClose={() => setSelectedMission(null)}
-          />
-        )}
       </div>
 
       {/* Edit Profile Modal */}

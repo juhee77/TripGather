@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { X, MapPin, Calendar as CalendarIcon, Users, Type, Camera, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, MapPin, Calendar as CalendarIcon, Users, Type, Camera, Clock, ChevronLeft } from 'lucide-react';
 import { authFetch } from '../api/client';
 import { useUser } from '../contexts/UserContext';
 
@@ -13,7 +14,8 @@ const CATEGORIES = [
 
 const DEFAULT_BG = 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=800';
 
-const CreateGatheringModal = ({ onClose, onCreated }) => {
+const CreateGatheringPage = () => {
+  const navigate = useNavigate();
   const { user: currentUser } = useUser();
   const [formData, setFormData] = useState({
     title: '',
@@ -90,9 +92,7 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
       });
 
       if (response.ok) {
-        const savedGathering = await response.json();
-        onCreated(savedGathering); 
-        onClose(); 
+        navigate(-1);
       } else {
         const errText = await response.text();
         alert(`저장에 실패했습니다 (서버 오류 ${response.status}):\n${errText}`);
@@ -111,26 +111,19 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
   };
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-      backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1000, 
-      display: 'flex', justifyContent: 'center', alignItems: 'flex-end'
-    }}>
-      <div style={{
-        background: 'var(--surface)', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto',
-        borderTopLeftRadius: '28px', borderTopRightRadius: '28px', 
-        padding: '30px 24px', animation: 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-        boxShadow: '0 -10px 40px rgba(0,0,0,0.1)'
+    <div className="app-container animate-fade" style={{ background: 'white', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <header style={{ 
+        display: 'flex', alignItems: 'center', padding: '20px', gap: '16px', background: 'white', 
+        position: 'sticky', top: 0, zIndex: 100, borderBottom: '1px solid var(--border-color)',
+        borderRadius: '0 0 24px 24px'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <h2 style={{ fontSize: '24px', fontWeight: 800 }}>새로운 모임 열기 🚀</h2>
-          <button onClick={onClose} style={{ 
-            padding: '8px', background: 'var(--bg-color)', borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <X size={20} color="var(--text-primary)" />
-          </button>
-        </div>
+        <button onClick={() => navigate(-1)} className="icon-circle" style={{ width: '40px', height: '40px', padding: 0 }}>
+          <ChevronLeft size={24} color="var(--text-primary)" />
+        </button>
+        <h1 className="heading-m" style={{ margin: 0, fontSize: '20px' }}>새로운 모임 열기 🚀</h1>
+      </header>
+      
+      <div style={{ flex: 1, padding: '24px', overflowY: 'auto', paddingBottom: '100px' }}>
         <p style={{ color: 'var(--text-secondary)', fontSize: '15px', marginBottom: '24px' }}>
           관심사가 맞는 동네 이웃들과 함께해요!
         </p>
@@ -282,4 +275,4 @@ const CreateGatheringModal = ({ onClose, onCreated }) => {
   );
 };
 
-export default CreateGatheringModal;
+export default CreateGatheringPage;

@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { MissionStatus } from '../constants/enums';
 import TicketCard from './TicketCard';
-import ItineraryEditorModal from './ItineraryEditorModal';
-import RouteDetailModal from './RouteDetailModal';
 import { Plus, RotateCcw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
 import { useMissionsViewModel } from '../viewmodels/useMissionsViewModel';
 
 const ItineraryTab = ({ onMissionStart, onEdit }) => {
+    const navigate = useNavigate();
     const {
         itineraries,
         isLoading: loading,
         actions: { createItinerary, updateItinerary, deleteItinerary, refreshItineraries }
     } = useItinerariesViewModel();
+
+    const openEditor = (id = null) => {
+        if (id) navigate(`/itinerary/edit/${id}`);
+        else navigate('/itinerary/create');
+    };
 
     const { 
         activeMissions, 
@@ -34,40 +39,17 @@ const ItineraryTab = ({ onMissionStart, onEdit }) => {
         }
     };
 
-    const [isEditorOpen, setIsEditorOpen] = useState(false);
-    const [selectedItinerary, setSelectedItinerary] = useState(null);
-    const [editingItinerary, setEditingItinerary] = useState(null);
-
     useEffect(() => {
         refreshItineraries();
     }, [refreshItineraries]);
-
-    const handleSaved = async (savedItinerary) => {
-        // ViewModel actions handle network calls and refresh
-        if (savedItinerary.id) {
-            await updateItinerary(savedItinerary.id, savedItinerary);
-        } else {
-            await createItinerary(savedItinerary);
-        }
-        
-        if (selectedItinerary?.id === savedItinerary.id) {
-            setSelectedItinerary(savedItinerary);
-        }
-    };
 
     const handleDelete = async (id) => {
         if (!window.confirm('정말 이 일정을 삭제하시겠습니까?')) return;
         try {
             await deleteItinerary(id);
-            if (selectedItinerary?.id === id) setSelectedItinerary(null);
         } catch (err) {
             console.error('Delete failed:', err);
         }
-    };
-
-    const openEditor = (it = null) => {
-        setEditingItinerary(it);
-        setIsEditorOpen(true);
     };
 
     return (
@@ -120,9 +102,12 @@ const ItineraryTab = ({ onMissionStart, onEdit }) => {
                         <div key={it.id} className="animate-fade" style={{ animationDelay: `${idx * 0.1}s` }}>
                             <TicketCard
                                 itinerary={it}
-                                onViewRoute={(itinerary) => setSelectedItinerary(itinerary)}
+                                onViewRoute={(itinerary) => {
+                                    if(itinerary.missionId) navigate(`/mission/${itinerary.missionId}`);
+                                    else navigate(`/itinerary/${itinerary.id}`);
+                                }}
                                 onStartMission={handleStartMission}
-                                onEdit={onEdit}
+                                onEdit={(it) => openEditor(it.id)}
                             />
                         </div>
                     ))}
@@ -166,26 +151,6 @@ const ItineraryTab = ({ onMissionStart, onEdit }) => {
             >
                 <Plus size={32} strokeWidth={3} />
             </button>
-
-            {/* Editor Modal (Create/Edit) */}
-            {isEditorOpen && (
-                <ItineraryEditorModal 
-                    itinerary={editingItinerary}
-                    onClose={() => setIsEditorOpen(false)}
-                    onSaved={handleSaved}
-                />
-            )}
-
-            {/* Route Detail Modal */}
-            {selectedItinerary && (
-                <RouteDetailModal 
-                    itinerary={selectedItinerary}
-                    onClose={() => setSelectedItinerary(null)}
-                    onEdit={() => openEditor(selectedItinerary)}
-                    onDelete={() => handleDelete(selectedItinerary.id)}
-                    onMissionStart={onMissionStart}
-                />
-            )}
         </div>
     );
 };

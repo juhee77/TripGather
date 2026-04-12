@@ -3,11 +3,13 @@ import GatheringRepository from '../repositories/GatheringRepository';
 
 export const useGatheringsViewModel = () => {
   const [gatherings, setGatherings] = useState([]);
-  const [selectedRegion, setSelectedRegion] = useState('\uC804\uCCB4');
+  const [selectedRegion, setSelectedRegion] = useState('전체');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [availableOnly, setAvailableOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchGatherings = useCallback(async (region = '\uC804\uCCB4') => {
+  const fetchGatherings = useCallback(async (filters = {}) => {
     setIsLoading(true);
     setError(null);
     try {

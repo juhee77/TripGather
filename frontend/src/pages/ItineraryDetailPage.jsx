@@ -1,17 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { X, MapPin, ChevronRight, Trash2, Edit3, Navigation, CheckCircle, Camera, Check, Clock, Image as ImageIcon } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { authFetch } from '../api/client';
-import ModalHeader from './UI/ModalHeader';
-import ModalFooter from './UI/ModalFooter';
-import PrimaryButton from './UI/PrimaryButton';
+import ModalHeader from '../components/UI/ModalHeader';
+import ModalFooter from '../components/UI/ModalFooter';
+import PrimaryButton from '../components/UI/PrimaryButton';
 
-const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete, onStepComplete }) => {
+const ItineraryDetailPage = ({ type = 'itinerary' }) => {
+    const { id } = useParams();
+    const navigate = useNavigate();
     const [isVisible, setIsVisible] = useState(false);
     const { user: currentUser } = useUser();
     
     // Mission Progress States
-    const [localItinerary, setLocalItinerary] = useState(itinerary);
+    const [localItinerary, setLocalItinerary] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [checkingStepId, setCheckingStepId] = useState(null);
     const [memo, setMemo] = useState('');
     const [photoFile, setPhotoFile] = useState(null);
@@ -20,24 +24,49 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete, onStepComplete
     
     const fileInputRef = useRef(null);
 
+    useEffect(() => {
+        setIsVisible(true);
+        const fetchDetails = async () => {
+            setLoading(true);
+            try {
+                if (type === 'mission') {
+                    const res = await authFetch(`/api/missions/${id}`);
+                    if (!res.ok) throw new Error("Failed to load mission");
+                    const data = await res.json();
+                    setLocalItinerary({
+                        id: data.id, 
+                        itineraryId: data.itineraryId,
+                        title: data.itineraryTitle,
+                        author: data.itineraryAuthor,
+                        steps: data.steps,
+                        missionId: data.id
+                    });
+                } else {
+                    const res = await authFetch(`/api/itineraries/${id}`);
+                    if (!res.ok) throw new Error("Failed to load itinerary");
+                    const data = await res.json();
+                    setLocalItinerary(data);
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (id) fetchDetails();
+    }, [id, type]);
+
+    if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>로딩 중...</div>;
+    if (!localItinerary) return <div style={{ padding: '40px', textAlign: 'center' }}>데이터를 찾을 수 없습니다.</div>;
+
+    const onClose = () => navigate(-1);
+    const onEdit = () => {}; // Todo: navigate to edit page
+    const onStepComplete = () => {};
+
     // Identifiers
     const isMission = !!localItinerary.steps;
     const userMissionId = localItinerary.itineraryId ? localItinerary.id : (localItinerary.missionId || localItinerary.id);
     const isAuthor = currentUser && (currentUser.name === (localItinerary.author || localItinerary.itineraryAuthor));
-
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '';
-        const d = new Date(dateStr);
-        return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-    };
-
-    useEffect(() => {
-        setIsVisible(true);
-    }, []);
-
-    useEffect(() => {
-        setLocalItinerary(itinerary);
-    }, [itinerary]);
 
     const groupedByDay = (() => {
         const sourcePoints = localItinerary.steps || localItinerary.routePoints || [];
@@ -121,8 +150,8 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete, onStepComplete
     };
 
     return (
-        <div className="modal-overlay">
-            <div className={`modal-content animate-fade`} style={{ height: '94vh' }}>
+        <div className="animate-fade" style={{ background: 'var(--bg-lite)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: '100px' }}>
                 <ModalHeader 
                     title={localItinerary.title || localItinerary.itineraryTitle}
                     subtitle={isMission ? "MISSION IN PROGRESS" : "ITINERARY DETAILS"}
@@ -341,4 +370,4 @@ const RouteDetailModal = ({ itinerary, onClose, onEdit, onDelete, onStepComplete
     );
 };
 
-export default RouteDetailModal;
+export default ItineraryDetailPage;
