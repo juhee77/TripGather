@@ -34,7 +34,7 @@ public class GatheringRepositoryCustomImpl implements GatheringRepositoryCustom 
         }
 
         if (Boolean.TRUE.equals(availableOnly)) {
-            builder.and(gathering.currentJoining.lt(gathering.maxJoining));
+            builder.and(gathering.status.eq(com.example.demo.domain.GatheringStatus.OPEN));
         }
 
         return queryFactory.selectFrom(gathering)
