@@ -16,4 +16,6 @@ public interface GatheringUseCase {
     List<Gathering> getHostedGatherings();
     void leaveGathering(Long id);
     Gathering getGathering(Long id);
+    void likeGathering(Long id);
+    void inviteMember(Long gatheringId, Long userId);
 }

@@ -91,4 +91,16 @@ public class GatheringController {
         gatheringService.rejectMember(id, userId);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{id}/like")
+    public ResponseEntity<Void> likeGathering(@PathVariable Long id) {
+        gatheringService.likeGathering(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/invite/{userId}")
+    public ResponseEntity<Void> inviteMember(@PathVariable Long id, @PathVariable Long userId) {
+        gatheringService.inviteMember(id, userId);
+        return ResponseEntity.ok().build();
+    }
 }
