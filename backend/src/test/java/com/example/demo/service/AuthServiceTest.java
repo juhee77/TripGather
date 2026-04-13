@@ -4,6 +4,7 @@ import com.example.demo.domain.User;
 import com.example.demo.dto.AuthRequest.LoginRequest;
 import com.example.demo.dto.AuthRequest.SignupRequest;
 import com.example.demo.dto.AuthResponse;
+import com.example.demo.exception.CustomException;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtTokenProvider;
 import com.example.demo.security.LoginAttemptService;
@@ -42,6 +43,9 @@ class AuthServiceTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private PointService pointService;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -77,7 +81,7 @@ class AuthServiceTest {
         given(userRepository.existsByEmail(request.getEmail())).willReturn(true);
 
         // when & then
-        assertThrows(IllegalArgumentException.class, () -> authService.signup(request));
+        assertThrows(CustomException.class, () -> authService.signup(request));
     }
 
     @Test
@@ -126,7 +130,7 @@ class AuthServiceTest {
         given(passwordEncoder.matches(request.getPassword(), user.getPassword())).willReturn(false);
 
         // when & then
-        assertThrows(IllegalArgumentException.class, () -> authService.login(request));
+        assertThrows(CustomException.class, () -> authService.login(request));
         verify(loginAttemptService).loginFailed(request.getEmail());
     }
 

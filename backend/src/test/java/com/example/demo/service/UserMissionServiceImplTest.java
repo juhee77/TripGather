@@ -34,6 +34,8 @@ class UserMissionServiceImplTest {
     private UserMissionStepRepository stepRepository;
     @Mock
     private FileService fileService;
+    @Mock
+    private PointService pointService;
 
     @InjectMocks
     private UserMissionServiceImpl userMissionService;
@@ -94,7 +96,7 @@ class UserMissionServiceImplTest {
         String email = "test@test.com";
         User user = User.builder().id(1L).email(email).build();
         Itinerary itinerary = Itinerary.builder().title("Final Trip").build();
-        UserMission mission = UserMission.builder().id(missionId).user(user).itinerary(itinerary).status("ACTIVE").build();
+        UserMission mission = UserMission.builder().id(missionId).user(user).itinerary(itinerary).status(MissionStatus.ACTIVE).build();
 
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(missionRepository.findById(missionId)).willReturn(Optional.of(mission));
