@@ -1,9 +1,13 @@
 import React from 'react';
-import { MapPin, Users, Calendar, MessageCircle, ArrowRight, Share2 } from 'lucide-react';
+import { MapPin, Users, Calendar, MessageCircle, ArrowRight, Share2, Heart } from 'lucide-react';
 import TicketContainer from './UI/TicketContainer';
 import './FeedCard.css';
 
-const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount = 0, pendingCount = 0, onClick }) => {
+const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount = 0, pendingCount = 0, likedByCurrentUser = false, onLike, onClick }) => {
+  const handleLikeClick = (e) => {
+    e.stopPropagation();
+    if (onLike) onLike();
+  };
   const topSection = (
     <div className="feed-header-wrapper">
       <div 
@@ -71,6 +75,16 @@ const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount 
           <span className="text-s"><strong>{joining}</strong>/10 Traveling</span>
         </div>
         <div className="social-stats">
+          <button 
+            className="stat-item icon-btn" 
+            onClick={handleLikeClick}
+            style={{ 
+              color: likedByCurrentUser ? '#FF6B6B' : 'var(--text-muted)',
+              transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+            }}
+          >
+            <Heart size={18} fill={likedByCurrentUser ? '#FF6B6B' : 'none'} />
+          </button>
           <div className="stat-item">
             <MessageCircle size={16} color="var(--text-muted)" />
             <span>{commentCount}</span>
