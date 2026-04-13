@@ -6,6 +6,10 @@ import com.example.demo.domain.User;
 import com.example.demo.repository.GatheringPostRepository;
 import com.example.demo.repository.GatheringRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.GatheringMemberRepository;
+import com.example.demo.domain.MemberStatus;
+import com.example.demo.exception.CustomException;
+import com.example.demo.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,11 +29,13 @@ public class GatheringPostController {
     private final GatheringPostRepository postRepository;
     private final GatheringRepository gatheringRepository;
     private final UserRepository userRepository;
+    private final GatheringMemberRepository gatheringMemberRepository;
 
     @GetMapping("/{gatheringId}/posts")
-    public ResponseEntity<List<PostResponse>> getPosts(@PathVariable Long gatheringId) {
+    public ResponseEntity<List<PostResponse>> getPosts(@PathVariable Long gatheringId, Principal principal) {
+        validateMembership(gatheringId, principal);
         Gathering gathering = gatheringRepository.findById(gatheringId)
-                .orElseThrow(() -> new RuntimeException("Gathering not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
         
         List<PostResponse> responses = postRepository.findByGatheringOrderByCreatedAtDesc(gathering)
                 .stream()
@@ -39,16 +45,17 @@ public class GatheringPostController {
         return ResponseEntity.ok(responses);
     }
 
-    @PostMapping("/{gatheringId}/posts")
     public ResponseEntity<PostResponse> createPost(
             @PathVariable Long gatheringId,
             @RequestBody PostRequest request,
             Principal principal) {
+        
+        validateMembership(gatheringId, principal);
             
         User user = userRepository.findByEmail(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         Gathering gathering = gatheringRepository.findById(gatheringId)
-                .orElseThrow(() -> new RuntimeException("Gathering not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
 
         GatheringPost post = GatheringPost.builder()
                 .author(user)
@@ -59,6 +66,20 @@ public class GatheringPostController {
 
         GatheringPost saved = postRepository.save(post);
         return ResponseEntity.ok(PostResponse.from(saved));
+    }
+
+    private void validateMembership(Long gatheringId, Principal principal) {
+        if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+        
+        Gathering gathering = gatheringRepository.findById(gatheringId)
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
+                
+        boolean isHost = gathering.getHost().getEmail().equals(principal.getName());
+        boolean isApproved = gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(gatheringId, principal.getName(), MemberStatus.APPROVED);
+        
+        if (!isHost && !isApproved) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "승인된 크루원만 접근 가능합니다.");
+        }
     }
 
     @Data
