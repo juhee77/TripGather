@@ -113,8 +113,8 @@ class ItineraryIntegrationTest {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/itineraries/" + id))
                 .andExpect(status().isNoContent());
 
-        // then: 삭제 후 조회 시 서버 에러 (IllegalArgumentException) 반환 -> 400 Bad Request
+        // then: 삭제 후 조회 시 서버 에러 (ITINERARY_NOT_FOUND) 반환 -> 404 Not Found
         mockMvc.perform(get("/api/itineraries/" + id))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound());
     }
 }

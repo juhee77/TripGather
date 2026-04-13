@@ -17,6 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.example.demo.exception.CustomException;
+import com.example.demo.exception.ErrorCode;
 
 import java.util.Optional;
 import java.util.ArrayList;
@@ -111,7 +113,7 @@ class GatheringServiceImplTest {
 
         // when & then
         assertThatThrownBy(() -> gatheringService.joinGathering(1L))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(CustomException.class)
                 .hasMessageContaining("모임 정원이 초과되었습니다.");
     }
 
