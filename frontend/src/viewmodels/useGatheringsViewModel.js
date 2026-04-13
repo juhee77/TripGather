@@ -57,14 +57,29 @@ export const useGatheringsViewModel = () => {
     return fetchGatherings({ location: selectedRegion, query: searchQuery, availableOnly });
   }, [selectedRegion, searchQuery, availableOnly, fetchGatherings]);
 
+  const likeGathering = useCallback(async (gatheringId) => {
+    try {
+      await GatheringRepository.like(gatheringId);
+      // Update local state for immediate feedback
+      setGatherings(prev => prev.map(g => 
+        g.id === gatheringId 
+          ? { ...g, likedByCurrentUser: !g.likedByCurrentUser, likeCount: g.likedByCurrentUser ? (g.likeCount || 0) - 1 : (g.likeCount || 0) + 1 } 
+          : g
+      ));
+    } catch (err) {
+      console.error("Like failed", err);
+    }
+  }, []);
+
   const actions = useMemo(() => ({
     handleRegionChange,
     handleSearchQueryChange,
     handleAvailableOnlyChange,
     createGathering,
     deleteGathering,
-    refreshGatherings
-  }), [handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, createGathering, deleteGathering, refreshGatherings]);
+    refreshGatherings,
+    likeGathering
+  }), [handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, createGathering, deleteGathering, refreshGatherings, likeGathering]);
 
   return {
     gatherings,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
-import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle } from 'lucide-react';
+import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle, Share2, Heart } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { authFetch, apiUrl } from '../api/client';
 import ModalHeader from '../components/UI/ModalHeader';
@@ -139,6 +139,37 @@ const GatheringDetailPage = () => {
     }
   };
 
+  
+  const handleLike = async () => {
+    try {
+      const res = await authFetch(`/api/gatherings/${gathering.id}/like`, { method: "POST" });
+      if (res.ok) {
+        onUpdate && onUpdate();
+      }
+    } catch (err) {
+      console.error("Error liking gathering", err);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: gathering.title,
+      text: `${gathering.host?.name || gathering.host}님의 여행에 초대합니다!`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert("링크가 클립보드에 복사되었습니다! ✈️");
+      }
+    } catch (err) {
+      console.error("Error sharing", err);
+    }
+  };
+
   const handleUpdate = async () => {
     try {
       const res = await authFetch(`/api/gatherings/${gathering.id}`, {
@@ -205,20 +236,38 @@ const GatheringDetailPage = () => {
           title={gathering.title}
           subtitle={`Host: ${typeof gathering.host === 'string' ? gathering.host : gathering.host?.name}`}
           onClose={onClose}
-          actions={isHost ? (
-            <>
-              <button onClick={() => setIsEditing(true)} className="icon-circle" style={{ background: 'var(--bg-color)', color: 'var(--primary-orange)' }}>
-                <Edit size={18} />
+          actions={
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={handleLike} 
+                className="icon-circle" 
+                style={{ 
+                  background: 'var(--bg-color)', 
+                  color: (gathering.likedByCurrentUser || false) ? '#FF6B6B' : 'var(--text-muted)' 
+                }}
+              >
+                <Heart size={18} fill={(gathering.likedByCurrentUser || false) ? '#FF6B6B' : 'none'} />
               </button>
-              <button onClick={handleDelete} className="icon-circle" style={{ background: 'var(--bg-color)', color: '#FF6B6B' }}>
-                <Trash2 size={18} />
+              <button onClick={handleShare} className="icon-circle" style={{ background: 'var(--bg-color)', color: 'var(--text-primary)' }}>
+                <Share2 size={18} />
               </button>
-            </>
-          ) : (myStatus === MemberStatus.APPROVED && (
-            <button onClick={handleLeave} title="모임 나가기" className="icon-circle" style={{ background: 'var(--bg-color)', color: '#FF6B6B' }}>
-              <XCircle size={18} />
-            </button>
-          ))}
+              {isHost && (
+                <>
+                  <button onClick={() => setIsEditing(true)} className="icon-circle" style={{ background: 'var(--bg-color)', color: 'var(--primary-orange)' }}>
+                    <Edit size={18} />
+                  </button>
+                  <button onClick={handleDelete} className="icon-circle" style={{ background: 'var(--bg-color)', color: '#FF6B6B' }}>
+                    <Trash2 size={18} />
+                  </button>
+                </>
+              )}
+              {!isHost && myStatus === MemberStatus.APPROVED && (
+                <button onClick={handleLeave} title="모임 나가기" className="icon-circle" style={{ background: 'var(--bg-color)', color: '#FF6B6B' }}>
+                  <XCircle size={18} />
+                </button>
+              )}
+            </div>
+          }
         />
 
         <div style={{ padding: '0 24px', borderBottom: '1px solid var(--border-color)' }}>
@@ -228,9 +277,7 @@ const GatheringDetailPage = () => {
               const tabName = tab.startsWith('무전') ? '무전' : tab.startsWith('갤러리') ? '갤러리' : tab;
               const isActive = activeTab === tabName;
               
-              // Only members can see Snapshots
-              if (tabName === '갤러리' && !isMember) return null;
-
+              // Tab visibility check is moved inside the render logic to show empty state instead of hiding tabs
               return (
                 <button
                   key={tab}
@@ -351,82 +398,108 @@ const GatheringDetailPage = () => {
 
           {activeTab === '크루' && (
             <div className="animate-fade">
-              {/* Host Section */}
-              {isHost && (
-                <div style={{ marginBottom: '32px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>참여 신청 관리</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {gathering.members?.filter(m => m.status === MemberStatus.PENDING && (!currentUser || m.user.id !== currentUser.id)).map(req => (
-                      <div key={req.user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-color)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div style={{ width: '40px', height: '40px', borderRadius: '20px', background: 'var(--border-color)', overflow: 'hidden' }}>
-                            {req.user.profileImageUrl ? <img src={req.user.profileImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E2E8F0', fontSize: '20px' }}>👤</div>}
+              {isMember ? (
+                <>
+                  {/* Host Section */}
+                  {isHost && (
+                    <div style={{ marginBottom: '32px' }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>참여 신청 관리</h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {gathering.members?.filter(m => m.status === MemberStatus.PENDING && (!currentUser || m.user.id !== currentUser.id)).map(req => (
+                          <div key={req.user.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg-color)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                              <div style={{ width: '40px', height: '40px', borderRadius: '20px', background: 'var(--border-color)', overflow: 'hidden' }}>
+                                {req.user.profileImageUrl ? <img src={req.user.profileImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E2E8F0', fontSize: '20px' }}>👤</div>}
+                              </div>
+                              <span style={{ fontSize: '15px', fontWeight: 700 }}>{req.user.name}</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button onClick={() => handleApprove(req.user.id)} style={{ width: '36px', height: '36px', background: 'rgba(81, 207, 102, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <CheckCircle size={20} color="#51CF66" />
+                              </button>
+                              <button onClick={() => handleReject(req.user.id)} style={{ width: '36px', height: '36px', background: 'rgba(255, 107, 107, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <XCircle size={20} color="#FF6B6B" />
+                              </button>
+                            </div>
                           </div>
-                          <span style={{ fontSize: '15px', fontWeight: 700 }}>{req.user.name}</span>
+                        ))}
+                        {gathering.members?.filter(m => m.status === MemberStatus.PENDING).length === 0 && (
+                          <p style={{ fontSize: '14px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px', background: 'var(--bg-color)', borderRadius: '16px' }}>새로운 참가 신청이 없습니다.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Confirmed Members Section */}
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>참여 중인 멤버</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
+                    {gathering.members?.filter(m => m.status === MemberStatus.APPROVED).map(req => (
+                      <div key={req.user.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: 'var(--bg-color)', borderRadius: '12px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '16px', background: 'var(--border-color)', overflow: 'hidden' }}>
+                          {req.user.profileImageUrl ? <img src={req.user.profileImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E2E8F0', fontSize: '14px' }}>👤</div>}
                         </div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => handleApprove(req.user.id)} style={{ width: '36px', height: '36px', background: 'rgba(81, 207, 102, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <CheckCircle size={20} color="#51CF66" />
-                          </button>
-                          <button onClick={() => handleReject(req.user.id)} style={{ width: '36px', height: '36px', background: 'rgba(255, 107, 107, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <XCircle size={20} color="#FF6B6B" />
-                          </button>
-                        </div>
+                        <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{req.user.name}</span>
                       </div>
                     ))}
-                    {gathering.members?.filter(m => m.status === MemberStatus.PENDING).length === 0 && (
-                      <p style={{ fontSize: '14px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px', background: 'var(--bg-color)', borderRadius: '16px' }}>새로운 참가 신청이 없습니다.</p>
-                    )}
                   </div>
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔒</div>
+                  <h4 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>탑승객 전용 구역</h4>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600, lineHeight: 1.6 }}>크루 명단은 승인된 탑승객만 확인할 수 있는 보안 사항입니다. 참여 신청 후 승인을 기다려주세요!</p>
                 </div>
               )}
-
-              {/* Confirmed Members Section */}
-              <h3 style={{ fontSize: '16px', fontWeight: 800, marginBottom: '16px', color: 'var(--text-primary)' }}>참여 중인 멤버</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
-                {gathering.members?.filter(m => m.status === MemberStatus.APPROVED).map(req => (
-                  <div key={req.user.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: 'var(--bg-color)', borderRadius: '12px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '16px', background: 'var(--border-color)', overflow: 'hidden' }}>
-                      {req.user.profileImageUrl ? <img src={req.user.profileImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E2E8F0', fontSize: '14px' }}>👤</div>}
-                    </div>
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{req.user.name}</span>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
 
           {activeTab === '무전' && (
             <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '80px' }}>
-                {comments.map(c => (
-                  <div key={c.id} style={{ display: 'flex', gap: '12px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '18px', background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700, color: 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
-                      {c.author.slice(0, 1)}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{c.author}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>{new Date(c.createdAt).toLocaleDateString()}</span>
+              {isMember ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '80px' }}>
+                  {comments.map(c => (
+                    <div key={c.id} style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '18px', background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700, color: 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                        {c.author.slice(0, 1)}
                       </div>
-                      <div style={{ background: 'var(--bg-color)', padding: '12px 16px', borderRadius: '0 16px 16px 16px', fontSize: '15px', color: 'var(--text-primary)', display: 'inline-block', border: '1px solid rgba(0,0,0,0.03)' }}>
-                        {c.content}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{c.author}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>{new Date(c.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div style={{ background: 'var(--bg-color)', padding: '12px 16px', borderRadius: '0 16px 16px 16px', fontSize: '15px', color: 'var(--text-primary)', display: 'inline-block', border: '1px solid rgba(0,0,0,0.03)' }}>
+                          {c.content}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                {comments.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                    <p style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: 600 }}>궁금한 점을 댓글로 남겨보세요! 💬</p>
-                  </div>
-                )}
-              </div>
+                  ))}
+                  {comments.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                      <p style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: 600 }}>궁금한 점을 무전으로 남겨보세요! 💬</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '20px' }}>📻</div>
+                  <h4 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>무전 교신 제한</h4>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600, lineHeight: 1.6 }}>라운지 밖에서의 무전은 승인된 크루들끼리만 가능합니다. 참여 신청 후 멤버들과 소통해보세요.</p>
+                </div>
+              )}
             </div>
           )}
 
-          {activeTab === '갤러리' && isMember && (
+          {activeTab === '갤러리' && (
             <div className="animate-fade" style={{ height: '100%', minHeight: '400px' }}>
-              <GatheringFeed gatheringId={gathering.id} currentUser={currentUser} />
+              {isMember ? (
+                <GatheringFeed gatheringId={gathering.id} currentUser={currentUser} />
+              ) : (
+                <div style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '20px' }}>📷</div>
+                  <h4 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>갤러리 접근 제한</h4>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600, lineHeight: 1.6 }}>여행의 소중한 기록은 함께 떠나는 크루들만 공유할 수 있습니다.</p>
+                </div>
+              )}
             </div>
           )}
         </div>

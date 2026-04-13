@@ -4,16 +4,20 @@ import com.example.demo.domain.Gathering;
 import com.example.demo.domain.GatheringMember;
 import com.example.demo.domain.MemberStatus;
 import com.example.demo.domain.User;
+import com.example.demo.repository.GatheringLikeRepository;
 import com.example.demo.repository.GatheringMemberRepository;
 import com.example.demo.repository.GatheringRepository;
 import com.example.demo.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.usecase.GatheringUseCase;
 import com.example.demo.exception.CustomException;
 import com.example.demo.exception.ErrorCode;
+import com.example.demo.domain.GatheringStatus;
+import com.example.demo.domain.GatheringLike;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -23,7 +27,8 @@ public class GatheringServiceImpl implements GatheringUseCase {
     
     private final GatheringRepository gatheringRepository;
     private final UserRepository userRepository;
-    private final com.example.demo.repository.GatheringMemberRepository gatheringMemberRepository;
+    private final GatheringMemberRepository gatheringMemberRepository;
+    private final GatheringLikeRepository gatheringLikeRepository;
 
     @Transactional(readOnly = true)
     public List<Gathering> getAllGatherings(String location) {
@@ -111,8 +116,14 @@ public class GatheringServiceImpl implements GatheringUseCase {
         
         // Update currentJoining
         Gathering gathering = member.getGathering();
-        gathering.setCurrentJoining((int) gathering.getMembers().stream()
-                .filter(m -> m.getStatus() == MemberStatus.APPROVED).count());
+        int approvedCount = (int) gathering.getMembers().stream()
+                .filter(m -> m.getStatus() == MemberStatus.APPROVED).count();
+        gathering.setCurrentJoining(approvedCount);
+
+        // Auto Close logic
+        if (approvedCount >= gathering.getMaxJoining()) {
+            gathering.setStatus(GatheringStatus.CLOSED);
+        }
     }
 
     @Transactional
@@ -181,6 +192,12 @@ public class GatheringServiceImpl implements GatheringUseCase {
             gatheringMemberRepository.flush();
             long count = gatheringMemberRepository.countByGatheringIdAndStatus(id, MemberStatus.APPROVED);
             gathering.setCurrentJoining((int) count);
+            
+            // Re-open if below max
+            if (count < gathering.getMaxJoining()) {
+                gathering.setStatus(GatheringStatus.OPEN);
+            }
+            
             gatheringRepository.save(gathering);
         }
     }
@@ -189,6 +206,71 @@ public class GatheringServiceImpl implements GatheringUseCase {
     public Gathering getGathering(Long id) {
         return gatheringRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND, "Invalid gathering ID"));
+    }
+
+    @Transactional
+    public void likeGathering(Long id) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        
+        Gathering gathering = gatheringRepository.findById(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
+        
+        java.util.Optional<GatheringLike> existingLike = gatheringLikeRepository.findByUserAndGathering(user, gathering);
+        
+        if (existingLike.isPresent()) {
+            gatheringLikeRepository.delete(existingLike.get());
+            gathering.setLikeCount(Math.max(0, gathering.getLikeCount() - 1));
+        } else {
+            GatheringLike newLike = GatheringLike.builder()
+                    .user(user)
+                    .gathering(gathering)
+                    .build();
+            gatheringLikeRepository.save(newLike);
+            gathering.setLikeCount(gathering.getLikeCount() + 1);
+        }
+        gatheringRepository.save(gathering);
+    }
+
+    @Override
+    @Transactional
+    public void inviteMember(Long gatheringId, Long userId) {
+        validateHost(gatheringId);
+        
+        Gathering gathering = gatheringRepository.findById(gatheringId).get();
+        User guest = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "초대할 사용자를 찾을 수 없습니다."));
+        
+        boolean alreadyMember = gathering.getMembers().stream()
+                .anyMatch(m -> m.getUser().getId().equals(userId));
+        
+        if (alreadyMember) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이미 멤버이거나 신청 중인 사용자입니다.");
+        }
+        
+        if (gathering.getCurrentJoining() >= gathering.getMaxJoining()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 정원이 가득 차서 초대할 수 없습니다.");
+        }
+        
+        GatheringMember newMember = GatheringMember.builder()
+                .gathering(gathering)
+                .user(guest)
+                .status(MemberStatus.APPROVED)
+                .build();
+        
+        gathering.getMembers().add(newMember);
+        gatheringMemberRepository.save(newMember);
+        
+        int approvedCount = (int) gathering.getMembers().stream()
+                .filter(m -> m.getStatus() == MemberStatus.APPROVED).count();
+        gathering.setCurrentJoining(approvedCount);
+        
+        if (approvedCount >= gathering.getMaxJoining()) {
+            gathering.setStatus(GatheringStatus.CLOSED);
+        }
+        
+        gatheringRepository.save(gathering);
     }
 
     private void validateHost(Long gatheringId) {

@@ -75,6 +75,14 @@ class GatheringRepository {
     });
     if (!response.ok) throw new Error('Failed to reject member');
   }
+
+  async like(gatheringId) {
+    const response = await authFetch(`/api/gatherings/${gatheringId}/like`, {
+      method: 'POST'
+    });
+    if (!response.ok) throw new Error('Failed to toggle like');
+    return response.json();
+  }
 }
 
 export default new GatheringRepository();

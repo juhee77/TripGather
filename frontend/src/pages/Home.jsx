@@ -22,7 +22,7 @@ const Home = () => {
     selectedRegion,
     searchQuery,
     availableOnly,
-    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, refreshGatherings }
+    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, refreshGatherings, likeGathering }
   } = useGatheringsViewModel();
 
   const [activeTab, setActiveTab] = useState('라운지');
@@ -79,7 +79,12 @@ const Home = () => {
       }}>
         <div>
           <span className="label-orange">GATHERING TERMINAL</span>
-          <h1 className="heading-l" style={{ marginTop: '4px' }}>라운지</h1>
+          <h1 className="heading-l" style={{ 
+            marginTop: '4px',
+            wordBreak: 'keep-all',
+            whiteSpace: 'nowrap',
+            fontSize: 'clamp(1.5rem, 5vw, 2rem)'
+          }}>라운지</h1>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <input 
@@ -193,7 +198,7 @@ const Home = () => {
                 <div style={{ padding: '24px' }}>
                   <div className="flex-between">
                     <div style={{ flex: 1 }}>
-                      <span className="label-muted">DEPARTURE</span>
+                      <span className="label-muted" style={{ color: 'rgba(15, 23, 42, 0.5)' }}>DEPARTURE</span>
                       <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>SEOUL</div>
                     </div>
                     <div style={{ flex: 0.5, textAlign: 'center', position: 'relative' }}>
@@ -207,7 +212,7 @@ const Home = () => {
                       </div>
                     </div>
                     <div style={{ flex: 1, textAlign: 'right' }}>
-                      <span className="label-muted">DESTINATION</span>
+                      <span className="label-muted" style={{ color: 'rgba(15, 23, 42, 0.5)' }}>DESTINATION</span>
                       <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>
                         {myUpcoming.location?.split(' ')[0].toUpperCase() || 'TRIP'}
                       </div>

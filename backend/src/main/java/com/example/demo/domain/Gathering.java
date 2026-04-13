@@ -41,6 +41,13 @@ public class Gathering {
     @Column(columnDefinition = "TEXT")
     private String bgImageUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private GatheringStatus status = GatheringStatus.OPEN;
+
+    @Builder.Default
+    private int likeCount = 0;
+
     @OneToMany(mappedBy = "gathering", cascade = CascadeType.ALL, orphanRemoval = true)
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"gathering"})
     @Builder.Default
