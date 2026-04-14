@@ -17,15 +17,20 @@ public class GatheringController {
     private final GatheringUseCase gatheringService;
 
     @GetMapping
-    public ResponseEntity<List<GatheringResponse>> getAllGatherings(@RequestParam(required = false) String location) {
+    public ResponseEntity<List<GatheringResponse>> getAllGatherings(@RequestParam(required = false) String location, java.security.Principal principal) {
         return ResponseEntity.ok(gatheringService.getAllGatherings(location).stream()
-                .map(GatheringResponse::from)
+                .map(g -> {
+                    boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
+                    return GatheringResponse.from(g, isLiked);
+                })
                 .collect(java.util.stream.Collectors.toList()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<GatheringResponse> getGathering(@PathVariable Long id) {
-        return ResponseEntity.ok(GatheringResponse.from(gatheringService.getGathering(id)));
+    public ResponseEntity<GatheringResponse> getGathering(@PathVariable Long id, java.security.Principal principal) {
+        Gathering gathering = gatheringService.getGathering(id);
+        boolean isLiked = principal != null && gatheringService.isLikedByUser(id, principal.getName());
+        return ResponseEntity.ok(GatheringResponse.from(gathering, isLiked));
     }
 
     @GetMapping("/search")
@@ -33,23 +38,33 @@ public class GatheringController {
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String location,
-            @RequestParam(required = false) Boolean availableOnly) {
+            @RequestParam(required = false) Boolean availableOnly,
+            java.security.Principal principal) {
         return ResponseEntity.ok(gatheringService.searchGatherings(query, category, location, availableOnly).stream()
-                .map(GatheringResponse::from)
+                .map(g -> {
+                    boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
+                    return GatheringResponse.from(g, isLiked);
+                })
                 .collect(java.util.stream.Collectors.toList()));
     }
 
     @GetMapping("/my/hosted")
-    public ResponseEntity<List<GatheringResponse>> getMyHostedGatherings() {
+    public ResponseEntity<List<GatheringResponse>> getMyHostedGatherings(java.security.Principal principal) {
         return ResponseEntity.ok(gatheringService.getHostedGatherings().stream()
-                .map(GatheringResponse::from)
+                .map(g -> {
+                    boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
+                    return GatheringResponse.from(g, isLiked);
+                })
                 .collect(java.util.stream.Collectors.toList()));
     }
 
     @GetMapping({"/my/joined", "/my/participating"})
-    public ResponseEntity<List<GatheringResponse>> getMyJoinedGatherings() {
+    public ResponseEntity<List<GatheringResponse>> getMyJoinedGatherings(java.security.Principal principal) {
         return ResponseEntity.ok(gatheringService.getJoinedGatherings().stream()
-                .map(GatheringResponse::from)
+                .map(g -> {
+                    boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
+                    return GatheringResponse.from(g, isLiked);
+                })
                 .collect(java.util.stream.Collectors.toList()));
     }
 

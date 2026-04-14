@@ -33,18 +33,28 @@ public class GatheringPostController {
 
     @GetMapping("/{gatheringId}/posts")
     public ResponseEntity<List<PostResponse>> getPosts(@PathVariable Long gatheringId, Principal principal) {
-        validateMembership(gatheringId, principal);
         Gathering gathering = gatheringRepository.findById(gatheringId)
                 .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
         
-        List<PostResponse> responses = postRepository.findByGatheringOrderByCreatedAtDesc(gathering)
-                .stream()
+        boolean isMember = false;
+        if (principal != null) {
+            boolean isHost = gathering.getHost().getEmail().equals(principal.getName());
+            boolean isApproved = gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(gatheringId, principal.getName(), MemberStatus.APPROVED);
+            isMember = isHost || isApproved;
+        }
+
+        List<GatheringPost> posts = postRepository.findByGatheringOrderByCreatedAtDesc(gathering);
+        
+        final boolean memberStatus = isMember;
+        List<PostResponse> responses = posts.stream()
+                .filter(post -> memberStatus || post.isPublic())
                 .map(PostResponse::from)
                 .collect(Collectors.toList());
         
         return ResponseEntity.ok(responses);
     }
 
+    @PostMapping("/{gatheringId}/posts")
     public ResponseEntity<PostResponse> createPost(
             @PathVariable Long gatheringId,
             @RequestBody PostRequest request,
@@ -62,6 +72,7 @@ public class GatheringPostController {
                 .gathering(gathering)
                 .content(request.getContent())
                 .imageUrl(request.getImageUrl())
+                .isPublic(request.isPublic())
                 .build();
 
         GatheringPost saved = postRepository.save(post);
@@ -89,6 +100,7 @@ public class GatheringPostController {
     public static class PostRequest {
         private String content;
         private String imageUrl;
+        private boolean isPublic;
     }
 
     @Data
@@ -101,6 +113,7 @@ public class GatheringPostController {
         private String authorImageUrl;
         private String content;
         private String imageUrl;
+        private boolean isPublic;
         private String createdAt;
 
         public static PostResponse from(GatheringPost post) {
@@ -110,6 +123,7 @@ public class GatheringPostController {
                     .authorImageUrl(post.getAuthor().getProfileImageUrl())
                     .content(post.getContent())
                     .imageUrl(post.getImageUrl())
+                    .isPublic(post.isPublic())
                     .createdAt(post.getCreatedAt().toString())
                     .build();
         }

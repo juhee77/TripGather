@@ -29,6 +29,9 @@ public class GatheringPost {
 
     private String imageUrl;
 
+    @Builder.Default
+    private boolean isPublic = false;
+
     private LocalDateTime createdAt;
 
     @PrePersist

@@ -149,6 +149,12 @@ public class GatheringServiceImpl implements GatheringUseCase {
         gathering.setMaxJoining(updateData.getMaxJoining());
         gathering.setBgImageUrl(updateData.getBgImageUrl());
         gathering.setCategory(updateData.getCategory());
+        
+        // Update privacy settings
+        gathering.setGalleryPublic(updateData.isGalleryPublic());
+        gathering.setChatPublic(updateData.isChatPublic());
+        gathering.setCommentPublic(updateData.isCommentPublic());
+        
         return gathering;
     }
 
@@ -231,6 +237,17 @@ public class GatheringServiceImpl implements GatheringUseCase {
             gathering.setLikeCount(gathering.getLikeCount() + 1);
         }
         gatheringRepository.save(gathering);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isLikedByUser(Long gatheringId, String email) {
+        if (email == null || email.isEmpty() || email.equals("anonymousUser")) return false;
+        
+        return userRepository.findByEmail(email)
+                .map(user -> gatheringRepository.findById(gatheringId)
+                        .map(gathering -> gatheringLikeRepository.existsByUserAndGathering(user, gathering))
+                        .orElse(false))
+                .orElse(false);
     }
 
     @Override

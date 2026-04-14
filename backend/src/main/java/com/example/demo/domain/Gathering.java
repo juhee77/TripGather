@@ -67,6 +67,15 @@ public class Gathering {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Builder.Default
+    private boolean isGalleryPublic = false;
+
+    @Builder.Default
+    private boolean isChatPublic = false;
+
+    @Builder.Default
+    private boolean isCommentPublic = true;
+
     @PostLoad
     protected void onPostLoad() {
         if (comments != null) {

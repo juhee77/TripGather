@@ -27,9 +27,18 @@ public class GatheringResponse {
     private String bgImageUrl;
     private UserResponse host;
     private List<GatheringMemberResponse> members;
+    private int likeCount;
+    private boolean likedByCurrentUser;
+    private boolean isGalleryPublic;
+    private boolean isChatPublic;
+    private boolean isCommentPublic;
     private LocalDateTime createdAt;
 
     public static GatheringResponse from(Gathering gathering) {
+        return from(gathering, false);
+    }
+
+    public static GatheringResponse from(Gathering gathering, boolean isLiked) {
         if (gathering == null) return null;
         return GatheringResponse.builder()
                 .id(gathering.getId())
@@ -47,6 +56,11 @@ public class GatheringResponse {
                         gathering.getMembers().stream()
                                 .map(GatheringMemberResponse::from)
                                 .collect(Collectors.toList()) : null)
+                .likeCount(gathering.getLikeCount())
+                .likedByCurrentUser(isLiked)
+                .isGalleryPublic(gathering.isGalleryPublic())
+                .isChatPublic(gathering.isChatPublic())
+                .isCommentPublic(gathering.isCommentPublic())
                 .createdAt(gathering.getCreatedAt())
                 .build();
     }
