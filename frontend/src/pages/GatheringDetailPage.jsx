@@ -455,7 +455,7 @@ const GatheringDetailPage = () => {
 
           {activeTab === '무전' && (
             <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              {isMember ? (
+              {(isMember || gathering.isCommentPublic) ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '80px' }}>
                   {comments.map(c => (
                     <div key={c.id} style={{ display: 'flex', gap: '12px' }}>
@@ -491,7 +491,7 @@ const GatheringDetailPage = () => {
 
           {activeTab === '갤러리' && (
             <div className="animate-fade" style={{ height: '100%', minHeight: '400px' }}>
-              {isMember ? (
+              {(isMember || gathering.isGalleryPublic) ? (
                 <GatheringFeed gatheringId={gathering.id} currentUser={currentUser} />
               ) : (
                 <div style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
@@ -505,7 +505,7 @@ const GatheringDetailPage = () => {
         </div>
 
         {/* Comment Input Wrapper - Only shown for Taik tab */}
-        {activeTab === '무전' && (
+        {activeTab === '무전' && (isMember || gathering.isCommentPublic) && (
           <div style={{
             padding: '12px 24px 24px 24px', background: 'var(--surface)', borderTop: '1px solid var(--border-color)',
             display: 'flex', gap: '8px'

@@ -9,6 +9,7 @@ const GatheringFeed = ({ gatheringId, currentUser }) => {
   const [content, setContent] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isPublic, setIsPublic] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -69,7 +70,7 @@ const GatheringFeed = ({ gatheringId, currentUser }) => {
         const res = await authFetch(`/api/gatherings/${gatheringId}/posts`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content, imageUrl })
+            body: JSON.stringify({ content, imageUrl, isPublic })
         });
         if (res.ok) {
             setContent('');
@@ -128,27 +129,38 @@ const GatheringFeed = ({ gatheringId, currentUser }) => {
             </button>
             <input type="file" ref={fileInputRef} onChange={handleImageChange} style={{ display: 'none' }} accept="image/*" />
             
-            <button 
-              type="submit" 
-              disabled={uploading || (!content.trim() && !imageFile)}
-              style={{ 
-                background: 'var(--primary-gradient)', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: 'var(--radius-full)', 
-                padding: '8px 16px', 
-                fontSize: '13px', 
-                fontWeight: 800,
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '6px',
-                cursor: 'pointer',
-                opacity: (uploading || (!content.trim() && !imageFile)) ? 0.5 : 1
-              }}
-            >
-              <Send size={16} />
-              공유하기
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', fontSize: '12px', color: 'var(--text-sub)', fontWeight: 600 }}>
+                <input 
+                  type="checkbox" 
+                  checked={isPublic} 
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                전체 공개
+              </label>
+              <button 
+                type="submit" 
+                disabled={uploading || (!content.trim() && !imageFile)}
+                style={{ 
+                  background: 'var(--primary-gradient)', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: 'var(--radius-full)', 
+                  padding: '8px 16px', 
+                  fontSize: '13px', 
+                  fontWeight: 800,
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px',
+                  cursor: 'pointer',
+                  opacity: (uploading || (!content.trim() && !imageFile)) ? 0.5 : 1
+                }}
+              >
+                <Send size={16} />
+                공유하기
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -186,8 +198,19 @@ const GatheringFeed = ({ gatheringId, currentUser }) => {
                     backgroundImage: `url(${post.authorImageUrl || 'https://via.placeholder.com/150'})`,
                     backgroundSize: 'cover', backgroundPosition: 'center', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                   }} />
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{post.authorName}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{post.authorName}</div>
+                      {post.isPublic && (
+                        <div style={{ 
+                          fontSize: '10px', fontWeight: 900, color: 'white', 
+                          background: 'var(--primary-orange)', padding: '2px 6px', 
+                          borderRadius: '4px', letterSpacing: '0.05em' 
+                        }}>
+                          PUBLIC
+                        </div>
+                      )}
+                    </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-sub)' }}>{new Date(post.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</div>
                   </div>
                 </div>

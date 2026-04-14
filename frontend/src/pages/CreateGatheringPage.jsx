@@ -24,7 +24,10 @@ const CreateGatheringPage = () => {
     date: '',
     time: '',
     maxJoining: 4,
-    category: '밥/카페'
+    category: '밥/카페',
+    isGalleryPublic: false,
+    isChatPublic: false,
+    isCommentPublic: true
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -252,6 +255,83 @@ const CreateGatheringPage = () => {
                   onFocus={(e) => e.target.style.border = '1px solid var(--primary-orange)'}
                   onBlur={(e) => e.target.style.border = '1px solid var(--border-color)'}
                 />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ 
+            background: '#F8F9FA', padding: '24px', borderRadius: '24px', 
+            display: 'flex', flexDirection: 'column', gap: '20px', border: '1px solid var(--border-color)' 
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span role="img" aria-label="shield">🛡️</span> 프라이버시 설정
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>댓글 전체 공개</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>참여하지 않은 사람도 댓글을 달 수 있습니다.</div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setFormData({...formData, isCommentPublic: !formData.isCommentPublic})}
+                  style={{
+                    width: '50px', height: '26px', borderRadius: '13px',
+                    background: formData.isCommentPublic ? 'var(--primary-orange)' : '#DEE2E6',
+                    position: 'relative', border: 'none', transition: 'all 0.2s', cursor: 'pointer'
+                  }}
+                >
+                  <div style={{
+                    width: '20px', height: '20px', borderRadius: '50%', background: 'white',
+                    position: 'absolute', top: '3px', left: formData.isCommentPublic ? '27px' : '3px',
+                    transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>갤러리 전체 공개</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>누구나 우리 크루의 사진첩을 볼 수 있습니다.</div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setFormData({...formData, isGalleryPublic: !formData.isGalleryPublic})}
+                  style={{
+                    width: '50px', height: '26px', borderRadius: '13px',
+                    background: formData.isGalleryPublic ? 'var(--primary-orange)' : '#DEE2E6',
+                    position: 'relative', border: 'none', transition: 'all 0.2s', cursor: 'pointer'
+                  }}
+                >
+                  <div style={{
+                    width: '20px', height: '20px', borderRadius: '50%', background: 'white',
+                    position: 'absolute', top: '3px', left: formData.isGalleryPublic ? '27px' : '3px',
+                    transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }} />
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>채팅방 전체 공개</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>미참여자도 채팅 내용을 볼 수 있습니다.</div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setFormData({...formData, isChatPublic: !formData.isChatPublic})}
+                  style={{
+                    width: '50px', height: '26px', borderRadius: '13px',
+                    background: formData.isChatPublic ? 'var(--primary-orange)' : '#DEE2E6',
+                    position: 'relative', border: 'none', transition: 'all 0.2s', cursor: 'pointer'
+                  }}
+                >
+                  <div style={{
+                    width: '20px', height: '20px', borderRadius: '50%', background: 'white',
+                    position: 'absolute', top: '3px', left: formData.isChatPublic ? '27px' : '3px',
+                    transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }} />
+                </button>
               </div>
             </div>
           </div>
