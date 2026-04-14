@@ -4,8 +4,20 @@ import { apiUrl } from '../api/client';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [loading, setLoading] = useState(false); // Auth verified by token presence initially, UserContext will handle deep verification
+
+  useEffect(() => {
+    // Sync token if localStorage changes in other tabs
+    const handleStorageChange = () => {
+      const savedToken = localStorage.getItem('token');
+      if (savedToken !== token) {
+        setToken(savedToken);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [token]);
 
   const saveAuth = (token, userData) => {
     localStorage.setItem('token', token);
