@@ -111,4 +111,42 @@ class UserServiceImplTest {
         assertThat(updated.getBio()).isEqualTo("New Bio");
         verify(userRepository).save(any(User.class));
     }
+
+    @Test
+    @DisplayName("전체 유저 조회 성공")
+    void getAllUsers_Success() {
+        // given
+        given(userRepository.findAll()).willReturn(java.util.List.of(testUser));
+
+        // when
+        java.util.List<User> result = userService.getAllUsers();
+
+        // then
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("유저 생성 성공")
+    void createUser_Success() {
+        // given
+        given(userRepository.save(any(User.class))).willReturn(testUser);
+
+        // when
+        User result = userService.createUser(testUser);
+
+        // then
+        assertThat(result).isEqualTo(testUser);
+    }
+
+    @Test
+    @DisplayName("인증 정보 없을 때 getCurrentUser 실패")
+    void getCurrentUser_Unauthenticated_ThrowsException() {
+        // given
+        SecurityContextHolder.clearContext();
+
+        // when & then
+        assertThatThrownBy(() -> userService.getCurrentUser())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Authentication is required");
+    }
 }

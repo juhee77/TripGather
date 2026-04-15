@@ -100,4 +100,93 @@ class UserMissionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.completed").value(true));
     }
+
+    @Test
+    @WithMockUser
+    @DisplayName("벌크 미션 시작 성공")
+    void startMissions_Success() throws Exception {
+        UserMissionResponse res = new UserMissionResponse();
+        res.setId(1L);
+        given(missionService.startMissions(anyList(), anyString())).willReturn(List.of(res));
+
+        mockMvc.perform(post("/api/missions/start/bulk")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(List.of(1L, 2L))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("미션 완료 성공")
+    void completeMission_Success() throws Exception {
+        UserMissionResponse res = new UserMissionResponse();
+        res.setId(1L);
+        res.setStatus("COMPLETED");
+        given(missionService.completeMission(anyLong(), anyString())).willReturn(res);
+
+        mockMvc.perform(post("/api/missions/complete/1")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("COMPLETED"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("개별 미션 조회 성공")
+    void getMission_Success() throws Exception {
+        UserMissionResponse res = new UserMissionResponse();
+        res.setId(1L);
+        given(missionService.getMission(anyLong(), anyString())).willReturn(res);
+
+        mockMvc.perform(get("/api/missions/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("내 스탬프 목록 조회 성공")
+    void getMyStamps_Success() throws Exception {
+        com.example.demo.dto.StampResponse res = com.example.demo.dto.StampResponse.builder()
+                .missionId(1L)
+                .build();
+        given(missionService.getMyStamps(anyString())).willReturn(List.of(res));
+
+        mockMvc.perform(get("/api/missions/me/stamps"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("미션 중단 요청 성공")
+    void requestLeave_Success() throws Exception {
+        mockMvc.perform(post("/api/missions/1/leave/request")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("호스트가 받은 중단 요청 목록 조회 성공")
+    void getLeaveRequests_Success() throws Exception {
+        UserMissionResponse res = new UserMissionResponse();
+        res.setId(1L);
+        given(missionService.getLeaveRequests(anyString())).willReturn(List.of(res));
+
+        mockMvc.perform(get("/api/missions/host/requests"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("미션 중단 승인 성공")
+    void approveLeave_Success() throws Exception {
+        mockMvc.perform(post("/api/missions/1/leave/approve")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+    }
 }
