@@ -29,8 +29,11 @@ public class GatheringResponse {
     private List<GatheringMemberResponse> members;
     private int likeCount;
     private boolean likedByCurrentUser;
+    @com.fasterxml.jackson.annotation.JsonProperty("isGalleryPublic")
     private boolean isGalleryPublic;
+    @com.fasterxml.jackson.annotation.JsonProperty("isChatPublic")
     private boolean isChatPublic;
+    @com.fasterxml.jackson.annotation.JsonProperty("isCommentPublic")
     private boolean isCommentPublic;
     private LocalDateTime createdAt;
 
