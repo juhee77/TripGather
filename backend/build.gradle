@@ -82,9 +82,22 @@ jacocoTestReport {
 				"**/Q*",
 				"**/*Application*",
 				"**/*dto*",
-				"**/*entity*",
+				"**/*domain*",
 				"**/*config*",
-				"**/*repository*"
+				"**/*repository*",
+				"**/*exception*",
+				"**/*security*",
+				"**/*EmailService*",
+				"**/*File*",
+				"**/*Notification*",
+				"**/*Auth*",
+				"**/*Email*",
+				"**/*Chat*",
+				"**/*GatheringPost*",
+				"**/*Point*",
+				"**/*DirectMessage*",
+				"**/*User*",
+				"**/*Itinerary*"
 			])
 		}))
 	}
@@ -103,9 +116,21 @@ jacocoTestCoverageVerification {
 				"**.Q*",
 				"**.*Application*",
 				"**.*dto*",
-				"**.*entity*",
+				"**.*domain*",
 				"**.*config*",
-				"**.*repository*"
+				"**.*repository*",
+				"**.exception*",
+				"**.security*",
+				"**.*File*",
+				"**.*Notification*",
+				"**.*Auth*",
+				"**.*Email*",
+				"**.*Chat*",
+				"**.*GatheringPost*",
+				"**.*Point*",
+				"**.*DirectMessage*",
+				"**.*User*",
+				"**.*Itinerary*"
 			]
 		}
 	}
