@@ -58,7 +58,37 @@ class GatheringControllerTest {
         mockMvc.perform(get("/api/gatherings"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].title").value("Gathering 1"));
+                .andExpect(jsonPath("$[0].title").value("Gathering 1"))
+                .andExpect(jsonPath("$[0].isCommentPublic").value(true));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("모임 검색 성공")
+    void searchGatherings_Success() throws Exception {
+        // given
+        Gathering g1 = Gathering.builder().id(1L).title("Search Result").build();
+        given(gatheringService.searchGatherings(any(), any(), any(), any())).willReturn(List.of(g1));
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings/search")
+                        .param("query", "Search"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("Search Result"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("내가 호스팅한 모임 조회 성공")
+    void getMyHostedGatherings_Success() throws Exception {
+        // given
+        Gathering g1 = Gathering.builder().id(1L).title("My Gathering").build();
+        given(gatheringService.getHostedGatherings()).willReturn(List.of(g1));
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings/my/hosted"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("My Gathering"));
     }
 
     @Test
@@ -100,5 +130,84 @@ class GatheringControllerTest {
         mockMvc.perform(post("/api/gatherings/1/members/2/approve")
                         .with(csrf()))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("모임 좋아요 성공")
+    void likeGathering_Success() throws Exception {
+        // when & then
+        mockMvc.perform(post("/api/gatherings/1/like")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("모임 업데이트 성공")
+    void updateGathering_Success() throws Exception {
+        // given
+        Gathering updated = Gathering.builder().id(1L).title("Updated").build();
+        given(gatheringService.updateGathering(anyLong(), any(Gathering.class))).willReturn(updated);
+
+        // when & then
+        mockMvc.perform(put("/api/gatherings/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updated)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Updated"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("모임 상세 조회 성공")
+    void getGathering_Success() throws Exception {
+        Gathering g = Gathering.builder().id(1L).title("Detail").build();
+        given(gatheringService.getGathering(anyLong())).willReturn(g);
+
+        mockMvc.perform(get("/api/gatherings/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Detail"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("모임 삭제 성공")
+    void deleteGathering_Success() throws Exception {
+        mockMvc.perform(delete("/api/gatherings/1")
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+    }
+
+
+    @Test
+    @WithMockUser
+    @DisplayName("모임 탈퇴 성공")
+    void leaveGathering_Success() throws Exception {
+        mockMvc.perform(post("/api/gatherings/1/leave")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("멤버 거절 성공")
+    void rejectMember_Success() throws Exception {
+        mockMvc.perform(post("/api/gatherings/1/members/2/reject")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("내가 참가한 모임 조회 성공")
+    void getJoinedGatherings_Success() throws Exception {
+        Gathering g = Gathering.builder().id(1L).title("Joined").build();
+        given(gatheringService.getJoinedGatherings()).willReturn(List.of(g));
+
+        mockMvc.perform(get("/api/gatherings/my/joined"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("Joined"));
     }
 }
