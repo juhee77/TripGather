@@ -168,4 +168,87 @@ class AuthServiceTest {
         // when & then
         assertThrows(IllegalStateException.class, () -> authService.login(request));
     }
+
+    @Test
+    @DisplayName("로그인 실패 - 존재하지 않는 사용자")
+    void login_Fail_UserNotFound() {
+        // given
+        LoginRequest request = new LoginRequest();
+        request.setEmail("notfound@test.com");
+        request.setPassword("password");
+
+        given(userRepository.findByEmail(request.getEmail())).willReturn(Optional.empty());
+
+        // when & then
+        assertThrows(CustomException.class, () -> authService.login(request));
+        verify(loginAttemptService).loginFailed(request.getEmail());
+    }
+
+    @Test
+    @DisplayName("이메일 인증 성공")
+    void verifyEmail_Success() {
+        // given
+        String token = "valid-token";
+        User user = User.builder().email("test@test.com").emailVerified(false).verificationToken(token).build();
+
+        given(userRepository.findByVerificationToken(token)).willReturn(Optional.of(user));
+
+        // when
+        authService.verifyEmail(token);
+
+        // then
+        assertThat(user.isEmailVerified()).isTrue();
+        assertThat(user.getVerificationToken()).isNull();
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("이메일 인증 실패 - 잘못된 토큰")
+    void verifyEmail_Fail_InvalidToken() {
+        // given
+        String token = "invalid-token";
+        given(userRepository.findByVerificationToken(token)).willReturn(Optional.empty());
+
+        // when & then
+        assertThrows(CustomException.class, () -> authService.verifyEmail(token));
+    }
+
+    @Test
+    @DisplayName("카카오 모의 로그인 - 기존 사용자")
+    void mockKakaoLogin_ExistingUser() {
+        // given
+        String email = "kakao_mock@example.com";
+        User user = User.builder().id(1L).email(email).name("KakaoMock").build();
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(jwtTokenProvider.generateAccessToken(email)).willReturn("mock_token");
+
+        // when
+        AuthResponse response = authService.mockKakaoLogin();
+
+        // then
+        assertThat(response.getAccessToken()).isEqualTo("mock_token");
+        assertThat(response.getEmail()).isEqualTo(email);
+    }
+
+    @Test
+    @DisplayName("카카오 모의 로그인 - 신규 사용자 생성")
+    void mockKakaoLogin_NewUser() {
+        // given
+        String email = "kakao_mock@example.com";
+        given(userRepository.findByEmail(email)).willReturn(Optional.empty());
+        given(passwordEncoder.encode(anyString())).willReturn("encoded_pwd");
+        given(userRepository.save(any(User.class))).willAnswer(i -> {
+            User u = i.getArgument(0);
+            return u;
+        });
+        given(jwtTokenProvider.generateAccessToken(email)).willReturn("mock_token");
+
+        // when
+        AuthResponse response = authService.mockKakaoLogin();
+
+        // then
+        assertThat(response.getAccessToken()).isEqualTo("mock_token");
+        verify(userRepository).save(any(User.class));
+    }
 }

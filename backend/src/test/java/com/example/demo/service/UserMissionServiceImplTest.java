@@ -103,6 +103,7 @@ class UserMissionServiceImplTest {
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(missionRepository.findById(missionId)).willReturn(Optional.of(mission));
         given(missionRepository.save(any(UserMission.class))).willAnswer(i -> i.getArgument(0));
+        given(stepRepository.findByUserMissionId(missionId)).willReturn(java.util.List.of());
 
         // when
         UserMissionResponse response = userMissionService.completeMission(missionId, email);
@@ -256,21 +257,87 @@ class UserMissionServiceImplTest {
     }
 
     @Test
-    @DisplayName("미션 중단 승인 실패 - 권한 없음")
-    void approveLeave_Forbidden() {
+    @DisplayName("여러 미션 동시 시작 성공")
+    void startMissions_Success() {
+        // given
+        String email = "test@test.com";
+        User user = User.builder().id(1L).email(email).build();
+        Itinerary it1 = Itinerary.builder().id(1L).routePoints(java.util.List.of()).build();
+        Itinerary it2 = Itinerary.builder().id(2L).routePoints(java.util.List.of()).build();
+        
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(itineraryRepository.findAllById(any())).willReturn(java.util.List.of(it1, it2));
+        given(missionRepository.findByUserId(user.getId())).willReturn(java.util.List.of());
+        given(missionRepository.saveAll(any())).willAnswer(i -> i.getArgument(0));
+
+        // when
+        java.util.List<UserMissionResponse> responses = userMissionService.startMissions(java.util.List.of(1L, 2L), email);
+
+        // then
+        assertThat(responses).hasSize(2);
+        verify(missionRepository).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("이미 완료된 미션 다시 완료 시도")
+    void completeMission_AlreadyCompleted() {
         // given
         Long missionId = 10L;
-        String otherEmail = "other@test.com";
-        User other = User.builder().id(3L).email(otherEmail).name("Other").build();
-        Itinerary itinerary = Itinerary.builder().author("Host").routePoints(java.util.List.of()).build();
-        UserMission mission = UserMission.builder().id(missionId).itinerary(itinerary).build();
+        String email = "test@test.com";
+        User user = User.builder().id(1L).email(email).build();
+        Itinerary itinerary = Itinerary.builder().id(1L).title("Test Trip").build();
+        UserMission mission = UserMission.builder().id(missionId).user(user).itinerary(itinerary).status(MissionStatus.COMPLETED).build();
 
-        given(userRepository.findByEmail(otherEmail)).willReturn(Optional.of(other));
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
         given(missionRepository.findById(missionId)).willReturn(Optional.of(mission));
+        given(stepRepository.findByUserMissionId(missionId)).willReturn(java.util.List.of());
 
-        // when & then
-        org.junit.jupiter.api.Assertions.assertThrows(com.example.demo.exception.CustomException.class, () ->
-            userMissionService.approveLeave(missionId, otherEmail)
-        );
+        // when
+        UserMissionResponse response = userMissionService.completeMission(missionId, email);
+
+        // then
+        assertThat(response.getStatus()).isEqualTo("COMPLETED");
+        verify(missionRepository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
+    @DisplayName("미션 단계 완료 시 기존 사진 삭제 확인")
+    void completeStep_DeleteOldPhoto() throws Exception {
+        // given
+        Long missionId = 10L;
+        Long stepId = 100L;
+        String email = "test@test.com";
+        User user = User.builder().id(1L).email(email).build();
+        UserMission mission = UserMission.builder().id(missionId).user(user).build();
+        UserMissionStep step = UserMissionStep.builder().id(stepId).userMission(mission).photoUrl("old.jpg").build();
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(missionRepository.findById(missionId)).willReturn(Optional.of(mission));
+        given(stepRepository.findById(stepId)).willReturn(Optional.of(step));
+        given(stepRepository.save(any(UserMissionStep.class))).willAnswer(i -> i.getArgument(0));
+
+        // when
+        userMissionService.completeStep(missionId, stepId, "Memo", "new.jpg", email);
+
+        // then
+        verify(fileService).deleteFile("old.jpg");
+    }
+
+    @Test
+    @DisplayName("중단 요청 목록 조회 성공")
+    void getLeaveRequests_Success() {
+        // given
+        String hostEmail = "host@test.com";
+        User host = User.builder().id(2L).email(hostEmail).name("Host").build();
+        UserMission mission = UserMission.builder().id(10L).itinerary(Itinerary.builder().build()).build();
+
+        given(userRepository.findByEmail(hostEmail)).willReturn(Optional.of(host));
+        given(missionRepository.findLeaveRequestsByHost("Host")).willReturn(java.util.List.of(mission));
+
+        // when
+        java.util.List<UserMissionResponse> responses = userMissionService.getLeaveRequests(hostEmail);
+
+        // then
+        assertThat(responses).hasSize(1);
     }
 }

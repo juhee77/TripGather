@@ -92,12 +92,12 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("프로필 업데이트 성공")
-    void updateProfile_Success() {
+    @DisplayName("프로필 업데이트 성공 - 일부 필드만 수정")
+    void updateProfile_Partial_Success() {
         // given
         User updateInfo = User.builder()
                 .name("Updated Name")
-                .bio("New Bio")
+                // bio and profileImageUrl are null
                 .build();
         
         given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
@@ -108,7 +108,26 @@ class UserServiceImplTest {
 
         // then
         assertThat(updated.getName()).isEqualTo("Updated Name");
-        assertThat(updated.getBio()).isEqualTo("New Bio");
+        assertThat(updated.getBio()).isEqualTo(testUser.getBio()); // bio should remain unchanged
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("프로필 업데이트 성공 - 프로필 이미지 수정")
+    void updateProfile_Image_Success() {
+        // given
+        User updateInfo = User.builder()
+                .profileImageUrl("http://new-image.com")
+                .build();
+        
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+        given(userRepository.save(any(User.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        User updated = userService.updateProfile(1L, updateInfo);
+
+        // then
+        assertThat(updated.getProfileImageUrl()).isEqualTo("http://new-image.com");
         verify(userRepository).save(any(User.class));
     }
 
@@ -148,5 +167,27 @@ class UserServiceImplTest {
         assertThatThrownBy(() -> userService.getCurrentUser())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Authentication is required");
+    }
+
+    @Test
+    @DisplayName("인증은 되었으나 DB에 유저가 없을 때 getCurrentUser 실패")
+    void getCurrentUser_UserNotFound_ThrowsException() {
+        // given
+        SecurityContext securityContext = mock(SecurityContext.class);
+        Authentication authentication = mock(Authentication.class);
+        
+        given(authentication.isAuthenticated()).willReturn(true);
+        given(authentication.getName()).willReturn("notfound@example.com");
+        given(securityContext.getAuthentication()).willReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
+        given(userRepository.findByEmail("notfound@example.com")).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.getCurrentUser())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Authenticated user not found in database");
+        
+        SecurityContextHolder.clearContext();
     }
 }
