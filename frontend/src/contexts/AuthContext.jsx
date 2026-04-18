@@ -5,7 +5,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('token'));
-  const [loading, setLoading] = useState(false); // Auth verified by token presence initially, UserContext will handle deep verification
+  const [loading] = useState(false); // Auth verified by token presence initially, UserContext will handle deep verification
 
   useEffect(() => {
     // Sync token if localStorage changes in other tabs
@@ -47,7 +47,7 @@ export function AuthProvider({ children }) {
       try {
         const errData = await res.json();
         errorMessage = errData.message || errorMessage;
-      } catch (e) {
+      } catch (_e) {
         errorMessage = res.statusText || errorMessage;
       }
       throw new Error(errorMessage);
@@ -70,7 +70,7 @@ export function AuthProvider({ children }) {
       try {
         const errData = await res.json();
         errorMessage = errData.message || errorMessage;
-      } catch (e) {
+      } catch (_e) {
         errorMessage = res.statusText || errorMessage;
       }
       throw new Error(errorMessage);
@@ -100,6 +100,7 @@ export function AuthProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');

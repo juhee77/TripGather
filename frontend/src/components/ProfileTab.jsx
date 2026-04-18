@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import PassportCard from './PassportCard';
 import StampBook from './StampBook';

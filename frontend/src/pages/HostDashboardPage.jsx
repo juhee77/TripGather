@@ -10,21 +10,17 @@ const HostDashboardPage = () => {
   const { user } = useUser();
   
   const [hostedGatherings, setHostedGatherings] = useState([]);
-  const [loadingHosted, setLoadingHosted] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState([]);
 
   useEffect(() => {
     if (user) {
-      setLoadingHosted(true);
       authFetch('/api/gatherings/my/hosted')
         .then(res => res.json())
         .then(data => {
           setHostedGatherings(Array.isArray(data) ? data : []);
-          setLoadingHosted(false);
         })
         .catch(err => {
           console.error("Error fetching hosted gatherings:", err);
-          setLoadingHosted(false);
         });
 
       authFetch('/api/missions/host/requests')

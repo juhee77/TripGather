@@ -32,6 +32,7 @@ const GatheringDetailPage = () => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (id) loadGathering();
   }, [id]);
@@ -67,6 +68,7 @@ const GatheringDetailPage = () => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (gathering) {
       fetchComments();

@@ -10,7 +10,7 @@ export function UserProvider({ children }) {
     const saved = localStorage.getItem('user');
     try {
       return saved ? JSON.parse(saved) : null;
-    } catch (e) {
+    } catch (_e) {
       return null;
     }
   });
@@ -91,6 +91,7 @@ export function UserProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useUser() {
   const ctx = useContext(UserContext);
   if (!ctx) throw new Error('useUser must be used within UserProvider');

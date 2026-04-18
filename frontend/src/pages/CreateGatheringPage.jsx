@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, MapPin, Calendar as CalendarIcon, Users, Type, Camera, Clock, ChevronLeft } from 'lucide-react';
 import { authFetch } from '../api/client';
-import { useUser } from '../contexts/UserContext';
 import gatheringPlaceholder from '../assets/gathering-placeholder.png';
 
 const CATEGORIES = [
@@ -17,7 +16,6 @@ const DEFAULT_BG = gatheringPlaceholder;
 
 const CreateGatheringPage = () => {
   const navigate = useNavigate();
-  const { user: currentUser } = useUser();
   const [formData, setFormData] = useState({
     title: '',
     location: '',
