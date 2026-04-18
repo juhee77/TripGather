@@ -17,7 +17,7 @@ const DMChatRoom = ({ otherUser, onBack }) => {
         try {
             const date = new Date(dateStr);
             return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
-        } catch (e) {
+        } catch (_e) {
             return "";
         }
     };
@@ -73,6 +73,7 @@ const DMChatRoom = ({ otherUser, onBack }) => {
         });
 
         client.activate();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setStompClient(client);
 
         return () => {

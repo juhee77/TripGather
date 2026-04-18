@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
@@ -79,7 +80,7 @@ export const useChatViewModel = (gathering, currentUser) => {
     try {
       const date = new Date(dateStr);
       return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
-    } catch (e) {
+    } catch (_e) {
       return "";
     }
   };

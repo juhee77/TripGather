@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import ChatTab from '../components/ChatTab';
 import { useNotification } from '../contexts/NotificationContext';
-import { useUser } from '../contexts/UserContext';
 import { authFetch } from '../api/client';
 
 const ChatPage = () => {
   const { resetUnreadCount } = useNotification();
-  const { user: currentUser } = useUser();
   const [gatherings, setGatherings] = useState([]);
 
   useEffect(() => {

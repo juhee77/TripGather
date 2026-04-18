@@ -11,7 +11,7 @@ const ItineraryTab = ({ onMissionStart }) => {
     const {
         itineraries,
         isLoading: loading,
-        actions: { deleteItinerary, refreshItineraries }
+        actions: { refreshItineraries }
     } = useItinerariesViewModel();
 
     const openEditor = (id = null) => {

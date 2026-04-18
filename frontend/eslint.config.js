@@ -24,6 +24,6 @@ export default defineConfig([globalIgnores(['dist']), {
     },
   },
   rules: {
-    'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_', caughtErrors: 'none' }],
   },
 }, ...storybook.configs["flat/recommended"]])

@@ -21,7 +21,7 @@ const Home = () => {
     selectedRegion,
     searchQuery,
     availableOnly,
-    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, refreshGatherings }
+    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange }
   } = useGatheringsViewModel();
 
   const [activeTab, setActiveTab] = useState('라운지');
