@@ -1,11 +1,9 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 
 const OAuth2RedirectHandler = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);

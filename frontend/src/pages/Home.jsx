@@ -10,7 +10,6 @@ import { useUser } from '../contexts/UserContext';
 import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
 import { useMissionsViewModel } from '../viewmodels/useMissionsViewModel'; // Added
 import { Search, Map as MapIcon, Plus, MessageCircle } from 'lucide-react';
-import { authFetch } from '../api/client';
 import { useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
 
@@ -22,41 +21,20 @@ const Home = () => {
     selectedRegion,
     searchQuery,
     availableOnly,
-    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, refreshGatherings, likeGathering }
+    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, refreshGatherings }
   } = useGatheringsViewModel();
 
   const [activeTab, setActiveTab] = useState('라운지');
   const [showOnlyHosted, setShowOnlyHosted] = useState(false);
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
-  const [myJoinedIds, setMyJoinedIds] = useState(() => {
-    try {
-      const saved = localStorage.getItem('myJoinedIds');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
   const {
     activeMissions,
-    actions: { fetchMissions, startMission, completeMission, completeStep }
+    actions: { fetchMissions, completeMission, completeStep }
   } = useMissionsViewModel();
 
   useEffect(() => {
     if (currentUser) fetchMissions();
   }, [currentUser, fetchMissions]);
-
-  const handleGatheringCreated = (newGathering) => {
-    refreshGatherings();
-  };
-
-  const tabs = ['발견', '내 모임', '일정']; // This line will be replaced by the new nav structure
-
-  const handleUpdateItinerary = (updated) => {
-    // Refresh missions and other data after edit
-    fetchMissions();
-    refreshGatherings(); // Added to ensure UI consistency
-  };
 
   const handleEditItinerary = (itinerary) => {
     navigate(`/itinerary/edit/${itinerary.id}`);

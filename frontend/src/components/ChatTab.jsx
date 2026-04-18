@@ -87,7 +87,7 @@ const ChatTab = ({ joinedGatherings }) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {chatType === 'group' ? (
                     joinedGatherings.length > 0 ? (
-                        joinedGatherings.map((g, idx) => (
+                        joinedGatherings.map((g) => (
                             <Card 
                                 key={g.id}
                                 onClick={() => setSelectedRoom(g)}
@@ -132,7 +132,7 @@ const ChatTab = ({ joinedGatherings }) => {
                 ) : (
                     <>
                         {dmPartners.length > 0 ? (
-                            dmPartners.map((partner, idx) => (
+                            dmPartners.map((partner) => (
                                 <Card 
                                     key={partner.email}
                                     onClick={() => handleStartDM(partner)}
