@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { useAuthViewModel } from '../viewmodels/useAuthViewModel';
 import { API_BASE } from '../api/client';
 import './LoginPage.css';
@@ -17,7 +16,6 @@ function LoginPage() {
     handleSubmit
   } = useAuthViewModel();
 
-  const navigate = useNavigate();
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);

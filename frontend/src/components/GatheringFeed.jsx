@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { authFetch } from '../api/client';
 import { Camera, Send, Image as ImageIcon, X } from 'lucide-react';
 import Skeleton from './UI/Skeleton';
 
-const GatheringFeed = ({ gatheringId, currentUser }) => {
+const GatheringFeed = ({ gatheringId }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState('');
@@ -13,7 +13,7 @@ const GatheringFeed = ({ gatheringId, currentUser }) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
       const res = await authFetch(`/api/gatherings/${gatheringId}/posts`);
@@ -26,11 +26,11 @@ const GatheringFeed = ({ gatheringId, currentUser }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [gatheringId]);
 
   useEffect(() => {
     fetchPosts();
-  }, [gatheringId]);
+  }, [gatheringId, fetchPosts]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];

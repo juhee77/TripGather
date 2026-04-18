@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { MissionStatus } from '../constants/enums';
 import TicketCard from './TicketCard';
 import { Plus, RotateCcw } from 'lucide-react';
@@ -6,12 +6,12 @@ import { useNavigate } from 'react-router-dom';
 import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
 import { useMissionsViewModel } from '../viewmodels/useMissionsViewModel';
 
-const ItineraryTab = ({ onMissionStart, onEdit }) => {
+const ItineraryTab = ({ onMissionStart }) => {
     const navigate = useNavigate();
     const {
         itineraries,
         isLoading: loading,
-        actions: { createItinerary, updateItinerary, deleteItinerary, refreshItineraries }
+        actions: { deleteItinerary, refreshItineraries }
     } = useItinerariesViewModel();
 
     const openEditor = (id = null) => {
@@ -42,15 +42,6 @@ const ItineraryTab = ({ onMissionStart, onEdit }) => {
     useEffect(() => {
         refreshItineraries();
     }, [refreshItineraries]);
-
-    const handleDelete = async (id) => {
-        if (!window.confirm('정말 이 비행 계획을 삭제하시겠습니까?')) return;
-        try {
-            await deleteItinerary(id);
-        } catch (err) {
-            console.error('Delete failed:', err);
-        }
-    };
 
     return (
         <div style={{

@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MissionStatus } from '../constants/enums';
 import { ChevronRight } from 'lucide-react';
 import TicketContainer from './UI/TicketContainer';
 
 const MissionTab = ({
-  activeMissions,
-  onMissionComplete,
-  onStepComplete
+  activeMissions
 }) => {
   const navigate = useNavigate();
 
@@ -28,7 +26,7 @@ const MissionTab = ({
       background: 'var(--bg-color)',
       minHeight: '100%'
     }}>
-      {activeMissions?.filter(m => m.status === MissionStatus.ACTIVE).map((mission, idx) => {
+      {activeMissions?.filter(m => m.status === MissionStatus.ACTIVE).map((mission) => {
         const isCompleted = mission?.status === MissionStatus.COMPLETED;
         const completedSteps = mission?.steps?.filter(s => s.isCompleted || s.completed).length || 0;
         const totalSteps = mission?.steps?.length || 0;

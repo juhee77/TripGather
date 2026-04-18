@@ -5,6 +5,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import './BottomNav.css';
 
 const BottomNav = () => {
+  const { unreadCount } = useNotification();
   return (
     <nav className="bottom-nav">
       <div className="nav-items">
@@ -19,8 +20,8 @@ const BottomNav = () => {
         <NavLink to="/chat" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
           <div className="nav-icon-container">
             <MessageCircle size={24} />
-            {useNotification().unreadCount > 0 && (
-              <span className="notification-badge">{useNotification().unreadCount}</span>
+            {unreadCount > 0 && (
+              <span className="notification-badge">{unreadCount}</span>
             )}
           </div>
           <span>채팅/모임</span>

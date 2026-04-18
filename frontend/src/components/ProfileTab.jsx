@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { MemberStatus } from '../constants/enums';
 import PassportCard from './PassportCard';
 import StampBook from './StampBook';
 import { authFetch } from '../api/client';
-import { useUser } from '../contexts/UserContext';
 import { LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-
 import { useUserViewModel } from '../viewmodels/useUserViewModel';
-import ChatRepository from '../repositories/ChatRepository';
 import { useNavigate } from 'react-router-dom';
 
 const ProfileTab = () => {
   const navigate = useNavigate();
-  const { user, loading: userLoading, updateProfile } = useUserViewModel();
+  const { user } = useUserViewModel();
   const { logout } = useAuth();
   const [stamps, setStamps] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -36,22 +32,7 @@ const ProfileTab = () => {
     }
   }, [user, hasFetched]);
 
-  useEffect(() => {
-    if (user && !hasFetched) {
-      setLoading(true);
-      authFetch('/api/missions/me/stamps')
-        .then(res => res.json())
-        .then(data => {
-          setStamps(Array.isArray(data) ? data : []);
-          setLoading(false);
-          setHasFetched(true);
-        })
-        .catch(err => {
-          console.error("Error fetching stamps:", err);
-          setLoading(false);
-        });
-    }
-  }, [user, hasFetched]);
+
 
   return (
     <div style={{ paddingBottom: '100px' }} className="animate-fade">

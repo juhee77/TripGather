@@ -10,7 +10,7 @@ import PrimaryButton from '../components/UI/PrimaryButton';
 const ItineraryDetailPage = ({ type = 'itinerary' }) => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const [isVisible, setIsVisible] = useState(false);
+    const [, setIsVisible] = useState(false);
     const { user: currentUser } = useUser();
     
     // Mission Progress States

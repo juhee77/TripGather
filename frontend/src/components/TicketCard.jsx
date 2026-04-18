@@ -7,7 +7,7 @@ import { useUser } from '../contexts/UserContext';
 const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit }) => {
     const { user: currentUser } = useUser();
     const isHost = currentUser && (itinerary.author === currentUser.name || itinerary.itineraryAuthor === currentUser.name);
-    const { title, author, itineraryAuthor, description, createdAt, status } = itinerary;
+    const { title, author, itineraryAuthor, description, createdAt } = itinerary;
     const date = createdAt ? new Date(createdAt).toLocaleDateString() : '2026-04-06';
     const isMission = !!itinerary.steps;
 
