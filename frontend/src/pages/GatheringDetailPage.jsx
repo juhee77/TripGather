@@ -376,23 +376,22 @@ const GatheringDetailPage = () => {
                     </div>
                   </div>
 
-                  {!isHost && (
-                    <button
-                      onClick={handleJoin}
-                      disabled={gathering.currentJoining >= gathering.maxJoining || myStatus}
-                      style={{
-                        width: '100%', padding: '18px',
-                        background: (gathering.currentJoining >= gathering.maxJoining && !myStatus) ? 'var(--text-muted)' : myStatus === MemberStatus.PENDING ? '#FFD43B' : myStatus === MemberStatus.APPROVED ? '#51CF66' : 'var(--primary-gradient)',
-                        color: 'white', border: 'none', borderRadius: '20px', fontSize: '17px', fontWeight: 800, marginTop: '24px', cursor: 'pointer',
-                        boxShadow: (gathering.currentJoining < gathering.maxJoining && !myStatus) ? '0 10px 20px rgba(255, 92, 0, 0.3)' : 'none'
-                      }}
-                    >
-                      {myStatus === MemberStatus.PENDING ? '신청 대기 중...' :
-                        myStatus === MemberStatus.APPROVED ? '참여 확정됨!' :
-                          myStatus === MemberStatus.REJECTED ? '거절된 모임입니다' :
-                            gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참여 신청하기'}
-                    </button>
-                  )}
+                  <button
+                    onClick={handleJoin}
+                    disabled={isHost || gathering.currentJoining >= gathering.maxJoining || myStatus}
+                    style={{
+                      width: '100%', padding: '18px',
+                      background: isHost ? '#51CF66' : (gathering.currentJoining >= gathering.maxJoining && !myStatus) ? 'var(--text-muted)' : myStatus === MemberStatus.PENDING ? '#FFD43B' : myStatus === MemberStatus.APPROVED ? '#51CF66' : 'var(--primary-gradient)',
+                      color: 'white', border: 'none', borderRadius: '20px', fontSize: '17px', fontWeight: 800, marginTop: '24px', cursor: isHost ? 'default' : 'pointer',
+                      boxShadow: (!isHost && gathering.currentJoining < gathering.maxJoining && !myStatus) ? '0 10px 20px rgba(255, 92, 0, 0.3)' : 'none'
+                    }}
+                  >
+                    {isHost ? '탑승 확정됨 (호스트)' : 
+                      myStatus === MemberStatus.PENDING ? '신청 대기 중...' :
+                      myStatus === MemberStatus.APPROVED ? '참여 확정됨!' :
+                        myStatus === MemberStatus.REJECTED ? '거절된 모임입니다' :
+                          gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참여 신청하기'}
+                  </button>
                 </>
               )}
             </div>

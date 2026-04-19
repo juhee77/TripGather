@@ -21,7 +21,7 @@ const Home = () => {
     selectedRegion,
     searchQuery,
     availableOnly,
-    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange }
+    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, likeGathering }
   } = useGatheringsViewModel();
 
   const [activeTab, setActiveTab] = useState('라운지');
@@ -286,6 +286,8 @@ const Home = () => {
                       (g.host.email === currentUser.email)
                     )) ? g.members?.filter(m => m.status === MemberStatus.PENDING).length || 0 : 0
                   }
+                  likedByCurrentUser={g.likedByCurrentUser}
+                  onLike={() => likeGathering(g.id)}
                 />
               </div>
             ))}
@@ -373,21 +375,35 @@ const Home = () => {
         )}
       </div>
 
-      {/* Unified Floating Action Button */}
       {['라운지', '비행 계획', '챌린지'].includes(activeTab) && (
-        <button
-          onClick={() => {
-            if (activeTab === '라운지') navigate('/create');
-            else navigate('/itinerary/create');
-          }}
-          className="primary-btn fab-button"
-          style={{
-            padding: 0,
-            zIndex: 90,
-          }}
-        >
-          <Plus size={32} strokeWidth={3} />
-        </button>
+        <div style={{ 
+          position: 'fixed', 
+          bottom: '100px', 
+          right: '24px', 
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+          padding: '10px'
+        }}>
+          <button
+            onClick={() => {
+              if (activeTab === '라운지') navigate('/create');
+              else navigate('/itinerary/create');
+            }}
+            className="primary-btn fab-button"
+            style={{
+              width: '64px',
+              height: '64px', 
+              borderRadius: '50%', 
+              padding: 0,
+              boxShadow: '0 12px 24px rgba(255, 92, 0, 0.4)',
+              zIndex: 90,
+            }}
+          >
+            <Plus size={32} strokeWidth={3} />
+          </button>
+        </div>
       )}
 
     </div>

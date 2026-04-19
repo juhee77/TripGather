@@ -79,42 +79,43 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit }) => {
                 >
                     INFO
                 </PrimaryButton>
-                {isHost && !isMission ? (
+                
+                {isHost && !isMission && (
                     <PrimaryButton 
-                        variant="primary"
+                        variant="secondary"
                         onClick={(e) => {
                             e.stopPropagation();
                             onEdit && onEdit(itinerary);
                         }}
-                        style={{ flex: 2, height: '52px', borderRadius: '14px' }}
+                        style={{ flex: 1, height: '52px', borderRadius: '14px', border: '1px solid var(--border-color)' }}
                     >
-                        EDIT JOURNEY
-                    </PrimaryButton>
-                ) : (
-                    <PrimaryButton 
-                        variant="primary"
-                        onClick={async (e) => {
-                            e.stopPropagation();
-                            if (isMission) {
-                                onViewRoute && onViewRoute(itinerary);
-                                return;
-                            }
-                            onStartMission && await onStartMission(itinerary.id);
-                        }}
-                        style={{ 
-                            flex: 2, 
-                            height: '52px', 
-                            borderRadius: '14px',
-                            background: isMission ? 'var(--text-primary)' : 'var(--primary-gradient)'
-                        }}
-                    >
-                        {isMission ? (
-                            <><CheckCircle size={18} style={{ marginRight: '8px' }} /> CONTINUE</>
-                        ) : (
-                            <>BOARDING NOW <ChevronRight size={18} style={{ marginLeft: '4px' }} /></>
-                        )}
+                        EDIT
                     </PrimaryButton>
                 )}
+
+                <PrimaryButton 
+                    variant="primary"
+                    onClick={async (e) => {
+                        e.stopPropagation();
+                        if (isMission) {
+                            onViewRoute && onViewRoute(itinerary);
+                            return;
+                        }
+                        onStartMission && await onStartMission(itinerary.id);
+                    }}
+                    style={{ 
+                        flex: (isHost && !isMission) ? 1.5 : 2, 
+                        height: '52px', 
+                        borderRadius: '14px',
+                        background: isMission ? 'var(--text-primary)' : 'var(--primary-gradient)'
+                    }}
+                >
+                    {isMission ? (
+                        <><CheckCircle size={18} style={{ marginRight: '8px' }} /> CONTINUE</>
+                    ) : (
+                        <>{(isHost && !isMission) ? 'BOARD' : 'BOARDING NOW'} <ChevronRight size={18} style={{ marginLeft: '4px' }} /></>
+                    )}
+                </PrimaryButton>
             </div>
         </div>
     );
