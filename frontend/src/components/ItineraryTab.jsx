@@ -124,24 +124,6 @@ const ItineraryTab = ({ onMissionStart }) => {
                     )}
                 </div>
             </div>
-
-            {/* Floating Action Button inside Tab */}
-            <button
-                onClick={() => openEditor()}
-                className="primary-btn"
-                style={{
-                    position: 'fixed', 
-                    bottom: '110px', 
-                    right: 'calc(50% - 240px + 24px)',
-                    width: '64px', 
-                    height: '64px', 
-                    borderRadius: '50%', 
-                    zIndex: 100,
-                    boxShadow: '0 15px 30px rgba(255, 92, 0, 0.4)'
-                }}
-            >
-                <Plus size={32} strokeWidth={3} />
-            </button>
         </div>
     );
 };
