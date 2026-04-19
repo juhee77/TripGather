@@ -26,7 +26,7 @@ public class ChatMessageResponse {
                 .content(message.getContent())
                 .senderName(message.getSender().getName())
                 .senderEmail(message.getSender().getEmail())
-                .sentAt(message.getSentAt().toString())
+                .sentAt(message.getSentAt() != null ? message.getSentAt().toString() : java.time.LocalDateTime.now().toString())
                 .build();
     }
 }
