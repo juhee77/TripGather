@@ -19,4 +19,5 @@ public interface GatheringUseCase {
     void likeGathering(Long id);
     boolean isLikedByUser(Long gatheringId, String email);
     void inviteMember(Long gatheringId, Long userId);
+    boolean isAuthorizedMember(Long gatheringId, String email);
 }

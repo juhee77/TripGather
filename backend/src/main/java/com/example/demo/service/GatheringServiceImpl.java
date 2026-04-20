@@ -298,4 +298,18 @@ public class GatheringServiceImpl implements GatheringUseCase {
             throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "호스트만 접근 가능합니다.");
         }
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isAuthorizedMember(Long gatheringId, String email) {
+        if (email == null || email.isEmpty() || email.equals("anonymousUser")) return false;
+        
+        Gathering gathering = gatheringRepository.findById(gatheringId).orElse(null);
+        if (gathering == null) return false;
+        
+        if (gathering.getHost().getEmail().equals(email)) return true;
+        
+        return gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(
+                gatheringId, email, com.example.demo.domain.MemberStatus.APPROVED);
+    }
 }
