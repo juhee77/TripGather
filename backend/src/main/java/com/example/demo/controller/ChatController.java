@@ -24,28 +24,36 @@ public class ChatController {
 
     private final ChatUseCase chatService;
     private final NotificationService notificationService;
+    private final com.example.demo.usecase.GatheringUseCase gatheringService;
 
     // 클라이언트가 /app/chat/{gatheringId}/send 로 메시지를 보내면 호출됨
     @MessageMapping("/chat/{gatheringId}/send")
     @SendTo("/topic/chat/{gatheringId}")
-    public ChatMessageResponse sendMessage(@DestinationVariable Long gatheringId, ChatMessageRequest request) {
-        com.example.demo.domain.ChatMessage saved = chatService.saveMessage(gatheringId, request.getSenderEmail(), request.getContent());
+    public ChatMessageResponse sendMessage(@DestinationVariable Long gatheringId, ChatMessageRequest request, java.security.Principal principal) {
+        // Membership check: Only approved members/host can send messages
+        String email = (principal != null) ? principal.getName() : request.getSenderEmail();
+        if (!gatheringService.isAuthorizedMember(gatheringId, email)) {
+            // In a real app, we might throw an exception or send an error message back via a private topic
+            // For now, we'll just not save/broadcast or allow it if it's public (but usually chat is for members)
+            // Let's restrict to members only for safety.
+            return null; 
+        }
+
+        com.example.demo.domain.ChatMessage saved = chatService.saveMessage(gatheringId, email, request.getContent());
         
         ChatMessageResponse response = ChatMessageResponse.from(saved);
 
         // 실시간 알림 전송 (참여자들에게)
-        Gathering gathering = saved.getGathering();
+        com.example.demo.domain.Gathering gathering = saved.getGathering();
         if (gathering != null && gathering.getMembers() != null) {
-            for (GatheringMember member : gathering.getMembers()) {
+            for (com.example.demo.domain.GatheringMember member : gathering.getMembers()) {
                 String receiverEmail = member.getUser().getEmail();
-                // 발신자 본인은 제외
-                if (!receiverEmail.equals(request.getSenderEmail())) {
+                if (!receiverEmail.equals(email)) {
                     notificationService.send(receiverEmail, "chat-received", response);
                 }
             }
-            // 호스트에게도 알림 (호스트가 멤버에 포함되어 있는지 확인 필요)
             String hostEmail = gathering.getHost().getEmail();
-            if (!hostEmail.equals(request.getSenderEmail())) {
+            if (!hostEmail.equals(email)) {
                 notificationService.send(hostEmail, "chat-received", response);
             }
         }
@@ -55,7 +63,17 @@ public class ChatController {
 
     @GetMapping("/api/chat/{gatheringId}/history")
     @ResponseBody
-    public List<ChatMessageResponse> getChatHistory(@PathVariable Long gatheringId) {
+    public List<ChatMessageResponse> getChatHistory(@PathVariable Long gatheringId, java.security.Principal principal) {
+        com.example.demo.domain.Gathering gathering = gatheringService.getGathering(gatheringId);
+        
+        // Check privacy: if not public, only members or host can view
+        if (!gathering.isChatPublic()) {
+            String email = (principal != null) ? principal.getName() : null;
+            if (!gatheringService.isAuthorizedMember(gatheringId, email)) {
+                return java.util.Collections.emptyList();
+            }
+        }
+
         return chatService.getChatHistory(gatheringId).stream()
                 .map(ChatMessageResponse::from)
                 .toList();

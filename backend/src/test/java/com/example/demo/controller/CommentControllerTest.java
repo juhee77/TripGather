@@ -42,9 +42,7 @@ class CommentControllerTest {
     @Mock
     private CommentRepository commentRepository;
     @Mock
-    private GatheringRepository gatheringRepository;
-    @Mock
-    private GatheringMemberRepository gatheringMemberRepository;
+    private com.example.demo.usecase.GatheringUseCase gatheringService;
 
     @InjectMocks
     private CommentController commentController;
@@ -77,6 +75,7 @@ class CommentControllerTest {
     @DisplayName("댓글 조회 성공")
     void getComments_Success() throws Exception {
         // given
+        given(gatheringService.getGathering(1L)).willReturn(publicGathering);
         Comment comment = Comment.builder().id(1L).content("Hello").author("user").build();
         given(commentRepository.findAllByGatheringIdOrderByCreatedAtAsc(1L)).willReturn(List.of(comment));
 
@@ -87,10 +86,23 @@ class CommentControllerTest {
     }
 
     @Test
+    @DisplayName("비공개 모임 비멤버 댓글 조회 시 빈 리스트 반환")
+    void getComments_PrivateGathering_NonMember_EmptyList() throws Exception {
+        // given
+        given(gatheringService.getGathering(2L)).willReturn(privateGathering);
+        given(gatheringService.isAuthorizedMember(anyLong(), any())).willReturn(false);
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings/2/comments"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
     @DisplayName("공개 모임 댓글 작성 성공")
     void addComment_PublicGathering_Success() throws Exception {
         // given
-        given(gatheringRepository.findById(1L)).willReturn(Optional.of(publicGathering));
+        given(gatheringService.getGathering(1L)).willReturn(publicGathering);
         Comment savedComment = Comment.builder().id(1L).content("New Comment").author("user@example.com").build();
         given(commentRepository.save(any(Comment.class))).willReturn(savedComment);
 
@@ -107,9 +119,8 @@ class CommentControllerTest {
     @DisplayName("비공개 모임 멤버 댓글 작성 성공")
     void addComment_PrivateGathering_Member_Success() throws Exception {
         // given
-        given(gatheringRepository.findById(2L)).willReturn(Optional.of(privateGathering));
-        given(gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(anyLong(), anyString(), any(MemberStatus.class)))
-                .willReturn(true);
+        given(gatheringService.getGathering(2L)).willReturn(privateGathering);
+        given(gatheringService.isAuthorizedMember(2L, "user@example.com")).willReturn(true);
         Comment savedComment = Comment.builder().id(2L).content("Member Comment").author("user@example.com").build();
         given(commentRepository.save(any(Comment.class))).willReturn(savedComment);
 
@@ -126,9 +137,8 @@ class CommentControllerTest {
     @DisplayName("비공개 모임 비멤버 댓글 작성 실패")
     void addComment_PrivateGathering_NonMember_Forbidden() throws Exception {
         // given
-        given(gatheringRepository.findById(2L)).willReturn(Optional.of(privateGathering));
-        given(gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(anyLong(), anyString(), any(MemberStatus.class)))
-                .willReturn(false);
+        given(gatheringService.getGathering(2L)).willReturn(privateGathering);
+        given(gatheringService.isAuthorizedMember(anyLong(), any())).willReturn(false);
 
         // when & then
         mockMvc.perform(post("/api/gatherings/2/comments")

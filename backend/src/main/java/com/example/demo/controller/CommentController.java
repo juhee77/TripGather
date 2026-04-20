@@ -19,28 +19,34 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CommentController {
     private final CommentRepository commentRepository;
-    private final GatheringRepository gatheringRepository;
-    private final com.example.demo.repository.GatheringMemberRepository gatheringMemberRepository;
+    private final com.example.demo.usecase.GatheringUseCase gatheringService;
 
     @GetMapping
-    public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long gatheringId) {
+    public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long gatheringId, Principal principal) {
+        com.example.demo.domain.Gathering gathering = gatheringService.getGathering(gatheringId);
+        
+        // Check privacy: if not public, only members or host can view
+        if (!gathering.isCommentPublic()) {
+            String email = (principal != null) ? principal.getName() : null;
+            if (!gatheringService.isAuthorizedMember(gatheringId, email)) {
+                return ResponseEntity.ok(java.util.Collections.emptyList());
+            }
+        }
+
         return ResponseEntity.ok(commentRepository.findAllByGatheringIdOrderByCreatedAtAsc(gatheringId).stream()
                 .map(CommentResponse::from)
                 .toList());
     }
 
     @PostMapping
-    public ResponseEntity<CommentResponse> addComment(@PathVariable Long gatheringId, @RequestBody Comment comment, Principal principal) {
+    public ResponseEntity<CommentResponse> addComment(@PathVariable Long gatheringId, @RequestBody com.example.demo.domain.Comment comment, Principal principal) {
         if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
         
-        Gathering gathering = gatheringRepository.findById(gatheringId)
-                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
+        com.example.demo.domain.Gathering gathering = gatheringService.getGathering(gatheringId);
         
         // Check privacy: if not public, only members can comment
         if (!gathering.isCommentPublic()) {
-            boolean isMember = gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(
-                    gatheringId, principal.getName(), com.example.demo.domain.MemberStatus.APPROVED);
-            if (!isMember) {
+            if (!gatheringService.isAuthorizedMember(gatheringId, principal.getName())) {
                 throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "모임 멤버만 댓글을 작성할 수 있습니다.");
             }
         }

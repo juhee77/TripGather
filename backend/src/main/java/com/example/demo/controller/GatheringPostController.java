@@ -27,27 +27,25 @@ import java.util.stream.Collectors;
 public class GatheringPostController {
 
     private final GatheringPostRepository postRepository;
-    private final GatheringRepository gatheringRepository;
+    private final com.example.demo.usecase.GatheringUseCase gatheringService;
     private final UserRepository userRepository;
-    private final GatheringMemberRepository gatheringMemberRepository;
 
     @GetMapping("/{gatheringId}/posts")
     public ResponseEntity<List<PostResponse>> getPosts(@PathVariable Long gatheringId, Principal principal) {
-        Gathering gathering = gatheringRepository.findById(gatheringId)
-                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
+        Gathering gathering = gatheringService.getGathering(gatheringId);
         
-        boolean isMember = false;
-        if (principal != null) {
-            boolean isHost = gathering.getHost().getEmail().equals(principal.getName());
-            boolean isApproved = gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(gatheringId, principal.getName(), MemberStatus.APPROVED);
-            isMember = isHost || isApproved;
+        String email = (principal != null) ? principal.getName() : null;
+        boolean isMember = gatheringService.isAuthorizedMember(gatheringId, email);
+
+        // If gallery is private and user is not a member, hide everything
+        if (!gathering.isGalleryPublic() && !isMember) {
+            return ResponseEntity.ok(java.util.Collections.emptyList());
         }
 
         List<GatheringPost> posts = postRepository.findByGatheringOrderByCreatedAtDesc(gathering);
         
-        final boolean memberStatus = isMember;
         List<PostResponse> responses = posts.stream()
-                .filter(post -> memberStatus || post.isPublic())
+                .filter(post -> isMember || post.isPublic())
                 .map(PostResponse::from)
                 .collect(Collectors.toList());
         
@@ -60,12 +58,14 @@ public class GatheringPostController {
             @RequestBody PostRequest request,
             Principal principal) {
         
-        validateMembership(gatheringId, principal);
+        if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+        if (!gatheringService.isAuthorizedMember(gatheringId, principal.getName())) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "승인된 크루원만 접근 가능합니다.");
+        }
             
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        Gathering gathering = gatheringRepository.findById(gatheringId)
-                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
+        Gathering gathering = gatheringService.getGathering(gatheringId);
 
         GatheringPost post = GatheringPost.builder()
                 .author(user)
@@ -77,20 +77,6 @@ public class GatheringPostController {
 
         GatheringPost saved = postRepository.save(post);
         return ResponseEntity.ok(PostResponse.from(saved));
-    }
-
-    private void validateMembership(Long gatheringId, Principal principal) {
-        if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
-        
-        Gathering gathering = gatheringRepository.findById(gatheringId)
-                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
-                
-        boolean isHost = gathering.getHost().getEmail().equals(principal.getName());
-        boolean isApproved = gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(gatheringId, principal.getName(), MemberStatus.APPROVED);
-        
-        if (!isHost && !isApproved) {
-            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "승인된 크루원만 접근 가능합니다.");
-        }
     }
 
     @Data
