@@ -4,7 +4,7 @@ import { ArrowLeft, Users, MoreHorizontal, Shield, Send } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { useChatViewModel } from '../viewmodels/useChatViewModel';
 
-const ChatRoom = ({ gathering, onBack, onStartDM }) => {
+const ChatRoom = ({ gathering, onBack, onStartDM, inline = false }) => {
     const { user: currentUser } = useUser();
     const {
         messages,
@@ -15,8 +15,16 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
         scrollRef,
         handleSend,
         formatTime,
-        isHost
+        isHost: checkHost
     } = useChatViewModel(gathering, currentUser);
+
+    const isActualHost = currentUser && gathering?.host && (
+        (typeof gathering.host === 'string' && gathering.host === currentUser.name) ||
+        (gathering.host.email === currentUser.email)
+    );
+
+    const myStatus = gathering?.members?.find(m => m.user.email === currentUser?.email)?.status;
+    const isApprovedMember = isActualHost || myStatus === MemberStatus.APPROVED;
 
     if (!currentUser || !gathering) {
         return (
@@ -28,44 +36,68 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
 
     return (
         <div className="animate-fade" style={{ 
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+            position: inline ? 'relative' : 'fixed', 
+            top: 0, left: 0, right: 0, bottom: 0, 
+            height: inline ? '100%' : '100vh',
             background: 'var(--bg-color)', zIndex: 200, display: 'flex', flexDirection: 'column',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            borderRadius: inline ? '20px' : 0
         }}>
-            {/* Unified Room Header */}
-            <header className="glass-premium" style={{ 
-                padding: '20px', display: 'flex', alignItems: 'center', gap: '16px',
-                borderBottom: '1px solid var(--border-color)',
-                borderRadius: '0 0 24px 24px',
-                zIndex: 210, background: 'rgba(255, 255, 255, 0.9)',
-                backdropFilter: 'blur(20px)'
-            }}>
-                <button onClick={onBack} className="icon-circle glass" style={{ width: '42px', height: '42px', border: '1px solid var(--border-color)' }}>
-                    <ArrowLeft size={20} color="var(--text-primary)" />
-                </button>
-                <div style={{ flex: 1 }}>
-                    <h3 style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '16px', margin: 0 }}>{gathering.title}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-orange)' }}></span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                            AGENT GROUP 채팅
-                        </span>
+            {/* Unified Room Header - Hidden in inline mode to avoid duplication */}
+            {!inline && (
+                <header className="glass-premium" style={{ 
+                    padding: '20px', display: 'flex', alignItems: 'center', gap: '16px',
+                    borderBottom: '1px solid var(--border-color)',
+                    borderRadius: '0 0 24px 24px',
+                    zIndex: 210, background: 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: 'blur(20px)'
+                }}>
+                    <button onClick={onBack} className="icon-circle glass" style={{ width: '42px', height: '42px', border: '1px solid var(--border-color)' }}>
+                        <ArrowLeft size={20} color="var(--text-primary)" />
+                    </button>
+                    <div style={{ flex: 1 }}>
+                        <h3 style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '16px', margin: 0 }}>{gathering.title}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-orange)' }}></span>
+                            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                                AGENT GROUP 채팅
+                            </span>
+                        </div>
                     </div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                            onClick={() => setIsDrawerOpen(!isDrawerOpen)} 
+                            className="icon-circle glass" 
+                            style={{ 
+                                width: '42px', height: '42px', 
+                                background: isDrawerOpen ? 'var(--primary-orange)' : 'white',
+                                border: '1px solid var(--border-color)'
+                            }}
+                        >
+                            <Users size={20} color={isDrawerOpen ? "white" : "var(--text-primary)"} />
+                        </button>
+                    </div>
+                </header>
+            )}
+
+            {/* Inline Toggle for Members List if no header */}
+            {inline && (
+                <div style={{ padding: '12px 20px', display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid var(--border-color)' }}>
                     <button 
-                        onClick={() => setIsDrawerOpen(!isDrawerOpen)} 
-                        className="icon-circle glass" 
+                        onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                        className="glass"
                         style={{ 
-                            width: '42px', height: '42px', 
+                            padding: '6px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 800,
+                            display: 'flex', alignItems: 'center', gap: '6px',
                             background: isDrawerOpen ? 'var(--primary-orange)' : 'white',
+                            color: isDrawerOpen ? 'white' : 'var(--text-primary)',
                             border: '1px solid var(--border-color)'
                         }}
                     >
-                        <Users size={20} color={isDrawerOpen ? "white" : "var(--text-primary)"} />
+                        <Users size={14} /> 요원 목록
                     </button>
                 </div>
-            </header>
+            )}
 
             <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', background: 'var(--bg-color)' }}>
                 {/* Chat Area */}
@@ -94,7 +126,7 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
                                         <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 800 }}>
                                             {m.senderName || '익명 요원'}
                                         </span>
-                                        {isHost(m.senderEmail) && <Shield size={10} color="var(--primary-orange)" />}
+                                        {checkHost(m.senderEmail) && <Shield size={10} color="var(--primary-orange)" />}
                                     </div>
                                 )}
                                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
@@ -191,25 +223,33 @@ const ChatRoom = ({ gathering, onBack, onStartDM }) => {
             </div>
 
             {/* Premium Input Area */}
-            <footer style={{ padding: '16px 20px 32px', borderTop: '1px solid var(--border-color)', background: 'white', zIndex: 210 }}>
+            <footer style={{ padding: inline ? '12px 16px' : '16px 20px 32px', borderTop: '1px solid var(--border-color)', background: 'white', zIndex: 210 }}>
                 <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <div style={{ flex: 1, position: 'relative' }}>
                         <input 
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="명령을 입력하세요 (메시지)..."
+                            disabled={!isApprovedMember}
+                            placeholder={isApprovedMember ? "명령을 입력하세요 (메시지)..." : "승인된 크루만 메시지를 보낼 수 있습니다 🔒"}
                             style={{ 
                                 width: '100%', padding: '16px 20px', borderRadius: '18px', border: '1px solid var(--border-color)',
-                                background: 'var(--bg-color)', color: 'var(--text-primary)', outline: 'none', fontSize: '15px',
-                                fontWeight: 600
+                                background: isApprovedMember ? 'var(--bg-color)' : 'var(--bg-lite)', 
+                                color: 'var(--text-primary)', outline: 'none', fontSize: '14px',
+                                fontWeight: 600,
+                                opacity: isApprovedMember ? 1 : 0.7,
+                                cursor: isApprovedMember ? 'text' : 'not-allowed'
                             }}
                         />
                     </div>
                     <button 
                         type="submit" 
-                        disabled={!input.trim()}
+                        disabled={!input.trim() || !isApprovedMember}
                         className="primary-btn" 
-                        style={{ width: '52px', height: '52px', borderRadius: '18px', padding: 0, boxShadow: '0 8px 16px rgba(255, 92, 0, 0.2)' }}
+                        style={{ 
+                            width: '52px', height: '52px', borderRadius: '18px', padding: 0, 
+                            boxShadow: isApprovedMember ? '0 8px 16px rgba(255, 92, 0, 0.2)' : 'none',
+                            background: isApprovedMember ? 'var(--primary-gradient)' : 'var(--text-muted)'
+                        }}
                     >
                         <Send size={20} />
                     </button>

@@ -9,6 +9,7 @@ import ModalFooter from '../components/UI/ModalFooter';
 import FormInput from '../components/UI/FormInput';
 import PrimaryButton from '../components/UI/PrimaryButton';
 import GatheringFeed from '../components/GatheringFeed';
+import ChatRoom from '../components/ChatRoom';
 
 const GatheringDetailPage = () => {
   const { id } = useParams();
@@ -58,7 +59,7 @@ const GatheringDetailPage = () => {
 
   const fetchComments = async () => {
     try {
-      const res = await fetch(apiUrl(`/api/gatherings/${gathering.id}/comments`));
+      const res = await authFetch(`/api/gatherings/${gathering.id}/comments`);
       if (res.ok) {
         const data = await res.json();
         setComments(data);
@@ -274,12 +275,17 @@ const GatheringDetailPage = () => {
 
         <div style={{ padding: '0 24px', borderBottom: '1px solid var(--border-color)' }}>
           {/* New Tabs */}
-          <div style={{ display: 'flex', gap: '20px' }}>
-            {['브리핑', '크루', `무전 (${comments.length})`, '갤러리 📸'].map((tab) => {
-              const tabName = tab.startsWith('무전') ? '무전' : tab.startsWith('갤러리') ? '갤러리' : tab;
+          <div style={{ display: 'flex', gap: '16px', overflowX: 'auto' }} className="hide-scrollbar">
+            {[
+              '브리핑', 
+              '크루', 
+              `무전 (${comments.length})`, 
+              '갤러리 📸',
+              (isMember || gathering.isChatPublic) ? '채팅 💬' : null
+            ].filter(Boolean).map((tab) => {
+              const tabName = tab.startsWith('무전') ? '무전' : tab.startsWith('갤러리') ? '갤러리' : tab.startsWith('채팅') ? '채팅' : tab;
               const isActive = activeTab === tabName;
               
-              // Tab visibility check is moved inside the render logic to show empty state instead of hiding tabs
               return (
                 <button
                   key={tab}
@@ -334,9 +340,51 @@ const GatheringDetailPage = () => {
                     value={editData.maxJoining}
                     onChange={e => setEditData({...editData, maxJoining: parseInt(e.target.value)})}
                   />
+
+                  {/* Privacy Settings in Edit Mode */}
+                  <div style={{ 
+                    background: 'var(--highlight-muted)', padding: '20px', borderRadius: '16px', 
+                    display: 'flex', flexDirection: 'column', gap: '16px', border: '1px solid var(--border-color)',
+                    marginTop: '8px'
+                  }}>
+                    <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span role="img" aria-label="shield">🛡️</span> 프라이버시 설정
+                    </h3>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      {[
+                        { key: 'isCommentPublic', label: '댓글 전체 공개', sub: '참여하지 않은 사람도 댓글 가능' },
+                        { key: 'isGalleryPublic', label: '갤러리 전체 공개', sub: '누구나 사진첩 조회 가능' },
+                        { key: 'isChatPublic', label: '채팅방 전체 공개', sub: '미참여자도 채팅 내용 조회 가능' }
+                      ].map(item => (
+                        <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{item.label}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.sub}</div>
+                          </div>
+                          <button 
+                            type="button"
+                            onClick={() => setEditData({...editData, [item.key]: !editData[item.key]})}
+                            style={{
+                              width: '42px', height: '22px', borderRadius: '11px',
+                              background: editData[item.key] ? 'var(--primary-orange)' : '#DEE2E6',
+                              position: 'relative', border: 'none', transition: 'all 0.2s', cursor: 'pointer'
+                            }}
+                          >
+                            <div style={{
+                              width: '16px', height: '16px', borderRadius: '50%', background: 'white',
+                              position: 'absolute', top: '3px', left: editData[item.key] ? '23px' : '3px',
+                              transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            }} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
                     <PrimaryButton onClick={handleUpdate} style={{ flex: 1, height: '54px' }}>저장하기</PrimaryButton>
-                    <button onClick={() => setIsEditing(false)} style={{ flex: 1, padding: '14px', background: 'var(--bg-color)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                    <button onClick={() => setIsEditing(false)} style={{ flex: 1, padding: '14px', background: 'var(--bg-lite)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}>
                       취소
                     </button>
                   </div>
@@ -501,6 +549,16 @@ const GatheringDetailPage = () => {
                   <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600, lineHeight: 1.6 }}>여행의 소중한 기록은 함께 떠나는 크루들만 공유할 수 있습니다.</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === '채팅' && (
+            <div className="animate-fade" style={{ height: 'calc(100vh - 250px)', position: 'relative' }}>
+              <ChatRoom 
+                gathering={gathering} 
+                onBack={() => setActiveTab('브리핑')} 
+                inline={true} 
+              />
             </div>
           )}
         </div>
