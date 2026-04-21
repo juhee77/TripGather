@@ -6,7 +6,13 @@ import { useUser } from '../contexts/UserContext';
 
 const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit }) => {
     const { user: currentUser } = useUser();
-    const isHost = currentUser && (itinerary.author === currentUser.name || itinerary.itineraryAuthor === currentUser.name);
+    const isHost = currentUser && (
+        itinerary.author === currentUser.name || 
+        itinerary.itineraryAuthor === currentUser.name ||
+        itinerary.authorEmail === currentUser.email ||
+        itinerary.itineraryAuthorEmail === currentUser.email ||
+        (itinerary.author && typeof itinerary.author === 'object' && itinerary.author.email === currentUser.email)
+    );
     const { title, author, itineraryAuthor, description, createdAt } = itinerary;
     const date = createdAt ? new Date(createdAt).toLocaleDateString() : '2026-04-06';
     const isMission = !!itinerary.steps;
@@ -80,7 +86,7 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit }) => {
                     INFO
                 </PrimaryButton>
                 
-                {isHost && !isMission && (
+                {isHost && (
                     <PrimaryButton 
                         variant="secondary"
                         onClick={(e) => {

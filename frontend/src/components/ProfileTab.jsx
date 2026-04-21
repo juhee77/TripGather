@@ -51,7 +51,7 @@ const ProfileTab = () => {
         </button>
       </div>
 
-      <PassportCard user={user} stampsCount={stamps.length} />
+      <PassportCard user={user} stamps={stamps} />
       
       <StampBook stamps={stamps} loading={loading} />
 
