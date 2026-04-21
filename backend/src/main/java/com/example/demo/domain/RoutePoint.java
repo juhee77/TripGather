@@ -31,6 +31,9 @@ public class RoutePoint {
     private int sequenceOrder;
 
     private String label;
+    
+    /** 예상 방문 시간 (예: "14:30") */
+    private String visitTime;
 
     private Double lat;
 

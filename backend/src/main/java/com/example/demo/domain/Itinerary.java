@@ -20,6 +20,8 @@ public class Itinerary {
     private String title;
 
     private String author;
+    
+    private String authorEmail;
 
     private String description;
 

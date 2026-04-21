@@ -16,6 +16,7 @@ public class RoutePointResponse {
     private String dayLabel;
     private int sequenceOrder;
     private String label;
+    private String visitTime;
     private Double lat;
     private Double lng;
 
@@ -27,6 +28,7 @@ public class RoutePointResponse {
                 .dayLabel(routePoint.getDayLabel())
                 .sequenceOrder(routePoint.getSequenceOrder())
                 .label(routePoint.getLabel())
+                .visitTime(routePoint.getVisitTime())
                 .lat(routePoint.getLat())
                 .lng(routePoint.getLng())
                 .build();

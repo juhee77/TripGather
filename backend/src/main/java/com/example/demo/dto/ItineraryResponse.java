@@ -17,6 +17,7 @@ public class ItineraryResponse {
     private Long id;
     private String title;
     private String author;
+    private String authorEmail;
     private String description;
     private String location;
     private String dates;
@@ -31,6 +32,7 @@ public class ItineraryResponse {
                 .id(itinerary.getId())
                 .title(itinerary.getTitle())
                 .author(itinerary.getAuthor())
+                .authorEmail(itinerary.getAuthorEmail())
                 .description(itinerary.getDescription())
                 .location(itinerary.getLocation())
                 .dates(itinerary.getDates())
