@@ -17,6 +17,7 @@ public class UserMissionResponse {
     private Long itineraryId;
     private String itineraryTitle;
     private String itineraryAuthor;
+    private String itineraryAuthorEmail;
     private String itineraryLocation;
     private String itineraryDates;
     private String itineraryBgImageUrl;
@@ -33,6 +34,7 @@ public class UserMissionResponse {
                 .itineraryId(mission.getItinerary().getId())
                 .itineraryTitle(mission.getItinerary().getTitle())
                 .itineraryAuthor(mission.getItinerary().getAuthor())
+                .itineraryAuthorEmail(mission.getItinerary().getAuthorEmail())
                 .itineraryLocation(mission.getItinerary().getLocation())
                 .itineraryDates(mission.getItinerary().getDates())
                 .itineraryBgImageUrl(mission.getItinerary().getBgImageUrl())

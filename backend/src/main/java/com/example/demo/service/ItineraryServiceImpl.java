@@ -52,6 +52,14 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
             });
         }
         
+        // 작성자 정보 보존 (업데이트 시 변경 불가하도록 강화)
+        if (update.getAuthor() != null && itinerary.getAuthor() == null) {
+            itinerary.setAuthor(update.getAuthor());
+        }
+        if (update.getAuthorEmail() != null && (itinerary.getAuthorEmail() == null || itinerary.getAuthorEmail().isEmpty())) {
+            itinerary.setAuthorEmail(update.getAuthorEmail());
+        }
+        
         return itineraryRepository.save(itinerary);
     }
 
