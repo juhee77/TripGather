@@ -11,6 +11,7 @@ export const useChatViewModel = (gathering, currentUser) => {
   const [stompClient, setStompClient] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const scrollRef = useRef(null);
+  const clientRef = useRef(null);
 
   const fetchHistory = useCallback(async () => {
     if (!gathering?.id) return;
@@ -23,33 +24,53 @@ export const useChatViewModel = (gathering, currentUser) => {
   }, [gathering?.id]);
 
   useEffect(() => {
-    if (!gathering?.id) return;
+    if (!gathering?.id || !currentUser) return;
     fetchHistory();
 
     const token = localStorage.getItem('token');
     const socket = new SockJS(apiUrl('/ws-stomp'));
+    
     const client = new Client({
       webSocketFactory: () => socket,
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
       onConnect: () => {
-        console.log('Connected to WebSocket');
+        console.log('Connected to WebSocket - Subscribing to', gathering.id);
         client.subscribe(`/topic/chat/${gathering.id}`, (message) => {
-          const newMessage = JSON.parse(message.body);
-          setMessages(prev => [...prev, newMessage]);
+          try {
+            const newMessage = JSON.parse(message.body);
+            setMessages(prev => {
+              // 중복 메시지 방지 체크
+              if (prev.some(m => m.id === newMessage.id && m.id !== undefined)) return prev;
+              return [...prev, newMessage];
+            });
+          } catch (e) {
+            console.error("Failed to parse message box", e);
+          }
         });
       },
       onStompError: (frame) => {
-        console.error('STOMP error', frame);
+        console.error('STOMP error', frame.headers['message']);
       },
+      onWebSocketClose: () => {
+        console.log('WebSocket connection closed');
+      }
     });
 
     client.activate();
+    clientRef.current = client;
     setStompClient(client);
 
     return () => {
-      if (client) client.deactivate();
+      if (clientRef.current) {
+        console.log('Deactivating WebSocket...');
+        clientRef.current.deactivate();
+        clientRef.current = null;
+      }
     };
-  }, [gathering?.id, fetchHistory]);
+  }, [gathering?.id, currentUser?.email]);
 
   useEffect(() => {
     if (scrollRef.current) {
