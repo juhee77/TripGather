@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { X, Type, FileText, Send, Plus, Trash2, MapPin, Clock, ChevronLeft } from 'lucide-react';
 import { authFetch } from '../api/client';
+import { useUser } from '../contexts/UserContext';
 import FormInput from '../components/UI/FormInput';
 import PrimaryButton from '../components/UI/PrimaryButton';
 import stampPlaceholder from '../assets/stamp-placeholder.png';
@@ -9,6 +9,7 @@ import stampPlaceholder from '../assets/stamp-placeholder.png';
 const ItineraryEditorPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user: currentUser } = useUser();
     const isEdit = !!id;
     const [formData, setFormData] = useState({
         title: '',
@@ -83,6 +84,7 @@ const ItineraryEditorPage = () => {
             dayLabel: `Day ${dayNum}`,
             sequenceOrder: nextOrder,
             label: '',
+            visitTime: '12:00',
             lat: 37.5665,
             lng: 126.9780
         };
@@ -115,13 +117,22 @@ const ItineraryEditorPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!formData.routePoints || formData.routePoints.length === 0) {
+            alert('최소 한 개의 비행 계획(Stops)을 추가해야 합니다. 여행 경로를 완성해 주세요! ✈️');
+            return;
+        }
         setSaving(true);
         try {
+            const payload = {
+                ...formData,
+                author: isEdit ? undefined : currentUser?.name,
+                authorEmail: isEdit ? undefined : currentUser?.email
+            };
             const url = isEdit ? `/api/itineraries/${id}` : '/api/itineraries';
             const method = isEdit ? 'PATCH' : 'POST';
             const response = await authFetch(url, {
                 method,
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             });
             if (response.ok) {
                 navigate(-1);
@@ -243,21 +254,63 @@ const ItineraryEditorPage = () => {
                                         if ((point.dayNumber || 1) !== dayNum) return null;
                                         return (
                                             <div key={globalIndex} className="animate-fade" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                                <div style={{ flex: 1, position: 'relative' }}>
-                                                    <MapPin size={16} color="var(--primary-orange)" style={{ position: 'absolute', top: '13px', left: '14px' }} />
-                                                    <input 
-                                                        required 
-                                                        value={point.label} 
-                                                        onChange={(e) => updatePoint(globalIndex, 'label', e.target.value)} 
-                                                        placeholder="Location target..." 
-                                                        className="glass"
-                                                        style={{ 
-                                                            width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px', border: '1px solid var(--border-color)',
-                                                            color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, outline: 'none', background: 'var(--surface)'
-                                                        }} 
-                                                    />
+                                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <div style={{ position: 'relative' }}>
+                                                        <MapPin size={16} color="var(--primary-orange)" style={{ position: 'absolute', top: '13px', left: '14px' }} />
+                                                        <input 
+                                                            required 
+                                                            value={point.label} 
+                                                            onChange={(e) => updatePoint(globalIndex, 'label', e.target.value)} 
+                                                            placeholder="Location target..." 
+                                                            className="glass"
+                                                            style={{ 
+                                                                width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px', border: '1px solid var(--border-color)',
+                                                                color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, outline: 'none', background: 'var(--surface)'
+                                                            }} 
+                                                        />
+                                                    </div>
+                                                    
+                                                    {/* Custom Time Slider */}
+                                                    <div style={{ 
+                                                        padding: '12px', background: 'white', borderRadius: '12px', border: '1px solid var(--border-color)',
+                                                        display: 'flex', flexDirection: 'column', gap: '8px'
+                                                    }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>
+                                                                <Clock size={14} color="var(--primary-orange)" /> EXPECTED VISIT
+                                                            </div>
+                                                            <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--primary-orange)', background: 'var(--highlight-muted)', padding: '2px 8px', borderRadius: '6px' }}>
+                                                                {point.visitTime || "12:00"}
+                                                            </div>
+                                                        </div>
+                                                        <input 
+                                                            type="range"
+                                                            min="0"
+                                                            max="47"
+                                                            step="1"
+                                                            value={(() => {
+                                                                const [h, m] = (point.visitTime || "12:00").split(':').map(Number);
+                                                                return h * 2 + (m === 30 ? 1 : 0);
+                                                            })()}
+                                                            onChange={(e) => {
+                                                                const val = parseInt(e.target.value);
+                                                                const h = Math.floor(val / 2);
+                                                                const m = val % 2 === 0 ? "00" : "30";
+                                                                updatePoint(globalIndex, 'visitTime', `${h.toString().padStart(2, '0')}:${m}`);
+                                                            }}
+                                                            style={{ 
+                                                                width: '100%', accentColor: 'var(--primary-orange)', 
+                                                                height: '6px', borderRadius: '3px', cursor: 'pointer'
+                                                            }}
+                                                        />
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                                                            <span>00:00</span>
+                                                            <span>12:00</span>
+                                                            <span>23:30</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <button type="button" onClick={() => removePoint(globalIndex)} className="icon-circle" style={{ width: '36px', height: '36px', background: 'rgba(239, 68, 68, 0.1)', cursor: 'pointer' }}>
+                                                <button type="button" onClick={() => removePoint(globalIndex)} className="icon-circle" style={{ width: '36px', height: '40px', background: 'rgba(239, 68, 68, 0.1)', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '4px' }}>
                                                     <Trash2 size={16} color="#EF4444" />
                                                 </button>
                                             </div>

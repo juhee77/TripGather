@@ -60,7 +60,7 @@ const ItineraryDetailPage = ({ type = 'itinerary' }) => {
     if (!localItinerary) return <div style={{ padding: '40px', textAlign: 'center' }}>데이터를 찾을 수 없습니다.</div>;
 
     const onClose = () => navigate(-1);
-    const onEdit = () => {}; // Todo: navigate to edit page
+    const onEdit = () => navigate(`/itinerary/edit/${id}`);
     const onStepComplete = () => {};
 
     // Identifiers
@@ -226,9 +226,16 @@ const ItineraryDetailPage = ({ type = 'itinerary' }) => {
                                                         color: isDone ? 'white' : 'var(--text-muted)',
                                                         fontSize: '12px', fontWeight: 900, display: 'flex', justifyContent: 'center', alignItems: 'center'
                                                     }}>
-                                                        {isDone ? <span className="success-animation"><Check size={14} /></span> : point.sequenceOrder}
+                                                        {isDone ? <span className="success-animation"><Check size={14} /></span> : (point.sequenceOrder || pIdx + 1)}
                                                     </div>
-                                                    <h4 style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{point.label}</h4>
+                                                    <div>
+                                                        <h4 style={{ fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{point.label}</h4>
+                                                        {point.visitTime && (
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--primary-orange)', fontWeight: 800, marginTop: '2px' }}>
+                                                                <Clock size={12} /> {point.visitTime} EXPECTED
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 {isDone && (
                                                     <button 
