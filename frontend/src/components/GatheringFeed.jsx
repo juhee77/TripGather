@@ -199,18 +199,28 @@ const GatheringFeed = ({ gatheringId }) => {
                     backgroundSize: 'cover', backgroundPosition: 'center', border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                   }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{post.authorName}</div>
-                      {post.isPublic && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{post.authorName}</div>
                         <div style={{ 
-                          fontSize: '10px', fontWeight: 900, color: 'white', 
-                          background: 'var(--primary-orange)', padding: '2px 6px', 
-                          borderRadius: '4px', letterSpacing: '0.05em' 
+                          fontSize: '10px', 
+                          fontWeight: 900, 
+                          color: post.isPublic ? 'white' : 'var(--text-muted)', 
+                          background: post.isPublic ? 'var(--primary-gradient)' : 'var(--bg-lite)', 
+                          padding: '2px 8px', 
+                          borderRadius: '6px', 
+                          letterSpacing: '0.02em',
+                          border: post.isPublic ? 'none' : '1px solid var(--border-color)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
                         }}>
-                          PUBLIC
+                          {post.isPublic ? (
+                            <><span role="img" aria-label="public">🌍</span> 전체 공개</>
+                          ) : (
+                            <><span role="img" aria-label="private">🔒</span> 크루 전용</>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-sub)' }}>{new Date(post.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</div>
                   </div>
                 </div>
