@@ -324,3 +324,37 @@ label { display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-s
 .fab-button:active {
   transform: scale(0.9) translateY(0);
 }
+
+/* Dual Range Slider Styles */
+.dual-range-thumb::-webkit-slider-runnable-track {
+    background: none;
+    border: none;
+}
+
+.dual-range-thumb::-webkit-slider-thumb {
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--primary-orange);
+    cursor: pointer;
+    margin-top: -8px; /* Centers thumb on track */
+    pointer-events: auto; /* Enable interaction for thumb only */
+    box-shadow: 0 4px 10px rgba(255, 92, 0, 0.3);
+    -webkit-appearance: none;
+}
+
+.dual-range-thumb::-moz-range-thumb {
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--primary-orange);
+    cursor: pointer;
+    pointer-events: auto;
+    box-shadow: 0 4px 10px rgba(255, 92, 0, 0.3);
+}
+
+.dual-range-thumb:focus {
+    outline: none;
+}
