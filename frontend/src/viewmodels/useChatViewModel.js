@@ -23,9 +23,30 @@ export const useChatViewModel = (gathering, currentUser) => {
     }
   }, [gathering?.id]);
 
+  // 1. 과거 내역 로드 전용 Effect
   useEffect(() => {
-    if (!gathering?.id || !currentUser) return;
-    fetchHistory();
+    if (gathering?.id && currentUser) {
+      fetchHistory();
+    }
+  }, [gathering?.id, currentUser?.email, fetchHistory]);
+
+  // 2. 웹소켓 연결 관리용 Ref
+  const connectionRef = useRef({ gatheringId: null, userEmail: null });
+
+  // 3. 웹소켓 실시간 수신 전용 Effect
+  useEffect(() => {
+    const gId = gathering?.id;
+    const uEmail = currentUser?.email;
+
+    if (!gId || !uEmail) return;
+
+    // 만약 이미 동일한 조건으로 연결되어 있다면 재연결 건너뜀
+    if (connectionRef.current.gatheringId === gId && connectionRef.current.userEmail === uEmail && clientRef.current?.active) {
+      return;
+    }
+
+    console.log(`[Chat] Connecting to WebSocket for gathering:${gId}, user:${uEmail}`);
+    connectionRef.current = { gatheringId: gId, userEmail: uEmail };
 
     const token = localStorage.getItem('token');
     const socket = new SockJS(apiUrl('/ws-stomp'));
@@ -37,25 +58,24 @@ export const useChatViewModel = (gathering, currentUser) => {
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: () => {
-        console.log('Connected to WebSocket - Subscribing to', gathering.id);
-        client.subscribe(`/topic/chat/${gathering.id}`, (message) => {
+        console.log('[Chat] WebSocket Connected - Subscribing to', gId);
+        client.subscribe(`/topic/chat/${gId}`, (message) => {
           try {
             const newMessage = JSON.parse(message.body);
             setMessages(prev => {
-              // 중복 메시지 방지 체크
               if (prev.some(m => m.id === newMessage.id && m.id !== undefined)) return prev;
               return [...prev, newMessage];
             });
           } catch (e) {
-            console.error("Failed to parse message box", e);
+            console.error("[Chat] Failed to parse message", e);
           }
         });
       },
       onStompError: (frame) => {
-        console.error('STOMP error', frame.headers['message']);
+        console.error('[Chat] STOMP error', frame.headers['message']);
       },
       onWebSocketClose: () => {
-        console.log('WebSocket connection closed');
+        console.log('[Chat] WebSocket connection closed');
       }
     });
 
@@ -64,10 +84,12 @@ export const useChatViewModel = (gathering, currentUser) => {
     setStompClient(client);
 
     return () => {
+      console.log('[Chat] Cleaning up effect for gathering:', gId);
       if (clientRef.current) {
-        console.log('Deactivating WebSocket...');
+        console.log('[Chat] Deactivating WebSocket connection...');
         clientRef.current.deactivate();
         clientRef.current = null;
+        connectionRef.current = { gatheringId: null, userEmail: null };
       }
     };
   }, [gathering?.id, currentUser?.email]);
