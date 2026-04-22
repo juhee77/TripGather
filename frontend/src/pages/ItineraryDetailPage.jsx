@@ -230,9 +230,46 @@ const ItineraryDetailPage = ({ type = 'itinerary' }) => {
                                                     </div>
                                                     <div>
                                                         <h4 style={{ fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{point.label}</h4>
-                                                        {point.visitTime && (
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--primary-orange)', fontWeight: 800, marginTop: '2px' }}>
-                                                                <Clock size={12} /> {point.visitTime} EXPECTED
+                                                        {(point.startTime || point.endTime) && (
+                                                            <div style={{ 
+                                                                marginTop: '8px', padding: '10px 14px', background: 'var(--highlight-muted)', 
+                                                                borderRadius: '12px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center'
+                                                            }}>
+                                                                {point.startTime && (
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                        <Plane size={12} color="var(--primary-orange)" style={{ transform: 'rotate(90deg)' }} />
+                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)' }}>ARR</span>
+                                                                        <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{point.startTime}</span>
+                                                                    </div>
+                                                                )}
+                                                                {point.startTime && point.endTime && (
+                                                                    <div style={{ width: '1px', height: '12px', background: 'var(--border-color)' }} />
+                                                                )}
+                                                                {point.endTime && (
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                        <Plane size={12} color="var(--primary-orange)" />
+                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)' }}>DEP</span>
+                                                                        <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{point.endTime}</span>
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                {point.startTime && point.endTime && (
+                                                                    <div style={{ 
+                                                                        marginLeft: 'auto', padding: '2px 8px', background: 'white', 
+                                                                        borderRadius: '20px', fontSize: '10px', fontWeight: 900, color: 'var(--primary-orange)',
+                                                                        border: '1px solid rgba(255, 92, 0, 0.1)'
+                                                                    }}>
+                                                                        {(() => {
+                                                                            const [h1, m1] = point.startTime.split(':').map(Number);
+                                                                            const [h2, m2] = point.endTime.split(':').map(Number);
+                                                                            let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+                                                                            if (diff < 0) diff += 24 * 60; // Next day
+                                                                            const h = Math.floor(diff / 60);
+                                                                            const m = diff % 60;
+                                                                            return `STAY: ${h > 0 ? `${h}h ` : ''}${m}m`;
+                                                                        })()}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>

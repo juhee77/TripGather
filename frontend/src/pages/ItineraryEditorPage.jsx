@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { X, Type, FileText, Send, Plus, Trash2, MapPin, Clock, ChevronLeft, Plane } from 'lucide-react';
 import { authFetch } from '../api/client';
 import { useUser } from '../contexts/UserContext';
 import FormInput from '../components/UI/FormInput';
@@ -270,44 +271,115 @@ const ItineraryEditorPage = () => {
                                                         />
                                                     </div>
                                                     
-                                                    {/* Custom Time Slider */}
+                                                    {/* Aviation Style Time Range Slider */}
                                                     <div style={{ 
-                                                        padding: '12px', background: 'white', borderRadius: '12px', border: '1px solid var(--border-color)',
-                                                        display: 'flex', flexDirection: 'column', gap: '8px'
+                                                        padding: '16px', background: 'white', borderRadius: '16px', border: '1px solid var(--border-color)',
+                                                        display: 'flex', flexDirection: 'column', gap: '12px'
                                                     }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>
-                                                                <Clock size={14} color="var(--primary-orange)" /> EXPECTED VISIT
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)' }}>
+                                                                <Plane size={14} color="var(--primary-orange)" style={{ transform: 'rotate(90deg)' }} /> SCHEDULE (ARR/DEP)
                                                             </div>
-                                                            <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--primary-orange)', background: 'var(--highlight-muted)', padding: '2px 8px', borderRadius: '6px' }}>
-                                                                {point.visitTime || "12:00"}
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const isScheduled = !!point.startTime;
+                                                                    updatePoint(globalIndex, 'startTime', isScheduled ? null : '12:00');
+                                                                    updatePoint(globalIndex, 'endTime', isScheduled ? null : '13:00');
+                                                                }}
+                                                                style={{ 
+                                                                    fontSize: '11px', fontWeight: 800, color: point.startTime ? 'var(--primary-orange)' : 'var(--text-muted)',
+                                                                    background: point.startTime ? 'var(--highlight-muted)' : 'var(--bg-lite)',
+                                                                    padding: '4px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                {point.startTime ? 'SCHEDULE SET' : '+ SET TIME'}
+                                                            </button>
+                                                        </div>
+
+                                                        {point.startTime ? (
+                                                            <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>ARR (LANDING)</span>
+                                                                        <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)' }}>{point.startTime}</span>
+                                                                    </div>
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-end' }}>
+                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>DEP (TAKE-OFF)</span>
+                                                                        <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)' }}>{point.endTime}</span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div style={{ position: 'relative', height: '30px', display: 'flex', alignItems: 'center' }}>
+                                                                    {/* Background Track */}
+                                                                    <div style={{ position: 'absolute', width: '100%', height: '6px', background: 'var(--bg-lite)', borderRadius: '3px' }} />
+                                                                    
+                                                                    {/* Active Range Highlight */}
+                                                                    {(() => {
+                                                                        const [h1, m1] = point.startTime.split(':').map(Number);
+                                                                        const [h2, m2] = point.endTime.split(':').map(Number);
+                                                                        const s = h1 * 2 + (m1 === 30 ? 1 : 0);
+                                                                        const e = h2 * 2 + (m2 === 30 ? 1 : 0);
+                                                                        const left = (s / 47) * 100;
+                                                                        const width = ((e - s) / 47) * 100;
+                                                                        return (
+                                                                            <div style={{ 
+                                                                                position: 'absolute', left: `${left}%`, width: `${width}%`, 
+                                                                                height: '6px', background: 'var(--primary-gradient)', borderRadius: '3px',
+                                                                                boxShadow: '0 2px 8px rgba(255, 92, 0, 0.2)'
+                                                                            }} />
+                                                                        );
+                                                                    })()}
+
+                                                                    {/* Overlaying two hidden inputs to function as range slider */}
+                                                                    <input 
+                                                                        type="range" min="0" max="47" step="1"
+                                                                        value={(() => {
+                                                                            const [h, m] = point.startTime.split(':').map(Number);
+                                                                            return h * 2 + (m === 30 ? 1 : 0);
+                                                                        })()}
+                                                                        onChange={(e) => {
+                                                                            const val = Math.min(parseInt(e.target.value), (point.endTime ? parseInt(point.endTime.split(':')[0]) * 2 + (point.endTime.split(':')[1] === '30' ? 1 : 0) : 47));
+                                                                            const h = Math.floor(val / 2);
+                                                                            const m = val % 2 === 0 ? "00" : "30";
+                                                                            updatePoint(globalIndex, 'startTime', `${h.toString().padStart(2, '0')}:${m}`);
+                                                                        }}
+                                                                        style={{ 
+                                                                            position: 'absolute', width: '100%', appearance: 'none', background: 'none', pointerEvents: 'none', zIndex: 3,
+                                                                            WebkitAppearance: 'none'
+                                                                        }}
+                                                                        className="dual-range-thumb"
+                                                                    />
+                                                                    <input 
+                                                                        type="range" min="0" max="47" step="1"
+                                                                        value={(() => {
+                                                                            const [h, m] = point.endTime.split(':').map(Number);
+                                                                            return h * 2 + (m === 30 ? 1 : 0);
+                                                                        })()}
+                                                                        onChange={(e) => {
+                                                                            const val = Math.max(parseInt(e.target.value), (point.startTime ? parseInt(point.startTime.split(':')[0]) * 2 + (point.startTime.split(':')[1] === '30' ? 1 : 0) : 0));
+                                                                            const h = Math.floor(val / 2);
+                                                                            const m = val % 2 === 0 ? "00" : "30";
+                                                                            updatePoint(globalIndex, 'endTime', `${h.toString().padStart(2, '0')}:${m}`);
+                                                                        }}
+                                                                        style={{ 
+                                                                            position: 'absolute', width: '100%', appearance: 'none', background: 'none', pointerEvents: 'none', zIndex: 4,
+                                                                            WebkitAppearance: 'none'
+                                                                        }}
+                                                                        className="dual-range-thumb"
+                                                                    />
+                                                                </div>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                                                                    <span>MIDNIGHT</span>
+                                                                    <span>NOON</span>
+                                                                    <span>23:30</span>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                        <input 
-                                                            type="range"
-                                                            min="0"
-                                                            max="47"
-                                                            step="1"
-                                                            value={(() => {
-                                                                const [h, m] = (point.visitTime || "12:00").split(':').map(Number);
-                                                                return h * 2 + (m === 30 ? 1 : 0);
-                                                            })()}
-                                                            onChange={(e) => {
-                                                                const val = parseInt(e.target.value);
-                                                                const h = Math.floor(val / 2);
-                                                                const m = val % 2 === 0 ? "00" : "30";
-                                                                updatePoint(globalIndex, 'visitTime', `${h.toString().padStart(2, '0')}:${m}`);
-                                                            }}
-                                                            style={{ 
-                                                                width: '100%', accentColor: 'var(--primary-orange)', 
-                                                                height: '6px', borderRadius: '3px', cursor: 'pointer'
-                                                            }}
-                                                        />
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700 }}>
-                                                            <span>00:00</span>
-                                                            <span>12:00</span>
-                                                            <span>23:30</span>
-                                                        </div>
+                                                        ) : (
+                                                            <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '8px', fontStyle: 'italic' }}>
+                                                                No specific flight schedule set for this stop.
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <button type="button" onClick={() => removePoint(globalIndex)} className="icon-circle" style={{ width: '36px', height: '40px', background: 'rgba(239, 68, 68, 0.1)', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '4px' }}>

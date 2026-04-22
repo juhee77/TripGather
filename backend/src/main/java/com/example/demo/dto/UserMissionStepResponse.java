@@ -21,7 +21,8 @@ public class UserMissionStepResponse {
     private boolean isCompleted;
     private String memo;
     private String photoUrl;
-    private String visitTime;
+    private String startTime;
+    private String endTime;
     private LocalDateTime completedAt;
 
     public static UserMissionStepResponse from(UserMissionStep step) {
@@ -30,7 +31,8 @@ public class UserMissionStepResponse {
                 .id(step.getId())
                 .routePointId(step.getRoutePoint() != null ? step.getRoutePoint().getId() : null)
                 .label(step.getRoutePoint() != null ? step.getRoutePoint().getLabel() : "")
-                .visitTime(step.getRoutePoint() != null ? step.getRoutePoint().getVisitTime() : null)
+                .startTime(step.getRoutePoint() != null ? step.getRoutePoint().getStartTime() : null)
+                .endTime(step.getRoutePoint() != null ? step.getRoutePoint().getEndTime() : null)
                 .dayNumber(step.getRoutePoint() != null ? step.getRoutePoint().getDayNumber() : 1)
                 .sequenceOrder(step.getRoutePoint() != null ? step.getRoutePoint().getSequenceOrder() : 0)
                 .isCompleted(step.isCompleted())

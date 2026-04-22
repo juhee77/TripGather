@@ -32,8 +32,11 @@ public class RoutePoint {
 
     private String label;
     
-    /** 예상 방문 시간 (예: "14:30") */
-    private String visitTime;
+    /** 예상 방문 시작 시간 (ARR/Landing) 예: "12:00" */
+    private String startTime;
+
+    /** 예상 방문 종료 시간 (DEP/Take-off) 예: "14:30" */
+    private String endTime;
 
     private Double lat;
 
