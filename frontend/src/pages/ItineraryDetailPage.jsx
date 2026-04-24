@@ -185,8 +185,12 @@ const ItineraryDetailPage = () => {
                         <PrimaryButton
                             style={{ flex: 1 }}
                             onClick={async () => {
+                                if (!currentUser?.email) {
+                                    alert('로그인이 필요한 기능입니다.');
+                                    return;
+                                }
                                 try {
-                                    await JourneyRepository.add(localItinerary.id);
+                                    await JourneyRepository.add(localItinerary.id, currentUser.email);
                                     alert('내 여행에 추가되었습니다. ✈️');
                                     onClose();
                                 } catch (e) {
