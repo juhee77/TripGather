@@ -1,33 +1,38 @@
-# Walkthrough: Modernizing TripGather Journey Management
+# TripGather Platform Modernization Walkthrough
 
-이번 작업에서 TripGather의 "내 여정" 관리 기능을 강화하고, 백엔드의 날짜 처리 방식을 문자열에서 정규 `LocalDate` 타입으로 마이그레이션했습니다.
+이 워크스루는 TripGather 플랫폼의 레거시 미션 시스템 제거 및 독립적인 여정 관리 시스템으로의 현대화 작업을 요약합니다.
 
 ## 주요 변경 사항
 
-### 1. 백엔드 데이터 마이그레이션 (날짜 필드 정규화)
-- **대상 엔티티**: `Itinerary`, `Gathering`
-- **변경 사항**: 기존 `dates` (String) 필드를 삭제하고, `startDate`와 `endDate` (LocalDate) 필드를 도입했습니다.
-- **영향 범위**:
-    - `ItineraryResponse`, `GatheringResponse`, `UserMissionResponse` DTO 업데이트.
-    - `ItineraryServiceImpl`, `GatheringServiceImpl` 서비스 로직 수정.
-    - `DataInitializer.java` 샘플 데이터 업데이트.
-    - 전체 테스트 코드(`GatheringIntegrationTest` 등) 수정 및 정상화.
+### 1. 레거시 미션(챌린지) 시스템 제거
+- **백엔드**: `UserMission`, `UserMissionStep`, `StampResponse` 등 관련 엔티티 및 컨트롤러, 서비스 완전 삭제.
+- **프론트엔드**: `MissionTab`, `StampBook` 등 UI 컴포넌트 제거.
+- **데이터**: 초기 시드 데이터에서 미션 관련 정보 제거.
 
-### 2. "내 여정" UI 및 기능 개선
-- **여정 제거 기능**: `TicketCard.jsx`에 휴지통 아이콘을 추가하여, 저장된 여정을 손쉽게 제거할 수 있는 기능을 구현했습니다 (`JourneyRepository.remove` 연동).
-- **여정 정렬 기능**: `Home.jsx` 내 여정 탭에 '시작일 순' 및 '최근 추가 순' 정렬 필터를 추가했습니다.
-- **날짜 표시 개선**: 티켓 카드 UI에서 시작일과 종료일을 기간 형태(예: `2026.03.10 - 2026.03.15`)로 표시하도록 개선했습니다.
+### 2. 여정 복제 및 공유 시스템 (Phase 2)
+- **엔티티 확장**: `Itinerary`에 `ownerEmail`, `originalId`, `isPublic` 필드 추가.
+- **복제 API**: `/api/my-trips/clone`을 통해 다른 사용자의 여정을 내 여정으로 가져오기 기능 구현.
+- **공유 필터링**: 여행 피드에서 `isPublic: true`인 여정만 조회되도록 필터링.
+- **내 여행 관리**: 로그인 사용자의 여정만 조회하는 전용 컨트롤러(`MyTripController`) 및 프론트엔드 저장소 구현.
+
+### 3. 모임과 여정의 결합 (Phase 3)
+- **관계 설정**: `Gathering` 엔티티에 `linkedItinerary` 필드 추가 (N:1 관계).
+- **모임 생성 UI**: 모임 열기 시 내가 보유한 여행 일정 중 하나를 선택하여 연결하는 기능 추가.
+- **상세 보기**: 모임 상세 페이지에서 연결된 여정을 확인하고 바로 이동할 수 있는 링크 카드 구현.
+
+### 4. UI/UX 현대화
+- **4탭 구조**: 라운지, 여행 피드, 내 여행, 내 여권으로 이어지는 직관적인 네비게이션 적용.
+- **여정 정렬**: 내 여행 탭에서 시작일순/최신순 정렬 기능 구현.
+
+## 작업 결과물 관리
+- **브랜치**: `feat/modernize-itinerary-system`
+- **설계 문서**: 프로젝트 내 `docs/modernization/` 디렉토리에 버전 관리됨.
+    - `app_redesign_proposal.md`: 전체 아키텍처 재설계 제안서
+    - `implementation_plan.md`: 세부 기술 구현 계획
+    - `task.md`: 작업 현황 체크리스트
 
 ## 검증 결과
-
-### 백엔드 검증
-- 모든 엔티티 필드가 `LocalDate`로 성공적으로 전환되었습니다.
-- JUnit 테스트 suite가 새로운 필드 구조에 맞춰 수정되었으며, 정상 작동함을 확인했습니다.
-
-### 프론트엔드 검증
-- **여정 제거**: 티켓 카드의 제거 버튼 클릭 시 확인 창이 뜨며, 승인 시 목록에서 즉시 사라집니다.
-- **정렬 작동**: '시작일 순' 선택 시 빠른 일정부터, '최근 추가 순' 선택 시 생성일 역순으로 목록이 갱신됩니다.
-- **UI 일관성**: 모든 날짜 표시가 마이그레이션된 데이터 구조를 따르며, 통일된 형식으로 노출됩니다.
-
-## 향후 과제
-- 마이그레이션된 날짜 필드를 활용하여 캘린더 연동 또는 날짜 기반 필터링 기능을 추가로 확장할 수 있습니다.
+- [x] 미션 시스템 관련 코드 잔재가 남아있지 않음.
+- [x] "내 여행에 추가" 버튼 클릭 시 정상적으로 여정이 복제되어 내 목록에 나타남.
+- [x] 모임 생성 시 여정 연결이 원활하게 작동함.
+- [x] 여행 피드에서 공개된 여정만 노출됨.
