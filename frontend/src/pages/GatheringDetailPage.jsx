@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
-import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle, Share2, Heart } from 'lucide-react';
+import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle, Share2, Heart, Plane } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { authFetch, apiUrl } from '../api/client';
 import ModalHeader from '../components/UI/ModalHeader';
@@ -422,6 +422,31 @@ const GatheringDetailPage = () => {
                       </div>
                       <span>{gathering.currentJoining} / {gathering.maxJoining} 명 참여 중</span>
                     </div>
+
+                    {gathering.linkedItinerary && (
+                      <div 
+                        onClick={() => navigate(`/itinerary/${gathering.linkedItinerary.id}`)}
+                        style={{ 
+                          marginTop: '8px', padding: '16px', background: 'white', borderRadius: '16px', 
+                          border: '1px solid var(--border-color)', cursor: 'pointer',
+                          display: 'flex', flexDirection: 'column', gap: '8px',
+                          transition: 'transform 0.2s'
+                        }}
+                        onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
+                        onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span className="label-orange" style={{ margin: 0 }}>LINKED ITINERARY</span>
+                          <Plane size={14} color="var(--primary-orange)" />
+                        </div>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          {gathering.linkedItinerary.title}
+                        </div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                          {gathering.linkedItinerary.description}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <button

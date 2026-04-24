@@ -37,6 +37,7 @@ public class GatheringResponse {
     @com.fasterxml.jackson.annotation.JsonProperty("isCommentPublic")
     private boolean isCommentPublic;
     private LocalDateTime createdAt;
+    private ItineraryResponse linkedItinerary;
 
     public static GatheringResponse from(Gathering gathering) {
         return from(gathering, false);
@@ -67,6 +68,7 @@ public class GatheringResponse {
                 .isChatPublic(gathering.isChatPublic())
                 .isCommentPublic(gathering.isCommentPublic())
                 .createdAt(gathering.getCreatedAt())
+                .linkedItinerary(ItineraryResponse.from(gathering.getLinkedItinerary()))
                 .build();
     }
 }
