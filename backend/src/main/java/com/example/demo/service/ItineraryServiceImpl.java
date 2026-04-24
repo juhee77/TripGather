@@ -138,4 +138,43 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     public void deleteItinerary(Long id) {
         itineraryRepository.deleteById(id);
     }
+
+    @Override
+    @Transactional
+    public Itinerary mergeItinerary(Long sourceId, Long targetId, int targetDay) {
+        Itinerary source = getById(sourceId);
+        Itinerary target = getById(targetId);
+
+        // Find existing day label for targetDay if exists
+        String targetDayLabel = target.getRoutePoints().stream()
+                .filter(p -> p.getDayNumber() == targetDay)
+                .map(com.example.demo.domain.RoutePoint::getDayLabel)
+                .findFirst()
+                .orElse("Day " + targetDay);
+
+        // Find max sequence in target day
+        int maxSeq = target.getRoutePoints().stream()
+                .filter(p -> p.getDayNumber() == targetDay)
+                .mapToInt(com.example.demo.domain.RoutePoint::getSequenceOrder)
+                .max().orElse(0);
+
+        final int startSeq = maxSeq;
+        int count = 1;
+
+        for (com.example.demo.domain.RoutePoint sourcePoint : source.getRoutePoints()) {
+            com.example.demo.domain.RoutePoint newPoint = com.example.demo.domain.RoutePoint.builder()
+                    .label(sourcePoint.getLabel())
+                    .dayNumber(targetDay)
+                    .dayLabel(targetDayLabel)
+                    .sequenceOrder(startSeq + count)
+                    .startTime(sourcePoint.getStartTime())
+                    .endTime(sourcePoint.getEndTime())
+                    .itinerary(target)
+                    .build();
+            target.getRoutePoints().add(newPoint);
+            count++;
+        }
+
+        return itineraryRepository.save(target);
+    }
 }

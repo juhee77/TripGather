@@ -40,4 +40,11 @@ public class MyTripController {
     public ResponseEntity<ItineraryResponse> togglePublic(@PathVariable Long id, @RequestParam String email, @RequestParam boolean isPublic) {
         return ResponseEntity.ok(ItineraryResponse.from(itineraryService.togglePublicStatus(id, email, isPublic)));
     }
+    /**
+     * Merge points from another itinerary into an existing personal itinerary.
+     */
+    @PostMapping("/merge")
+    public ResponseEntity<ItineraryResponse> mergeItinerary(@RequestParam Long sourceId, @RequestParam Long targetId, @RequestParam int targetDay) {
+        return ResponseEntity.ok(ItineraryResponse.from(itineraryService.mergeItinerary(sourceId, targetId, targetDay)));
+    }
 }
