@@ -19,6 +19,7 @@ const ItineraryEditorPage = () => {
         endDate: '',
         description: '',
         stampImageUrl: '',
+        isPublic: false,
         routePoints: []
     });
     const [saving, setSaving] = useState(false);
@@ -39,6 +40,7 @@ const ItineraryEditorPage = () => {
                             endDate: itinerary.endDate || '',
                             description: itinerary.description || '',
                             stampImageUrl: itinerary.stampImageUrl || '',
+                            isPublic: itinerary.isPublic || false,
                             routePoints: itinerary.routePoints ? [...itinerary.routePoints].sort((a, b) => 
                                 a.dayNumber !== b.dayNumber ? a.dayNumber - b.dayNumber : a.sequenceOrder - b.sequenceOrder
                             ) : []
@@ -138,6 +140,7 @@ const ItineraryEditorPage = () => {
                 location: formData.region,
                 startDate: formData.startDate,
                 endDate: formData.endDate,
+                isPublic: formData.isPublic,
                 author: isEdit ? undefined : currentUser?.name,
                 authorEmail: isEdit ? undefined : currentUser?.email
             };
@@ -279,6 +282,33 @@ const ItineraryEditorPage = () => {
                                 <input type="file" ref={stampInputRef} onChange={handleStampUpload} accept="image/*" style={{ display: 'none' }} />
                             </div>
                         </div>
+
+                        {/* Privacy Toggle */}
+                        <div style={{ 
+                            background: 'var(--highlight-muted)', padding: '20px', borderRadius: '16px', 
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            border: '1px solid var(--border-color)'
+                        }}>
+                            <div>
+                                <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>MAKE PUBLIC 🌍</div>
+                                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Share this journey in the Travel Feed</div>
+                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, isPublic: !prev.isPublic }))}
+                                style={{
+                                    width: '48px', height: '24px', borderRadius: '12px',
+                                    background: formData.isPublic ? 'var(--primary-orange)' : '#DEE2E6',
+                                    position: 'relative', border: 'none', transition: 'all 0.2s', cursor: 'pointer'
+                                }}
+                            >
+                                <div style={{
+                                    width: '18px', height: '18px', borderRadius: '50%', background: 'white',
+                                    position: 'absolute', top: '3px', left: formData.isPublic ? '27px' : '3px',
+                                    transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                }} />
+                            </button>
+                        </div>
                     </div>
 
                     <div style={{ marginTop: '8px' }}>
@@ -315,14 +345,38 @@ const ItineraryEditorPage = () => {
                                         if ((point.dayNumber || 1) !== dayNum) return null;
                                         return (
                                             <div key={globalIndex} className="animate-fade" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    <div style={{ position: 'relative' }}>
+                                                <div 
+                                                    style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}
+                                                    draggable
+                                                    onDragStart={(e) => {
+                                                        e.dataTransfer.setData('text/plain', globalIndex);
+                                                        e.currentTarget.style.opacity = '0.4';
+                                                    }}
+                                                    onDragEnd={(e) => {
+                                                        e.currentTarget.style.opacity = '1';
+                                                    }}
+                                                    onDragOver={(e) => e.preventDefault()}
+                                                    onDrop={(e) => {
+                                                        e.preventDefault();
+                                                        const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                                                        const toIndex = globalIndex;
+                                                        if (fromIndex === toIndex) return;
+                                                        
+                                                        const newPoints = [...formData.routePoints];
+                                                        const [movedItem] = newPoints.splice(fromIndex, 1);
+                                                        newPoints.splice(toIndex, 0, movedItem);
+                                                        
+                                                        const updatedPoints = newPoints.map((p, i) => ({ ...p, sequenceOrder: i + 1 }));
+                                                        setFormData(prev => ({ ...prev, routePoints: updatedPoints }));
+                                                    }}
+                                                >
+                                                    <div style={{ position: 'relative', cursor: 'grab' }}>
                                                         <MapPin size={16} color="var(--primary-orange)" style={{ position: 'absolute', top: '13px', left: '14px' }} />
                                                         <input 
                                                             required 
                                                             value={point.label} 
                                                             onChange={(e) => updatePoint(globalIndex, 'label', e.target.value)} 
-                                                            placeholder="Location target..." 
+                                                            placeholder="Drag to reorder or type location..." 
                                                             className="glass"
                                                             style={{ 
                                                                 width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px', border: '1px solid var(--border-color)',
@@ -395,7 +449,7 @@ const ItineraryEditorPage = () => {
                                                                     <input 
                                                                         type="range" min="0" max="47" step="1"
                                                                         value={(() => {
-                                                                            const [h, m] = point.startTime.split(':').map(Number);
+                                                                            const [h, m] = (point.startTime || "00:00").split(':').map(Number);
                                                                             return h * 2 + (m === 30 ? 1 : 0);
                                                                         })()}
                                                                         onChange={(e) => {
@@ -405,7 +459,7 @@ const ItineraryEditorPage = () => {
                                                                             updatePoint(globalIndex, 'startTime', `${h.toString().padStart(2, '0')}:${m}`);
                                                                         }}
                                                                         style={{ 
-                                                                            position: 'absolute', width: '100%', appearance: 'none', background: 'none', pointerEvents: 'none', zIndex: 3,
+                                                                            position: 'absolute', width: '100%', appearance: 'none', background: 'none', pointerEvents: 'auto', zIndex: 10,
                                                                             WebkitAppearance: 'none'
                                                                         }}
                                                                         className="dual-range-thumb"
@@ -413,7 +467,7 @@ const ItineraryEditorPage = () => {
                                                                     <input 
                                                                         type="range" min="0" max="47" step="1"
                                                                         value={(() => {
-                                                                            const [h, m] = point.endTime.split(':').map(Number);
+                                                                            const [h, m] = (point.endTime || "23:30").split(':').map(Number);
                                                                             return h * 2 + (m === 30 ? 1 : 0);
                                                                         })()}
                                                                         onChange={(e) => {
@@ -423,7 +477,7 @@ const ItineraryEditorPage = () => {
                                                                             updatePoint(globalIndex, 'endTime', `${h.toString().padStart(2, '0')}:${m}`);
                                                                         }}
                                                                         style={{ 
-                                                                            position: 'absolute', width: '100%', appearance: 'none', background: 'none', pointerEvents: 'none', zIndex: 4,
+                                                                            position: 'absolute', width: '100%', appearance: 'none', background: 'none', pointerEvents: 'auto', zIndex: 11,
                                                                             WebkitAppearance: 'none'
                                                                         }}
                                                                         className="dual-range-thumb"
@@ -442,9 +496,18 @@ const ItineraryEditorPage = () => {
                                                         )}
                                                     </div>
                                                 </div>
-                                                <button type="button" onClick={() => removePoint(globalIndex)} className="icon-circle" style={{ width: '36px', height: '40px', background: 'rgba(239, 68, 68, 0.1)', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '4px' }}>
-                                                    <Trash2 size={16} color="#EF4444" />
-                                                </button>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                    <button 
+                                                        type="button" 
+                                                        title="Drag cards to reorder stops!"
+                                                        style={{ width: '32px', height: '32px', background: 'white', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'grab' }}
+                                                    >
+                                                        <Plus size={12} style={{ transform: 'rotate(225deg)' }} />
+                                                    </button>
+                                                    <button type="button" onClick={() => removePoint(globalIndex)} className="icon-circle" style={{ width: '32px', height: '32px', background: 'rgba(239, 68, 68, 0.1)', cursor: 'pointer' }}>
+                                                        <Trash2 size={14} color="#EF4444" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         );
                                     })}
