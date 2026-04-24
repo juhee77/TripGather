@@ -367,7 +367,7 @@ const Home = () => {
                         isMine={true}
                         onEdit={() => handleEditItinerary(it)}
                         onRemove={() => handleRemoveJourney(it.id)}
-                        onClick={() => navigate(`/itinerary/${it.id}`)}
+                        onViewRoute={() => navigate(`/itinerary/${it.id}`)}
                       />
                     </div>
                   ))}
