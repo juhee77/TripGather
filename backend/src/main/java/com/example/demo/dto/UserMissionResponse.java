@@ -19,7 +19,8 @@ public class UserMissionResponse {
     private String itineraryAuthor;
     private String itineraryAuthorEmail;
     private String itineraryLocation;
-    private String itineraryDates;
+    private java.time.LocalDate startDate;
+    private java.time.LocalDate endDate;
     private String itineraryBgImageUrl;
     private String status;
     private LocalDateTime startedAt;
@@ -36,7 +37,8 @@ public class UserMissionResponse {
                 .itineraryAuthor(mission.getItinerary().getAuthor())
                 .itineraryAuthorEmail(mission.getItinerary().getAuthorEmail())
                 .itineraryLocation(mission.getItinerary().getLocation())
-                .itineraryDates(mission.getItinerary().getDates())
+                .startDate(mission.getItinerary().getStartDate())
+                .endDate(mission.getItinerary().getEndDate())
                 .itineraryBgImageUrl(mission.getItinerary().getBgImageUrl())
                 .status(mission.getStatus() != null ? mission.getStatus().name() : null)
                 .startedAt(mission.getStartedAt())

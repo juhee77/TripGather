@@ -32,7 +32,9 @@ public class Gathering {
 
     private String category;
 
-    private String dates;
+    private java.time.LocalDate startDate;
+
+    private java.time.LocalDate endDate;
 
     private int currentJoining;
 

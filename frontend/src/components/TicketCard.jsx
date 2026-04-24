@@ -1,10 +1,9 @@
-import React from 'react';
-import { Plane, Calendar, MapPin, ChevronRight, CheckCircle } from 'lucide-react';
+import { Plane, Calendar, MapPin, ChevronRight, CheckCircle, Trash2 } from 'lucide-react';
 import TicketContainer from './UI/TicketContainer';
 import PrimaryButton from './UI/PrimaryButton';
 import { useUser } from '../contexts/UserContext';
 
-const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit }) => {
+const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit, onRemove }) => {
     const { user: currentUser } = useUser();
     const isHost = currentUser && (
         itinerary.author === currentUser.name || 
@@ -13,8 +12,18 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit }) => {
         itinerary.itineraryAuthorEmail === currentUser.email ||
         (itinerary.author && typeof itinerary.author === 'object' && itinerary.author.email === currentUser.email)
     );
-    const { title, author, itineraryAuthor, description, createdAt } = itinerary;
-    const date = createdAt ? new Date(createdAt).toLocaleDateString() : '2026-04-06';
+    const { title, author, itineraryAuthor, description, createdAt, startDate, endDate } = itinerary;
+    
+    const formatDate = (dateStr) => {
+        if (!dateStr) return null;
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    };
+
+    const dateDisplay = (startDate && endDate) 
+        ? `${formatDate(startDate)} - ${formatDate(endDate)}`
+        : (createdAt ? formatDate(createdAt) : '2026. 04. 06.');
+
     const isMission = !!itinerary.steps;
 
     const topSection = (
@@ -31,15 +40,31 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit }) => {
                 }}>
                     <Plane size={16} fill="var(--primary-orange)" /> TRIPGATHER AIR
                 </div>
-                <div style={{ 
-                    background: 'rgba(99, 102, 241, 0.1)', 
-                    padding: '6px 14px', 
-                    borderRadius: '8px',
-                    fontSize: '10px',
-                    fontWeight: 900,
-                    color: 'var(--secondary-purple)',
-                    letterSpacing: '0.5px'
-                }}>FIRST CLASS</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ 
+                        background: 'rgba(99, 102, 241, 0.1)', 
+                        padding: '6px 14px', 
+                        borderRadius: '8px',
+                        fontSize: '10px',
+                        fontWeight: 900,
+                        color: 'var(--secondary-purple)',
+                        letterSpacing: '0.5px'
+                    }}>FIRST CLASS</div>
+                    {onRemove && (
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('이 여정을 제거하시겠습니까?')) {
+                                    onRemove(itinerary.id);
+                                }
+                            }}
+                            className="icon-circle"
+                            style={{ width: '32px', height: '32px', background: 'rgba(0,0,0,0.05)', border: 'none' }}
+                        >
+                            <Trash2 size={14} color="var(--text-sub)" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div style={{ marginBottom: '8px' }}>
@@ -53,15 +78,15 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit }) => {
 
     const bottomSection = (
         <div className="flex-column" style={{ gap: '20px', paddingTop: '8px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '24px' }}>
                 <div>
                     <span className="label-muted">PASSENGER</span>
                     <p className="info-value" style={{ fontSize: '16px' }}>{author || itineraryAuthor}</p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <span className="label-muted">BOARDING DATE</span>
-                    <p className="info-value" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end' }}>
-                        <Calendar size={14} color="var(--primary-orange)" strokeWidth={2.5} /> {date}
+                    <p className="info-value" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end', fontSize: '13px' }}>
+                        <Calendar size={14} color="var(--primary-orange)" strokeWidth={2.5} /> {dateDisplay}
                     </p>
                 </div>
             </div>
