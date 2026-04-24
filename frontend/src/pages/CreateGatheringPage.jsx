@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, MapPin, Calendar as CalendarIcon, Users, Type, Camera, Clock, ChevronLeft } from 'lucide-react';
+import { X, MapPin, Calendar as CalendarIcon, Users, Type, Camera, Clock, ChevronLeft, Plane } from 'lucide-react';
 import { authFetch } from '../api/client';
 import gatheringPlaceholder from '../assets/gathering-placeholder.png';
 
@@ -29,7 +29,24 @@ const CreateGatheringPage = () => {
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [myItineraries, setMyItineraries] = useState([]);
+  const [selectedItineraryId, setSelectedItineraryId] = useState('');
   const fileInputRef = useRef(null);
+
+  const { user: currentUser } = useUser();
+  const [itinerariesLoading, setItinerariesLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (currentUser?.email) {
+      setItinerariesLoading(true);
+      import('../repositories/JourneyRepository').then(repo => {
+        repo.default.fetchMine(currentUser.email)
+          .then(data => setMyItineraries(data))
+          .catch(err => console.error(err))
+          .finally(() => setItinerariesLoading(false));
+      });
+    }
+  }, [currentUser?.email]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -82,7 +99,8 @@ const CreateGatheringPage = () => {
       endDate: formData.date,
       maxJoining: parseInt(formData.maxJoining, 10),
       currentJoining: 1,
-      bgImageUrl: finalBgImageUrl || DEFAULT_BG
+      bgImageUrl: finalBgImageUrl || DEFAULT_BG,
+      linkedItinerary: selectedItineraryId ? { id: parseInt(selectedItineraryId, 10) } : null
     };
 
     try {
@@ -217,6 +235,29 @@ const CreateGatheringPage = () => {
                 onBlur={(e) => e.target.style.border = '1px solid var(--border-color)'}
               />
             </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '15px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>연결할 여행 일정</label>
+            <div style={{ position: 'relative' }}>
+              <Plane size={18} color="var(--text-sub)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
+              <select 
+                name="selectedItineraryId" 
+                value={selectedItineraryId} 
+                onChange={(e) => setSelectedItineraryId(e.target.value)}
+                style={{...inputStyle, appearance: 'none'}}
+              >
+                <option value="">일정 연결 안 함</option>
+                {myItineraries.map(it => (
+                  <option key={it.id} value={it.id}>{it.title}</option>
+                ))}
+              </select>
+            </div>
+            {myItineraries.length === 0 && !itinerariesLoading && (
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                * 아직 생성하거나 가져온 여정이 없습니다. '내 여행' 탭에서 여정을 추가해보세요.
+              </p>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '16px', flexDirection: 'column' }}>

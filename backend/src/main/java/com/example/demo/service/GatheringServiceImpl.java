@@ -29,6 +29,7 @@ public class GatheringServiceImpl implements GatheringUseCase {
     private final UserRepository userRepository;
     private final GatheringMemberRepository gatheringMemberRepository;
     private final GatheringLikeRepository gatheringLikeRepository;
+    private final com.example.demo.repository.ItineraryRepository itineraryRepository;
 
     @Transactional(readOnly = true)
     public List<Gathering> getAllGatherings(String location) {
@@ -64,6 +65,12 @@ public class GatheringServiceImpl implements GatheringUseCase {
         
         // Host is the first member
         savedGathering.setCurrentJoining(1); 
+        
+        // Link itinerary if provided in the input object (usually passed via JSON with id)
+        if (gathering.getLinkedItinerary() != null && gathering.getLinkedItinerary().getId() != null) {
+            itineraryRepository.findById(gathering.getLinkedItinerary().getId())
+                .ifPresent(savedGathering::setLinkedItinerary);
+        }
         
         return gatheringRepository.save(savedGathering);
     }
@@ -155,6 +162,13 @@ public class GatheringServiceImpl implements GatheringUseCase {
         gathering.setGalleryPublic(updateData.isGalleryPublic());
         gathering.setChatPublic(updateData.isChatPublic());
         gathering.setCommentPublic(updateData.isCommentPublic());
+        
+        if (updateData.getLinkedItinerary() != null && updateData.getLinkedItinerary().getId() != null) {
+            itineraryRepository.findById(updateData.getLinkedItinerary().getId())
+                .ifPresent(gathering::setLinkedItinerary);
+        } else if (updateData.getLinkedItinerary() == null) {
+            gathering.setLinkedItinerary(null);
+        }
         
         return gathering;
     }

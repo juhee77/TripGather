@@ -60,6 +60,10 @@ public class Gathering {
     @Builder.Default
     private java.util.List<GatheringMember> members = new java.util.ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "itinerary_id")
+    private Itinerary linkedItinerary;
+
     @Transient
     private int commentCount;
 
