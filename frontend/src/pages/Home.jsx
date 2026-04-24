@@ -33,9 +33,17 @@ const Home = () => {
 
   useEffect(() => {
     if (!currentUser?.email) return;
-    JourneyRepository.fetchMine(currentUser.email)
-      .then(setJourneyItineraries)
-      .catch((err) => console.error('Failed to fetch journeys:', err));
+    const loadJourneys = () => {
+      JourneyRepository.fetchMine(currentUser.email)
+        .then(setJourneyItineraries)
+        .catch((err) => console.error('Failed to fetch journeys:', err));
+    };
+    
+    loadJourneys();
+
+    // Refetch when window regains focus (e.g. after coming back from edit/detail)
+    window.addEventListener('focus', loadJourneys);
+    return () => window.removeEventListener('focus', loadJourneys);
   }, [currentUser?.email]);
 
   const handleEditItinerary = (itinerary) => {
@@ -311,19 +319,10 @@ const Home = () => {
           </div>
         )}
 
-
-
         {activeTab === '내 여행' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {(() => {
-              const journeyIds = new Set(journeyItineraries.map(j => j.id));
-              const myJourneys = itineraries.filter((it) => {
-                const isAuthor =
-                  (it.authorEmail && it.authorEmail === currentUser?.email);
-                const isOwner = 
-                  (it.ownerEmail && it.ownerEmail === currentUser?.email);
-                return isAuthor || isOwner || journeyIds.has(it.id);
-              });
+              const myJourneys = journeyItineraries;
 
               const sortedJourneys = [...myJourneys].sort((a, b) => {
                 if (sortBy === 'startDate') {
@@ -358,17 +357,17 @@ const Home = () => {
                         border: '1px solid var(--border-color)'
                       }}
                     >
-                      최근 추가 순
+                      최신 순
                     </button>
                   </div>
                   {sortedJourneys.map((it, idx) => (
-                    <div key={it.id} style={{ animationDelay: `${idx * 0.1}s` }} className="animate-fade">
+                    <div key={it.id} className="animate-fade" style={{ animationDelay: `${idx * 0.05}s` }}>
                       <TicketCard
                         itinerary={it}
-                        onViewRoute={() => navigate(`/itinerary/${it.id}`)}
-                        onEdit={() => navigate(`/itinerary/edit/${it.id}`)}
-                        onRemove={journeyIds.has(it.id) ? handleRemoveJourney : null}
-                        onStartMission={() => {}}
+                        isMine={true}
+                        onEdit={() => handleEditItinerary(it)}
+                        onRemove={() => handleRemoveJourney(it.id)}
+                        onClick={() => navigate(`/itinerary/${it.id}`)}
                       />
                     </div>
                   ))}

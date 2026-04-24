@@ -3,15 +3,14 @@ import TicketContainer from './UI/TicketContainer';
 import PrimaryButton from './UI/PrimaryButton';
 import { useUser } from '../contexts/UserContext';
 
-const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit, onRemove }) => {
+const TicketCard = ({ itinerary, onViewRoute, onEdit, onRemove, isMine: isMineProp }) => {
     const { user: currentUser } = useUser();
-    const isHost = currentUser && (
-        itinerary.author === currentUser.name || 
-        itinerary.itineraryAuthor === currentUser.name ||
+    const isMine = isMineProp || (currentUser && (
+        itinerary.ownerEmail === currentUser.email ||
         itinerary.authorEmail === currentUser.email ||
-        itinerary.itineraryAuthorEmail === currentUser.email ||
         (itinerary.author && typeof itinerary.author === 'object' && itinerary.author.email === currentUser.email)
-    );
+    ));
+    const isHost = isMine; // In the new system, mine means I can edit/remove it.
     const { title, author, itineraryAuthor, description, createdAt, startDate, endDate } = itinerary;
     
     const formatDate = (dateStr) => {
@@ -109,7 +108,7 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit, onRemove }
                     INFO
                 </PrimaryButton>
                 
-                {isHost && (
+                {isMine && (
                     <PrimaryButton 
                         variant="secondary"
                         onClick={(e) => {
@@ -124,18 +123,18 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit, onRemove }
 
                 <PrimaryButton 
                     variant="primary"
-                    onClick={async (e) => {
+                    onClick={(e) => {
                         e.stopPropagation();
-                        onStartMission && await onStartMission(itinerary);
+                        onViewRoute && onViewRoute(itinerary);
                     }}
                     style={{ 
-                        flex: isHost ? 1.5 : 2, 
+                        flex: isMine ? 1.5 : 2, 
                         height: '52px', 
                         borderRadius: '14px',
                         background: 'var(--primary-gradient)'
                     }}
                 >
-                    <>BOARD <ChevronRight size={18} style={{ marginLeft: '4px' }} /></>
+                    <>OPEN <ChevronRight size={18} style={{ marginLeft: '4px' }} /></>
                 </PrimaryButton>
             </div>
         </div>
