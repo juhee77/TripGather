@@ -3,7 +3,7 @@ import TicketContainer from './UI/TicketContainer';
 import PrimaryButton from './UI/PrimaryButton';
 import { useUser } from '../contexts/UserContext';
 
-const TicketCard = ({ itinerary, onViewRoute, onEdit, onRemove, isMine: isMineProp }) => {
+const TicketCard = ({ itinerary, onViewRoute, onEdit, onRemove, isMine: isMineProp, onClick, onInfo }) => {
     const { user: currentUser } = useUser();
     const isMine = isMineProp || (currentUser && (
         itinerary.ownerEmail === currentUser.email ||
@@ -101,7 +101,8 @@ const TicketCard = ({ itinerary, onViewRoute, onEdit, onRemove, isMine: isMinePr
                     variant="secondary"
                     onClick={(e) => {
                         e.stopPropagation();
-                        onViewRoute && onViewRoute(itinerary);
+                        if (onInfo) onInfo(itinerary);
+                        else if (onViewRoute) onViewRoute(itinerary);
                     }}
                     style={{ flex: 1, height: '52px', borderRadius: '14px' }}
                 >
@@ -144,7 +145,7 @@ const TicketCard = ({ itinerary, onViewRoute, onEdit, onRemove, isMine: isMinePr
         <TicketContainer 
             topSection={topSection} 
             bottomSection={bottomSection}
-            onClick={() => onViewRoute && onViewRoute(itinerary)}
+            onClick={onClick || (() => onViewRoute && onViewRoute(itinerary))}
             className="itinerary-ticket"
         />
     );

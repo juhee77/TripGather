@@ -12,5 +12,6 @@ public interface ItineraryUseCase {
     Itinerary updateItinerary(Long id, Itinerary update);
     Itinerary cloneItinerary(Long originalId, String ownerEmail);
     Itinerary togglePublicStatus(Long id, String email, boolean isPublic);
+    Itinerary mergeItinerary(Long sourceId, Long targetId, int targetDay);
     void deleteItinerary(Long id);
 }

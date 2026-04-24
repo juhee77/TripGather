@@ -20,6 +20,7 @@ public class ItineraryResponse {
     private String authorEmail;
     private String ownerEmail;
     private Long originalId;
+    @com.fasterxml.jackson.annotation.JsonProperty("isPublic")
     private boolean isPublic;
     private String description;
     private String location;

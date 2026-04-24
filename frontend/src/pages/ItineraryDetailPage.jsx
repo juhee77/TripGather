@@ -16,6 +16,11 @@ const ItineraryDetailPage = () => {
     
     const [localItinerary, setLocalItinerary] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [myJourneys, setMyJourneys] = useState([]);
+    const [selectedTargetId, setSelectedTargetId] = useState('');
+    const [selectedDay, setSelectedDay] = useState(1);
+    const [actionLoading, setActionLoading] = useState(false);
 
     useEffect(() => {
         setIsVisible(true);
@@ -104,6 +109,40 @@ const ItineraryDetailPage = () => {
         newPoints.splice(toIdx, 0, moved);
         const reordered = newPoints.map((p, i) => ({ ...p, sequenceOrder: i + 1 }));
         saveItinerary({ ...localItinerary, routePoints: reordered });
+    };
+
+    const handleClone = async () => {
+        if (!currentUser?.email) return alert('로그인이 필요합니다.');
+        setActionLoading(true);
+        try {
+            await JourneyRepository.add(localItinerary.id, currentUser.email);
+            alert('새 여행으로 추가되었습니다. ✈️');
+            navigate('/');
+        } catch (e) {
+            alert('추가에 실패했습니다.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleMerge = async () => {
+        if (!selectedTargetId) return alert('추가할 여정을 선택해주세요.');
+        setActionLoading(true);
+        try {
+            const res = await authFetch(`/api/my-trips/merge?sourceId=${localItinerary.id}&targetId=${selectedTargetId}&targetDay=${selectedDay}`, {
+                method: 'POST'
+            });
+            if (res.ok) {
+                alert('기존 여행에 추가되었습니다! 🗺️');
+                navigate('/');
+            } else {
+                alert('추가에 실패했습니다.');
+            }
+        } catch (e) {
+            alert('오류가 발생했습니다.');
+        } finally {
+            setActionLoading(false);
+        }
     };
 
     const groupedByDay = (() => {
@@ -281,30 +320,112 @@ const ItineraryDetailPage = () => {
 
                 <ModalFooter>
                     <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-                        <PrimaryButton
-                            style={{ flex: 1 }}
-                            onClick={async () => {
-                                if (!currentUser?.email) {
-                                    alert('로그인이 필요한 기능입니다.');
-                                    return;
-                                }
-                                if (isOwner) {
-                                    alert('이미 내 여행에 추가되어 있습니다.');
-                                    return;
-                                }
-                                try {
-                                    await JourneyRepository.add(localItinerary.id, currentUser.email);
-                                    alert('내 여행에 추가되었습니다. ✈️');
-                                    navigate('/');
-                                } catch (e) {
-                                    alert('추가하지 못했습니다.');
-                                }
-                            }}
-                        >
-                            {isOwner ? '내 여행 (소유 중)' : '내 여행에 추가'}
-                        </PrimaryButton>
+                        {!isOwner && (
+                            <PrimaryButton
+                                style={{ flex: 1 }}
+                                onClick={async () => {
+                                    if (!currentUser?.email) return alert('로그인이 필요합니다.');
+                                    // Fetch my journeys to show in selection
+                                    try {
+                                        const mine = await JourneyRepository.fetchMine(currentUser.email);
+                                        setMyJourneys(mine);
+                                        setShowAddModal(true);
+                                    } catch (e) {
+                                        handleClone(); // Fallback to direct clone
+                                    }
+                                }}
+                            >
+                                내 여행에 추가
+                            </PrimaryButton>
+                        )}
+                        {isOwner && (
+                            <div style={{ flex: 1, textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
+                                내 여권을 확인하거나 여행 피드에서 다른 영감을 찾아보세요! ✈️
+                            </div>
+                        )}
                     </div>
                 </ModalFooter>
+
+                {/* Add to Trip Modal */}
+                {showAddModal && (
+                    <div className="fixed-full flex-center" style={{ zIndex: 2000, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}>
+                        <div className="glass card animate-pop" style={{ width: '90%', maxWidth: '400px', padding: '24px', position: 'relative' }}>
+                            <h3 className="heading-s" style={{ marginBottom: '8px' }}>내 여행에 추가하기</h3>
+                            <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '20px' }}>이 여정을 어떻게 보관할까요?</p>
+                            
+                            <button 
+                                onClick={handleClone}
+                                disabled={actionLoading}
+                                style={{ 
+                                    width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', 
+                                    background: 'white', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', marginBottom: '12px',
+                                    textAlign: 'left'
+                                }}
+                            >
+                                <div style={{ fontSize: '24px' }}>✈️</div>
+                                <div>
+                                    <div style={{ fontWeight: 800 }}>새로운 일정으로 만들기</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>독립적인 새 여정으로 내 목록에 추가합니다.</div>
+                                </div>
+                            </button>
+
+                            <div style={{ margin: '20px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+                                <span style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-muted)' }}>OR ADD TO EXISTING</span>
+                                <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+                            </div>
+
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>여행 선택</label>
+                                <select 
+                                    value={selectedTargetId}
+                                    onChange={(e) => setSelectedTargetId(e.target.value)}
+                                    className="clean-input"
+                                    style={{ width: '100%', background: 'var(--bg-color)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)' }}
+                                >
+                                    <option value="">여행을 선택해주세요</option>
+                                    {myJourneys.map(j => (
+                                        <option key={j.id} value={j.id}>{j.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {selectedTargetId && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>추가할 일차 선택</label>
+                                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
+                                        {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                                            <button
+                                                key={day}
+                                                onClick={() => setSelectedDay(day)}
+                                                style={{
+                                                    minWidth: '40px', height: '40px', borderRadius: '10px',
+                                                    background: selectedDay === day ? 'var(--text-primary)' : 'var(--bg-color)',
+                                                    color: selectedDay === day ? 'white' : 'var(--text-secondary)',
+                                                    border: '1px solid var(--border-color)',
+                                                    fontWeight: 800, cursor: 'pointer'
+                                                }}
+                                            >
+                                                {day}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button onClick={() => setShowAddModal(false)} className="clean-input" style={{ flex: 1, border: 'none', background: 'var(--bg-color)', cursor: 'pointer', fontWeight: 800, padding: '12px', borderRadius: '12px' }}>취소</button>
+                                <PrimaryButton 
+                                    onClick={handleMerge} 
+                                    disabled={!selectedTargetId || actionLoading}
+                                    style={{ flex: 1.5 }}
+                                >
+                                    {actionLoading ? '추가 중...' : '기본 여정에 병합'}
+                                </PrimaryButton>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

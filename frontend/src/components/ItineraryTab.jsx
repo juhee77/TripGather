@@ -13,24 +13,7 @@ const ItineraryTab = ({ onAddToJourney }) => {
         actions: { refreshItineraries }
     } = useItinerariesViewModel();
 
-    const openEditor = (id = null) => {
-        if (id) navigate(`/itinerary/edit/${id}`);
-        else navigate('/itinerary/create');
-    };
-
-    const [addTarget, setAddTarget] = React.useState(null);
-
-    const handleAddToMyTrip = () => {
-        if (!addTarget?.id) return;
-        JourneyRepository.add(addTarget.id)
-            .then(() => {
-                setAddTarget(null);
-                if (onAddToJourney) onAddToJourney();
-            })
-            .catch((err) => {
-                console.error('Failed to add journey:', err);
-            });
-    };
+    // Legacy add logic removed in favor of ItineraryDetailPage's new Clone/Merge modal
 
     useEffect(() => {
         refreshItineraries();
@@ -91,8 +74,7 @@ const ItineraryTab = ({ onAddToJourney }) => {
                             <TicketCard
                                 itinerary={it}
                                 onViewRoute={() => navigate(`/itinerary/${it.id}`)}
-                                onStartMission={() => setAddTarget(it)}
-                                onEdit={(it) => openEditor(it.id)}
+                                onEdit={(it) => navigate(`/itinerary/edit/${it.id}`)}
                             />
                         </div>
                     ))}
@@ -119,37 +101,7 @@ const ItineraryTab = ({ onAddToJourney }) => {
                 </div>
             </div>
 
-            {/* Add to My Trip Modal */}
-            {addTarget && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(15,23,42,0.35)',
-                    zIndex: 1200,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '20px'
-                }}>
-                    <div style={{
-                        width: '100%',
-                        maxWidth: '420px',
-                        background: 'white',
-                        borderRadius: '20px',
-                        border: '1px solid var(--border-color)',
-                        padding: '20px'
-                    }}>
-                        <h3 style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>내 여행에 추가</h3>
-                        <p style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                            "{addTarget.title}"을(를) 내 여행 일정에 추가할까요?
-                        </p>
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            <button className="secondary-btn" style={{ flex: 1 }} onClick={() => setAddTarget(null)}>취소</button>
-                            <button className="primary-btn" style={{ flex: 1 }} onClick={handleAddToMyTrip}>내 여행에 추가</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Add to My Trip Dialog is now handled in ItineraryDetailPage */}
         </div>
     );
 };
