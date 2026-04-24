@@ -38,6 +38,8 @@ public class Itinerary {
      * isPublic determines if this itinerary shows up in the "Travel Feed".
      */
     @Builder.Default
+    @Getter(onMethod_ = {@com.fasterxml.jackson.annotation.JsonGetter("isPublic")})
+    @Setter(onMethod_ = {@com.fasterxml.jackson.annotation.JsonSetter("isPublic")})
     @com.fasterxml.jackson.annotation.JsonProperty("isPublic")
     private boolean isPublic = false;
 
