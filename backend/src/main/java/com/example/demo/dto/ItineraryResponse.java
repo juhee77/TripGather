@@ -21,9 +21,7 @@ public class ItineraryResponse {
     private String ownerEmail;
     private Long originalId;
     @com.fasterxml.jackson.annotation.JsonProperty("isPublic")
-    @com.fasterxml.jackson.annotation.JsonGetter("isPublic")
-    @com.fasterxml.jackson.annotation.JsonSetter("isPublic")
-    private boolean isPublic;
+    private boolean publicStatus;
     private String description;
     private String location;
     private java.time.LocalDate startDate;
@@ -42,7 +40,7 @@ public class ItineraryResponse {
                 .authorEmail(itinerary.getAuthorEmail())
                 .ownerEmail(itinerary.getOwnerEmail())
                 .originalId(itinerary.getOriginalId())
-                .isPublic(itinerary.isPublic())
+                .publicStatus(itinerary.isPublicStatus())
                 .description(itinerary.getDescription())
                 .location(itinerary.getLocation())
                 .startDate(itinerary.getStartDate())

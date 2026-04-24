@@ -24,11 +24,12 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Itinerary> getPublicItineraries() {
-        return itineraryRepository.findByIsPublicTrueOrderByCreatedAtDesc();
+    public java.util.List<Itinerary> getPublicItineraries() {
+        return itineraryRepository.findAll().stream()
+                .filter(Itinerary::isPublicStatus)
+                .toList();
     }
 
-    @Override
     @Transactional(readOnly = true)
     public List<Itinerary> getUserJourneys(String email) {
         return itineraryRepository.findByOwnerEmailOrderByCreatedAtDesc(email);
@@ -64,7 +65,7 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
                 .authorEmail(original.getAuthorEmail())
                 .ownerEmail(ownerEmail)
                 .originalId(originalId)
-                .isPublic(false) // Clones are private by default
+                .publicStatus(false) // Clones are private by default
                 .location(original.getLocation())
                 .startDate(original.getStartDate())
                 .endDate(original.getEndDate())
@@ -97,7 +98,7 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         if (!itinerary.getOwnerEmail().equals(email)) {
             throw new CustomException(ErrorCode.FORBIDDEN_ACTION); // Use standard forbidden error
         }
-        itinerary.setPublic(isPublic);
+        itinerary.setPublicStatus(isPublic);
         return itineraryRepository.save(itinerary);
     }
 
@@ -109,7 +110,7 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         itinerary.setStampImageUrl(update.getStampImageUrl());
         itinerary.setStartDate(update.getStartDate());
         itinerary.setEndDate(update.getEndDate());
-        itinerary.setPublic(update.isPublic());
+        itinerary.setPublicStatus(update.isPublicStatus());
         
         // RoutePoints 업데이트 로직
         if (update.getRoutePoints() != null) {
