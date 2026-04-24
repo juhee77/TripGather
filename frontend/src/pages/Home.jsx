@@ -32,11 +32,11 @@ const Home = () => {
   const { itineraries } = useItinerariesViewModel();
 
   useEffect(() => {
-    if (!currentUser) return;
-    JourneyRepository.fetchMine()
+    if (!currentUser?.email) return;
+    JourneyRepository.fetchMine(currentUser.email)
       .then(setJourneyItineraries)
       .catch((err) => console.error('Failed to fetch journeys:', err));
-  }, [currentUser]);
+  }, [currentUser?.email]);
 
   const handleEditItinerary = (itinerary) => {
     navigate(`/itinerary/edit/${itinerary.id}`);
@@ -318,11 +318,11 @@ const Home = () => {
             {(() => {
               const journeyIds = new Set(journeyItineraries.map(j => j.id));
               const myJourneys = itineraries.filter((it) => {
-                const isOwner =
-                  (it.author && it.author === currentUser?.name) ||
-                  (it.authorEmail && it.authorEmail === currentUser?.email) ||
-                  (typeof it.author === 'object' && it.author?.email === currentUser?.email);
-                return isOwner || journeyIds.has(it.id);
+                const isAuthor =
+                  (it.authorEmail && it.authorEmail === currentUser?.email);
+                const isOwner = 
+                  (it.ownerEmail && it.ownerEmail === currentUser?.email);
+                return isAuthor || isOwner || journeyIds.has(it.id);
               });
 
               const sortedJourneys = [...myJourneys].sort((a, b) => {
