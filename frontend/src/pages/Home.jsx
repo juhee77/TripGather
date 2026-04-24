@@ -9,9 +9,11 @@ import TravelInsightWidget from '../components/TravelInsightWidget'; // Added Ph
 import { useUser } from '../contexts/UserContext';
 import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
 import { useMissionsViewModel } from '../viewmodels/useMissionsViewModel'; // Added
+import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
 import { Search, Map as MapIcon, Plus, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
+import JourneyRepository from '../repositories/JourneyRepository';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -26,15 +28,24 @@ const Home = () => {
 
   const [activeTab, setActiveTab] = useState('라운지');
   const [showOnlyHosted, setShowOnlyHosted] = useState(false);
+  const [journeyItineraries, setJourneyItineraries] = useState([]);
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
   const {
     activeMissions,
     actions: { fetchMissions, completeMission, completeStep }
   } = useMissionsViewModel();
+  const { itineraries } = useItinerariesViewModel();
 
   useEffect(() => {
     if (currentUser) fetchMissions();
   }, [currentUser, fetchMissions]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    JourneyRepository.fetchMine()
+      .then(setJourneyItineraries)
+      .catch((err) => console.error('Failed to fetch journeys:', err));
+  }, [currentUser]);
 
   const handleEditItinerary = (itinerary) => {
     navigate(`/itinerary/edit/${itinerary.id}`);
@@ -310,42 +321,37 @@ const Home = () => {
 
         {activeTab === '내 여정' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {gatherings.filter(g => {
-              const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
-              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === MemberStatus.APPROVED));
-              const isCompleted = g.currentJoining >= g.maxJoining;
-              return (isHost || isApproved) && isCompleted;
-            }).map((g, idx) => (
-              <div 
-                key={g.id} 
-                onClick={() => navigate(`/gathering/${g.id}`)} 
-                style={{ cursor: 'pointer', animationDelay: `${idx * 0.1}s` }}
-                className="animate-fade"
-              >
-                <FeedCard
-                  title={g.title}
-                  host={typeof g.host === 'string' ? g.host : g.host?.name}
-                  date={g.dates}
-                  location={g.location}
-                  joining={`${g.currentJoining}/${g.maxJoining}`}
-                  bgImage={g.bgImageUrl}
-                  pendingCount={
-                    (currentUser && g.host && (
-                      (typeof g.host === 'string' && g.host === currentUser.name) ||
-                      (g.host.email === currentUser.email)
-                    )) ? g.members?.filter(m => m.status === MemberStatus.PENDING).length || 0 : 0
-                  }
-                />
-              </div>
-            ))}
-            {gatherings.filter(g => {
-              const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
-              const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === MemberStatus.APPROVED));
-              const isCompleted = g.currentJoining >= g.maxJoining;
-              return (isHost || isApproved) && isCompleted;
+            {(() => {
+              const journeyIds = new Set(journeyItineraries.map(j => j.id));
+              const myJourneys = itineraries.filter((it) => {
+                const isOwner =
+                  (it.author && it.author === currentUser?.name) ||
+                  (it.authorEmail && it.authorEmail === currentUser?.email) ||
+                  (typeof it.author === 'object' && it.author?.email === currentUser?.email);
+                return isOwner || journeyIds.has(it.id);
+              });
+
+              return myJourneys.map((it, idx) => (
+                <div key={it.id} style={{ animationDelay: `${idx * 0.1}s` }} className="animate-fade">
+                  <TicketCard
+                    itinerary={it}
+                    onViewRoute={() => navigate(`/itinerary/${it.id}`)}
+                    onEdit={() => navigate(`/itinerary/edit/${it.id}`)}
+                    onStartMission={() => {}}
+                  />
+                </div>
+              ));
+            })()}
+            {itineraries.filter((it) => {
+              const journeyIds = new Set(journeyItineraries.map(j => j.id));
+              const isOwner =
+                (it.author && it.author === currentUser?.name) ||
+                (it.authorEmail && it.authorEmail === currentUser?.email) ||
+                (typeof it.author === 'object' && it.author?.email === currentUser?.email);
+              return isOwner || journeyIds.has(it.id);
             }).length === 0 && (
-              <div className="glass" style={{ 
-                textAlign: 'center', 
+              <div className="glass" style={{
+                textAlign: 'center',
                 padding: '60px 24px',
                 borderRadius: 'var(--radius-lg)',
                 display: 'flex',
@@ -355,19 +361,33 @@ const Home = () => {
                 background: 'white',
                 border: '1px solid var(--border-color)'
               }}>
-                <div style={{ fontSize: '48px' }}>🚀</div>
+                <div style={{ fontSize: '48px' }}>🧳</div>
                 <p style={{ fontWeight: 700, color: 'var(--text-primary)', textAlign: 'center' }}>
-                  모집이 완료되어 확정된 모임만 여기에 표시됩니다.<br/>
-                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>진행 중인 모임은 '내 여권 &gt; 주최 관리'에서 확인하세요.</span>
+                  아직 내 여정이 없습니다.<br />
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                    비행 계획에서 BOARD 후 "여정에 넣기"를 선택하거나, 직접 일정을 생성해보세요.
+                  </span>
                 </p>
-                <button className="primary-btn" onClick={() => setActiveTab('라운지')}>모임 탐색하기</button>
+                <button className="primary-btn" onClick={() => setActiveTab('비행 계획')}>비행 계획 보러가기</button>
               </div>
             )}
           </div>
         )}
 
         {activeTab === '비행 계획' && (
-          <ItineraryTab onMissionStart={() => { fetchMissions(); setActiveTab('챌린지'); }} onEdit={handleEditItinerary} />
+          <ItineraryTab
+            onMissionStart={() => { fetchMissions(); setActiveTab('챌린지'); }}
+            onAddToJourney={async () => {
+              try {
+                const mine = await JourneyRepository.fetchMine();
+                setJourneyItineraries(mine);
+              } catch (e) {
+                console.error(e);
+              }
+              setActiveTab('내 여정');
+            }}
+            onEdit={handleEditItinerary}
+          />
         )}
 
         {activeTab === '내 여권' && (

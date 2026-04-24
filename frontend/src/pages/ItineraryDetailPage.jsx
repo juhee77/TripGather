@@ -6,6 +6,7 @@ import { authFetch } from '../api/client';
 import ModalHeader from '../components/UI/ModalHeader';
 import ModalFooter from '../components/UI/ModalFooter';
 import PrimaryButton from '../components/UI/PrimaryButton';
+import JourneyRepository from '../repositories/JourneyRepository';
 
 const ItineraryDetailPage = ({ type = 'itinerary' }) => {
     const { id } = useParams();
@@ -60,7 +61,7 @@ const ItineraryDetailPage = ({ type = 'itinerary' }) => {
     if (!localItinerary) return <div style={{ padding: '40px', textAlign: 'center' }}>데이터를 찾을 수 없습니다.</div>;
 
     const onClose = () => navigate(-1);
-    const onEdit = () => navigate(`/itinerary/edit/${id}`);
+    const onEdit = () => navigate(`/itinerary/edit/${localItinerary.itineraryId || id}`);
     const onStepComplete = () => {};
 
     // Identifiers
@@ -396,17 +397,35 @@ const ItineraryDetailPage = ({ type = 'itinerary' }) => {
                             </PrimaryButton>
                         </div>
                     ) : (
-                        <PrimaryButton 
-                            onClick={async () => {
-                                const res = await authFetch(`/api/missions/start/${localItinerary.id}`, { method: 'POST' });
-                                if (res.ok) {
-                                    alert("챌린지가 시작되었습니다! 나의 미션 탭에서 확인하세요. 🚀");
-                                    onClose();
-                                }
-                            }}
-                        >
-                            챌린지 참여하기
-                        </PrimaryButton>
+                        <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                            <button
+                                className="secondary-btn"
+                                style={{ flex: 1 }}
+                                onClick={async () => {
+                                    try {
+                                        await JourneyRepository.add(localItinerary.id);
+                                        alert('내 여정에 추가되었습니다. ✈️');
+                                        onClose();
+                                    } catch (e) {
+                                        alert('여정에 추가하지 못했습니다.');
+                                    }
+                                }}
+                            >
+                                여정에 넣기
+                            </button>
+                            <PrimaryButton
+                                style={{ flex: 1 }}
+                                onClick={async () => {
+                                    const res = await authFetch(`/api/missions/start/${localItinerary.id}`, { method: 'POST' });
+                                    if (res.ok) {
+                                        alert("챌린지에 추가되었습니다! 나의 챌린지 탭에서 확인하세요. 🚀");
+                                        onClose();
+                                    }
+                                }}
+                            >
+                                챌린지에 넣기
+                            </PrimaryButton>
+                        </div>
                     )}
                 </ModalFooter>
             </div>
