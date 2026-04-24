@@ -1,4 +1,4 @@
-import { Plane, Calendar, MapPin, ChevronRight, CheckCircle, Trash2 } from 'lucide-react';
+import { Plane, Calendar, MapPin, ChevronRight, Trash2 } from 'lucide-react';
 import TicketContainer from './UI/TicketContainer';
 import PrimaryButton from './UI/PrimaryButton';
 import { useUser } from '../contexts/UserContext';
@@ -22,9 +22,7 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit, onRemove }
 
     const dateDisplay = (startDate && endDate) 
         ? `${formatDate(startDate)} - ${formatDate(endDate)}`
-        : (createdAt ? formatDate(createdAt) : '2026. 04. 06.');
-
-    const isMission = !!itinerary.steps;
+        : (createdAt ? formatDate(createdAt) : '');
 
     const topSection = (
         <div style={{ padding: '24px 24px 0 24px' }}>
@@ -54,7 +52,7 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit, onRemove }
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation();
-                                if (window.confirm('이 여정을 제거하시겠습니까?')) {
+                                if (window.confirm('이 여행을 제거하시겠습니까?')) {
                                     onRemove(itinerary.id);
                                 }
                             }}
@@ -128,24 +126,16 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit, onRemove }
                     variant="primary"
                     onClick={async (e) => {
                         e.stopPropagation();
-                        if (isMission) {
-                            onViewRoute && onViewRoute(itinerary);
-                            return;
-                        }
                         onStartMission && await onStartMission(itinerary);
                     }}
                     style={{ 
-                        flex: (isHost && !isMission) ? 1.5 : 2, 
+                        flex: isHost ? 1.5 : 2, 
                         height: '52px', 
                         borderRadius: '14px',
-                        background: isMission ? 'var(--text-primary)' : 'var(--primary-gradient)'
+                        background: 'var(--primary-gradient)'
                     }}
                 >
-                    {isMission ? (
-                        <><CheckCircle size={18} style={{ marginRight: '8px' }} /> CONTINUE</>
-                    ) : (
-                        <>{(isHost && !isMission) ? 'BOARD' : 'BOARDING NOW'} <ChevronRight size={18} style={{ marginLeft: '4px' }} /></>
-                    )}
+                    <>BOARD <ChevronRight size={18} style={{ marginLeft: '4px' }} /></>
                 </PrimaryButton>
             </div>
         </div>

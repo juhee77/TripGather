@@ -35,8 +35,8 @@ const ItineraryEditorPage = () => {
                         setFormData({
                             title: itinerary.title || '',
                             region: itinerary.location || '',
-                            startDate: itinerary.dates?.includes('~') ? itinerary.dates.split('~')[0]?.trim() : '',
-                            endDate: itinerary.dates?.includes('~') ? itinerary.dates.split('~')[1]?.trim() : '',
+                            startDate: itinerary.startDate || '',
+                            endDate: itinerary.endDate || '',
                             description: itinerary.description || '',
                             stampImageUrl: itinerary.stampImageUrl || '',
                             routePoints: itinerary.routePoints ? [...itinerary.routePoints].sort((a, b) => 
@@ -130,16 +130,14 @@ const ItineraryEditorPage = () => {
         }
         setSaving(true);
         try {
-            const dates = (formData.startDate || formData.endDate)
-                ? `${formData.startDate || ''} ~ ${formData.endDate || ''}`
-                : '';
             const payload = {
                 title: formData.title,
                 description: formData.description,
                 stampImageUrl: formData.stampImageUrl,
                 routePoints: formData.routePoints,
                 location: formData.region,
-                dates,
+                startDate: formData.startDate,
+                endDate: formData.endDate,
                 author: isEdit ? undefined : currentUser?.name,
                 authorEmail: isEdit ? undefined : currentUser?.email
             };

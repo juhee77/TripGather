@@ -10,7 +10,6 @@ const HostDashboardPage = () => {
   const { user } = useUser();
   
   const [hostedGatherings, setHostedGatherings] = useState([]);
-  const [leaveRequests, setLeaveRequests] = useState([]);
 
   useEffect(() => {
     if (user) {
@@ -22,11 +21,6 @@ const HostDashboardPage = () => {
         .catch(err => {
           console.error("Error fetching hosted gatherings:", err);
         });
-
-      authFetch('/api/missions/host/requests')
-        .then(res => res.json())
-        .then(data => setLeaveRequests(Array.isArray(data) ? data : []))
-        .catch(err => console.error("Error fetching leave requests:", err));
     }
   }, [user]);
 
@@ -36,27 +30,11 @@ const HostDashboardPage = () => {
         method: 'POST'
       });
       if (res.ok) {
-        // Refresh the list
         const updated = await authFetch('/api/gatherings/my/hosted').then(r => r.json());
         setHostedGatherings(updated);
       }
     } catch (err) {
       console.error(`Error ${action} member:`, err);
-    }
-  };
-
-  const handleApproveLeave = async (missionId) => {
-    if (!window.confirm("이 사용자의 미션 탈퇴를 승인하시겠습니까?")) return;
-    try {
-      const res = await authFetch(`/api/missions/${missionId}/leave/approve`, {
-        method: 'POST'
-      });
-      if (res.ok) {
-        setLeaveRequests(prev => prev.filter(req => req.id !== missionId));
-        alert("탈퇴 처리가 완료되었습니다.");
-      }
-    } catch (err) {
-      console.error("Error approving leave:", err);
     }
   };
 
@@ -85,13 +63,12 @@ const HostDashboardPage = () => {
             background: 'var(--text-primary)', color: 'white', 
             padding: '6px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 800 
           }}>
-            {pendingApplicants.length + leaveRequests.length} PENDING
+            {pendingApplicants.length} PENDING
           </div>
         </div>
 
-        {pendingApplicants.length + leaveRequests.length > 0 ? (
+        {pendingApplicants.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* Pending Applicants List */}
             {pendingApplicants.map((app, idx) => (
               <div key={`${app.gatheringId}-${app.user.id}`} className="ticket-wrapper" style={{ 
                 padding: '20px 24px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '16px',
@@ -127,36 +104,6 @@ const HostDashboardPage = () => {
                     거절
                   </button>
                 </div>
-              </div>
-            ))}
-
-            {/* Leave Requests List */}
-            {leaveRequests.map((req, idx) => (
-              <div key={`mission-${req.id}`} className="ticket-wrapper" style={{ 
-                padding: '20px 24px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '16px',
-                animation: 'fadeIn 0.4s ease-out forwards', animationDelay: `${(pendingApplicants.length + idx) * 0.05}s`, opacity: 0
-              }}>
-                <div style={{ 
-                  width: '48px', height: '48px', borderRadius: '12px', 
-                  background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                  fontWeight: 900, color: '#EF4444', fontSize: '16px', border: '1px solid #FEE2E2' 
-                }}>
-                  {(req.userName || 'U')[0]}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)' }}>{req.userName}</span>
-                    <span className="status-pill" style={{ background: '#FEF2F2', color: '#EF4444', fontSize: '10px' }}>LEAVE REQUEST</span>
-                  </div>
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '4px' }}>{req.itineraryTitle}</p>
-                </div>
-                <button 
-                  onClick={() => handleApproveLeave(req.id)}
-                  className="secondary-btn" 
-                  style={{ padding: '10px 20px', borderRadius: '12px', fontSize: '13px', height: '40px', color: '#EF4444', borderColor: '#FEE2E2' }}
-                >
-                  탈퇴 승인
-                </button>
               </div>
             ))}
           </div>

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
 import { useAuth } from '../contexts/AuthContext';
-import { Pencil, X, MapPin, CheckCircle, Clock, LogOut } from 'lucide-react';
+import { Pencil, X, MapPin, LogOut } from 'lucide-react';
 import { authFetch } from '../api/client';
-import { MissionStatus } from '../constants/enums';
 import { useNavigate } from 'react-router-dom';
 
 const MyPage = () => {
@@ -19,19 +18,7 @@ const MyPage = () => {
   const [saving, setSaving] = useState(false);
   const fileInputRef = React.useRef(null);
   
-  const [myMissions, setMyMissions] = useState([]);
-  const [missionsLoading, setMissionsLoading] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      setMissionsLoading(true);
-      authFetch('/api/missions/me')
-        .then(res => res.json())
-        .then(data => setMyMissions(data))
-        .catch(err => console.error("Failed to load missions:", err))
-        .finally(() => setMissionsLoading(false));
-    }
-  }, [user]);
 
   const openEdit = () => {
     if (user) {
@@ -212,78 +199,10 @@ const MyPage = () => {
               <span style={{ fontSize: '11px', color: 'var(--text-sub)', fontWeight: 600 }}>PAGE 01 OF 01</span>
             </div>
 
-            {missionsLoading ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>기록을 불러오는 중...</div>
-            ) : myMissions.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px 20px', border: '2px dashed #eee', borderRadius: '16px' }}>
+            <div style={{ textAlign: 'center', padding: '60px 20px', border: '2px dashed #eee', borderRadius: '16px' }}>
                 <MapPin size={32} color="#eee" style={{ marginBottom: '12px' }} />
-                <p style={{ color: '#bbb', fontSize: '14px' }}>아직 찍힌 스탬프가 없습니다.<br/>여행을 떠나 미션을 완료해 보세요!</p>
+                <p style={{ color: '#bbb', fontSize: '14px' }}>아직 스탬프가 없습니다.<br/>여행을 떠나 스탬프를 모아보세요!</p>
               </div>
-            ) : (
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(2, 1fr)', 
-                gap: '20px', 
-                position: 'relative' 
-              }}>
-                {myMissions.map((m, idx) => {
-                  const isCompleted = m.status === MissionStatus.COMPLETED;
-                  // 랜덤 회전각 계산 (도장 느낌)
-                  const rotation = ((idx * 7) % 20) - 10; 
-                  
-                  return (
-                    <div 
-                      key={m.id} 
-                      onClick={() => navigate(`/mission/${m.id}`)}
-                      style={{ 
-                        aspectRatio: '1/1',
-                        border: isCompleted ? '3px double rgba(255, 92, 0, 0.4)' : '1px solid #eee',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        transform: isCompleted ? `rotate(${rotation}deg)` : 'none',
-                        transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                        background: isCompleted ? 'rgba(255, 92, 0, 0.02)' : 'white',
-                        position: 'relative',
-                        padding: '10px'
-                      }}
-                      className={isCompleted ? "animate-pop" : ""}
-                    >
-                      {isCompleted ? (
-                        <div style={{ 
-                          width: '100%', 
-                          height: '100%', 
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          opacity: 0.8
-                        }}>
-                          <div style={{ color: 'var(--primary-orange)', fontWeight: 900, fontSize: '12px', textAlign: 'center' }}>
-                            {m.itineraryTitle.substring(0, 10)}
-                          </div>
-                          <CheckCircle size={36} color="var(--primary-orange)" strokeWidth={2.5} style={{ margin: '8px 0' }} />
-                          <div style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 800 }}>
-                            {new Date(m.completedAt || m.startedAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <Clock size={24} color="#eee" />
-                          <div style={{ fontSize: '10px', color: '#bbb', textAlign: 'center', fontWeight: 600 }}>
-                            {m.itineraryTitle.substring(0, 8)}...
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
       </div>

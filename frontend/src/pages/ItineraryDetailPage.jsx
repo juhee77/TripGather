@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { X, MapPin, ChevronRight, Trash2, Edit3, Navigation, CheckCircle, Camera, Check, Clock, Image as ImageIcon } from 'lucide-react';
+import { MapPin, Edit3, Plane, Check } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { authFetch } from '../api/client';
 import ModalHeader from '../components/UI/ModalHeader';
@@ -8,46 +8,24 @@ import ModalFooter from '../components/UI/ModalFooter';
 import PrimaryButton from '../components/UI/PrimaryButton';
 import JourneyRepository from '../repositories/JourneyRepository';
 
-const ItineraryDetailPage = ({ type = 'itinerary' }) => {
+const ItineraryDetailPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [, setIsVisible] = useState(false);
     const { user: currentUser } = useUser();
     
-    // Mission Progress States
     const [localItinerary, setLocalItinerary] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [checkingStepId, setCheckingStepId] = useState(null);
-    const [memo, setMemo] = useState('');
-    const [photoFile, setPhotoFile] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState(null);
-    const [submittingStep, setSubmittingStep] = useState(false);
-    
-    const fileInputRef = useRef(null);
 
     useEffect(() => {
         setIsVisible(true);
         const fetchDetails = async () => {
             setLoading(true);
             try {
-                if (type === 'mission') {
-                    const res = await authFetch(`/api/missions/${id}`);
-                    if (!res.ok) throw new Error("Failed to load mission");
-                    const data = await res.json();
-                    setLocalItinerary({
-                        id: data.id, 
-                        itineraryId: data.itineraryId,
-                        title: data.itineraryTitle,
-                        author: data.itineraryAuthor,
-                        steps: data.steps,
-                        missionId: data.id
-                    });
-                } else {
-                    const res = await authFetch(`/api/itineraries/${id}`);
-                    if (!res.ok) throw new Error("Failed to load itinerary");
-                    const data = await res.json();
-                    setLocalItinerary(data);
-                }
+                const res = await authFetch(`/api/itineraries/${id}`);
+                if (!res.ok) throw new Error("Failed to load itinerary");
+                const data = await res.json();
+                setLocalItinerary(data);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -55,22 +33,21 @@ const ItineraryDetailPage = ({ type = 'itinerary' }) => {
             }
         };
         if (id) fetchDetails();
-    }, [id, type]);
+    }, [id]);
 
     if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>로딩 중...</div>;
     if (!localItinerary) return <div style={{ padding: '40px', textAlign: 'center' }}>데이터를 찾을 수 없습니다.</div>;
 
     const onClose = () => navigate(-1);
-    const onEdit = () => navigate(`/itinerary/edit/${localItinerary.itineraryId || id}`);
-    const onStepComplete = () => {};
+    const onEdit = () => navigate(`/itinerary/edit/${id}`);
 
-    // Identifiers
-    const isMission = !!localItinerary.steps;
-    const userMissionId = localItinerary.itineraryId ? localItinerary.id : (localItinerary.missionId || localItinerary.id);
-    const isAuthor = currentUser && (currentUser.name === (localItinerary.author || localItinerary.itineraryAuthor));
+    const isAuthor = currentUser && (
+        currentUser.name === localItinerary.author ||
+        currentUser.email === localItinerary.authorEmail
+    );
 
     const groupedByDay = (() => {
-        const sourcePoints = localItinerary.steps || localItinerary.routePoints || [];
+        const sourcePoints = localItinerary.routePoints || [];
         const points = [...sourcePoints].sort((a, b) =>
             a.dayNumber !== b.dayNumber ? a.dayNumber - b.dayNumber : a.sequenceOrder - b.sequenceOrder
         );
@@ -84,81 +61,15 @@ const ItineraryDetailPage = ({ type = 'itinerary' }) => {
         return Object.values(map);
     })();
 
-    const totalSteps = localItinerary.steps?.length || 0;
-    const completedSteps = localItinerary.steps?.filter(s => s.isCompleted || s.completed)?.length || 0;
-    const progressPercent = totalSteps === 0 ? 0 : Math.round((completedSteps / totalSteps) * 100);
-
-    const handlePhotoChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setPhotoFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => setPreviewUrl(reader.result);
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const handleCompleteStepInternal = async (stepId) => {
-        if (submittingStep) return;
-        setSubmittingStep(true);
-        try {
-            let finalPhotoUrl = (previewUrl && !photoFile) ? previewUrl : '';
-            
-            if (photoFile) {
-                const fd = new FormData();
-                fd.append('file', photoFile);
-                const uploadRes = await authFetch('/api/files/upload', {
-                    method: 'POST',
-                    body: fd
-                });
-                if (uploadRes.ok) {
-                    const data = await uploadRes.json();
-                    finalPhotoUrl = data.url;
-                } else {
-                    throw new Error("Photo upload failed");
-                }
-            }
-
-            const res = await authFetch(`/api/missions/${userMissionId}/steps/${stepId}/complete`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ memo, photoUrl: finalPhotoUrl })
-            });
-
-            if (res.ok) {
-                const updatedStep = await res.json();
-                setLocalItinerary(prev => ({
-                    ...prev,
-                    steps: prev.steps.map(s => s.id === stepId ? updatedStep : s)
-                }));
-                // Notify parent
-                if (onStepComplete) onStepComplete(userMissionId, stepId, updatedStep);
-                
-                setCheckingStepId(null);
-                setMemo('');
-                setPhotoFile(null);
-                setPreviewUrl(null);
-            } else {
-                const errorText = await res.text();
-                alert(`인증 실패: ${errorText}`);
-            }
-        } catch (e) {
-            console.error("Error completing step", e);
-            alert("인증 처리 중 오류가 발생했습니다.");
-        } finally {
-            setSubmittingStep(false);
-        }
-    };
-
     return (
         <div className="animate-fade" style={{ background: 'var(--bg-lite)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', paddingBottom: '100px' }}>
                 <ModalHeader 
-                    title={localItinerary.title || localItinerary.itineraryTitle}
-                    subtitle={isMission ? "MISSION IN PROGRESS" : "ITINERARY DETAILS"}
+                    title={localItinerary.title}
+                    subtitle="ITINERARY DETAILS"
                     onClose={onClose}
                     actions={
-                        isAuthor && !isMission && (
+                        isAuthor && (
                             <button onClick={onEdit} className="icon-circle" style={{ width: '40px', height: '40px' }}>
                                 <Edit3 size={18} color="var(--text-primary)" />
                             </button>
@@ -171,26 +82,16 @@ const ItineraryDetailPage = ({ type = 'itinerary' }) => {
                     <div className="ticket-wrapper" style={{ padding: '24px', marginBottom: '32px', background: 'white' }}>
                         <div className="flex-between" style={{ marginBottom: '12px' }}>
                             <span className="label-orange">JOURNEY LOG</span>
-                            <div className="status-pill">{isMission ? 'ACTIVE' : 'PLANNED'}</div>
+                            <div className="status-pill">PLANNED</div>
                         </div>
                         <p className="text-s" style={{ color: 'var(--text-main)', fontSize: '15px', lineHeight: 1.6 }}>
-                            {localItinerary.description || localItinerary.itinerary?.description}
+                            {localItinerary.description}
                         </p>
                         
-                        {isMission && (
-                            <div style={{ marginTop: '24px' }}>
-                                <div className="flex-between" style={{ marginBottom: '8px' }}>
-                                    <span className="label-muted">MISSION PROGRESS</span>
-                                    <span style={{ fontWeight: 900, color: 'var(--primary-orange)' }}>{progressPercent}%</span>
-                                </div>
-                                <div style={{ height: '8px', background: 'var(--bg-color)', borderRadius: '4px', overflow: 'hidden' }}>
-                                    <div style={{ 
-                                        width: `${progressPercent}%`, 
-                                        height: '100%', 
-                                        background: 'var(--primary-gradient)',
-                                        transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)'
-                                    }} />
-                                </div>
+                        {localItinerary.startDate && (
+                            <div style={{ marginTop: '16px', display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                                <span>📅 {localItinerary.startDate} ~ {localItinerary.endDate}</span>
+                                {localItinerary.location && <span>📍 {localItinerary.location}</span>}
                             </div>
                         )}
                     </div>
@@ -209,224 +110,93 @@ const ItineraryDetailPage = ({ type = 'itinerary' }) => {
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                {day.points.map((point, pIdx) => {
-                                    const isDone = point.isCompleted || point.completed;
-                                    const isChecking = checkingStepId === point.id;
-
-                                    return (
-                                        <div key={pIdx} className="ticket-wrapper" style={{ 
-                                            padding: '20px', 
-                                            border: isDone ? '1px solid #A7F3D0' : '1px solid var(--border-color)',
-                                            background: isDone ? '#F0FDF4' : 'white'
-                                        }}>
-                                            <div className="flex-between" style={{ marginBottom: '8px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <div style={{ 
-                                                        width: '24px', height: '24px', borderRadius: '50%', 
-                                                        background: isDone ? '#10B981' : 'var(--bg-color)',
-                                                        color: isDone ? 'white' : 'var(--text-muted)',
-                                                        fontSize: '12px', fontWeight: 900, display: 'flex', justifyContent: 'center', alignItems: 'center'
-                                                    }}>
-                                                        {isDone ? <span className="success-animation"><Check size={14} /></span> : (point.sequenceOrder || pIdx + 1)}
-                                                    </div>
-                                                    <div>
-                                                        <h4 style={{ fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{point.label}</h4>
-                                                        {(point.startTime || point.endTime) && (
-                                                            <div style={{ 
-                                                                marginTop: '8px', padding: '10px 14px', background: 'var(--highlight-muted)', 
-                                                                borderRadius: '12px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center'
-                                                            }}>
-                                                                {point.startTime && (
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                        <Plane size={12} color="var(--primary-orange)" style={{ transform: 'rotate(90deg)' }} />
-                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)' }}>ARR</span>
-                                                                        <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{point.startTime}</span>
-                                                                    </div>
-                                                                )}
-                                                                {point.startTime && point.endTime && (
-                                                                    <div style={{ width: '1px', height: '12px', background: 'var(--border-color)' }} />
-                                                                )}
-                                                                {point.endTime && (
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                        <Plane size={12} color="var(--primary-orange)" />
-                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)' }}>DEP</span>
-                                                                        <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{point.endTime}</span>
-                                                                    </div>
-                                                                )}
-                                                                
-                                                                {point.startTime && point.endTime && (
-                                                                    <div style={{ 
-                                                                        marginLeft: 'auto', padding: '2px 8px', background: 'white', 
-                                                                        borderRadius: '20px', fontSize: '10px', fontWeight: 900, color: 'var(--primary-orange)',
-                                                                        border: '1px solid rgba(255, 92, 0, 0.1)'
-                                                                    }}>
-                                                                        {(() => {
-                                                                            const [h1, m1] = point.startTime.split(':').map(Number);
-                                                                            const [h2, m2] = point.endTime.split(':').map(Number);
-                                                                            let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
-                                                                            if (diff < 0) diff += 24 * 60; // Next day
-                                                                            const h = Math.floor(diff / 60);
-                                                                            const m = diff % 60;
-                                                                            return `STAY: ${h > 0 ? `${h}h ` : ''}${m}m`;
-                                                                        })()}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                {isDone && (
-                                                    <button 
-                                                        onClick={() => setCheckingStepId(point.id)} 
-                                                        style={{ background: 'none', color: 'var(--text-muted)' }}
-                                                    >
-                                                        <Edit3 size={14} />
-                                                    </button>
-                                                )}
-                                            </div>
-
-                                            {isDone && point.photoUrl && (
-                                                <img src={point.photoUrl} alt="memory" style={{ 
-                                                    width: '100%', height: '180px', objectFit: 'cover', 
-                                                    borderRadius: '12px', marginTop: '12px', border: '1px solid var(--border-color)' 
-                                                }} />
-                                            )}
-
-                                            {isDone && point.memo && (
+                                {day.points.map((point, pIdx) => (
+                                    <div key={pIdx} className="ticket-wrapper" style={{ 
+                                        padding: '20px', 
+                                        border: '1px solid var(--border-color)',
+                                        background: 'white'
+                                    }}>
+                                        <div className="flex-between" style={{ marginBottom: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <div style={{ 
-                                                    marginTop: '12px', padding: '12px', background: 'white', 
-                                                    borderRadius: '12px', fontSize: '14px', borderLeft: '4px solid #10B981',
-                                                    color: 'var(--text-main)', fontWeight: 500
+                                                    width: '24px', height: '24px', borderRadius: '50%', 
+                                                    background: 'var(--bg-color)',
+                                                    color: 'var(--text-muted)',
+                                                    fontSize: '12px', fontWeight: 900, display: 'flex', justifyContent: 'center', alignItems: 'center'
                                                 }}>
-                                                    {point.memo}
+                                                    {point.sequenceOrder || pIdx + 1}
                                                 </div>
-                                            )}
-
-                                            {isMission && !isDone && !isChecking && (
-                                                <button 
-                                                    onClick={() => {
-                                                        setCheckingStepId(point.id);
-                                                        setMemo(point.memo || '');
-                                                        setPreviewUrl(point.photoUrl || null);
-                                                    }}
-                                                    className="secondary-btn w-full" 
-                                                    style={{ marginTop: '12px', height: '48px', fontSize: '13px' }}
-                                                >
-                                                    <Camera size={16} style={{ marginRight: '8px' }} /> 인증하고 스탬프 찍기
-                                                </button>
-                                            )}
-
-                                            {isChecking && (
-                                                <div style={{ marginTop: '16px', borderTop: '1px dashed var(--border-color)', paddingTop: '16px' }}>
-                                                    <textarea 
-                                                        value={memo} 
-                                                        onChange={e => setMemo(e.target.value)} 
-                                                        placeholder="이곳에서의 추억을 기록해보세요..." 
-                                                        style={{ 
-                                                            width: '100%', padding: '12px', borderRadius: '12px', 
-                                                            background: 'var(--bg-color)', border: '1px solid var(--border-color)',
-                                                            fontSize: '14px', minHeight: '100px', resize: 'none'
-                                                        }} 
-                                                    />
-                                                    
-                                                    <div style={{ marginTop: '12px' }}>
-                                                        {previewUrl ? (
-                                                            <div style={{ position: 'relative' }}>
-                                                                <img src={previewUrl} style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '12px' }} alt="preview" />
-                                                                <button 
-                                                                    onClick={() => { setPhotoFile(null); setPreviewUrl(null); }} 
-                                                                    style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.5)', color: 'white', borderRadius: '50%', padding: '6px' }}
-                                                                >
-                                                                    <X size={16} />
-                                                                </button>
-                                                            </div>
-                                                        ) : (
-                                                            <button 
-                                                                onClick={() => fileInputRef.current.click()} 
-                                                                style={{ 
-                                                                    width: '100%', height: '100px', borderRadius: '12px', 
-                                                                    border: '2px dashed var(--border-color)', display: 'flex', flexDirection: 'column',
-                                                                    justifyContent: 'center', alignItems: 'center', gap: '8px', color: 'var(--text-muted)'
-                                                                }}
-                                                            >
-                                                                <ImageIcon size={24} />
-                                                                <span style={{ fontSize: '13px', fontWeight: 700 }}>사진 첨부 (옵션)</span>
-                                                            </button>
-                                                        )}
-                                                        <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*" onChange={handlePhotoChange} />
-                                                    </div>
-
-                                                    <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-                                                        <button onClick={() => setCheckingStepId(null)} className="secondary-btn" style={{ flex: 1 }}>취소</button>
-                                                        <PrimaryButton 
-                                                            onClick={() => handleCompleteStepInternal(point.id)} 
-                                                            disabled={submittingStep}
-                                                            style={{ flex: 2 }}
-                                                        >
-                                                            {submittingStep ? '처리 중...' : '인증 완료'}
-                                                        </PrimaryButton>
-                                                    </div>
+                                                <div>
+                                                    <h4 style={{ fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{point.label}</h4>
+                                                    {(point.startTime || point.endTime) && (
+                                                        <div style={{ 
+                                                            marginTop: '8px', padding: '10px 14px', background: 'var(--highlight-muted)', 
+                                                            borderRadius: '12px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center'
+                                                        }}>
+                                                            {point.startTime && (
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <Plane size={12} color="var(--primary-orange)" style={{ transform: 'rotate(90deg)' }} />
+                                                                    <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)' }}>ARR</span>
+                                                                    <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{point.startTime}</span>
+                                                                </div>
+                                                            )}
+                                                            {point.startTime && point.endTime && (
+                                                                <div style={{ width: '1px', height: '12px', background: 'var(--border-color)' }} />
+                                                            )}
+                                                            {point.endTime && (
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <Plane size={12} color="var(--primary-orange)" />
+                                                                    <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)' }}>DEP</span>
+                                                                    <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{point.endTime}</span>
+                                                                </div>
+                                                            )}
+                                                            
+                                                            {point.startTime && point.endTime && (
+                                                                <div style={{ 
+                                                                    marginLeft: 'auto', padding: '2px 8px', background: 'white', 
+                                                                    borderRadius: '20px', fontSize: '10px', fontWeight: 900, color: 'var(--primary-orange)',
+                                                                    border: '1px solid rgba(255, 92, 0, 0.1)'
+                                                                }}>
+                                                                    {(() => {
+                                                                        const [h1, m1] = point.startTime.split(':').map(Number);
+                                                                        const [h2, m2] = point.endTime.split(':').map(Number);
+                                                                        let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+                                                                        if (diff < 0) diff += 24 * 60;
+                                                                        const h = Math.floor(diff / 60);
+                                                                        const m = diff % 60;
+                                                                        return `STAY: ${h > 0 ? `${h}h ` : ''}${m}m`;
+                                                                    })()}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
-                                    );
-                                })}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     ))}
                 </div>
 
                 <ModalFooter>
-                    {isMission ? (
-                        <div className="flex-between w-full">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
-                                <Clock size={16} />
-                                <span style={{ fontSize: '13px', fontWeight: 600 }}>{progressPercent}% Completed</span>
-                            </div>
-                            <PrimaryButton 
-                                disabled={progressPercent < 100}
-                                onClick={async () => {
-                                    const res = await authFetch(`/api/missions/complete/${userMissionId}`, { method: 'POST' });
-                                    if (res.ok) {
-                                        alert("축하합니다! 여행의 모든 미션을 완료했습니다. 🏆");
-                                        onClose();
-                                    }
-                                }}
-                            >
-                                미션 최종 완료
-                            </PrimaryButton>
-                        </div>
-                    ) : (
-                        <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-                            <button
-                                className="secondary-btn"
-                                style={{ flex: 1 }}
-                                onClick={async () => {
-                                    try {
-                                        await JourneyRepository.add(localItinerary.id);
-                                        alert('내 여정에 추가되었습니다. ✈️');
-                                        onClose();
-                                    } catch (e) {
-                                        alert('여정에 추가하지 못했습니다.');
-                                    }
-                                }}
-                            >
-                                여정에 넣기
-                            </button>
-                            <PrimaryButton
-                                style={{ flex: 1 }}
-                                onClick={async () => {
-                                    const res = await authFetch(`/api/missions/start/${localItinerary.id}`, { method: 'POST' });
-                                    if (res.ok) {
-                                        alert("챌린지에 추가되었습니다! 나의 챌린지 탭에서 확인하세요. 🚀");
-                                        onClose();
-                                    }
-                                }}
-                            >
-                                챌린지에 넣기
-                            </PrimaryButton>
-                        </div>
-                    )}
+                    <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                        <PrimaryButton
+                            style={{ flex: 1 }}
+                            onClick={async () => {
+                                try {
+                                    await JourneyRepository.add(localItinerary.id);
+                                    alert('내 여행에 추가되었습니다. ✈️');
+                                    onClose();
+                                } catch (e) {
+                                    alert('추가하지 못했습니다.');
+                                }
+                            }}
+                        >
+                            내 여행에 추가
+                        </PrimaryButton>
+                    </div>
                 </ModalFooter>
             </div>
         </div>

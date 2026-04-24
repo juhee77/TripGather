@@ -1,8 +1,7 @@
 /* eslint-disable */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PassportCard from './PassportCard';
 import StampBook from './StampBook';
-import { authFetch } from '../api/client';
 import { LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserViewModel } from '../viewmodels/useUserViewModel';
@@ -12,28 +11,8 @@ const ProfileTab = () => {
   const navigate = useNavigate();
   const { user } = useUserViewModel();
   const { logout } = useAuth();
-  const [stamps, setStamps] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [hasFetched, setHasFetched] = useState(false);
-
-  useEffect(() => {
-    if (user && !hasFetched) {
-      setLoading(true);
-      authFetch('/api/missions/me/stamps')
-        .then(res => res.json())
-        .then(data => {
-          setStamps(Array.isArray(data) ? data : []);
-          setLoading(false);
-          setHasFetched(true);
-        })
-        .catch(err => {
-          console.error("Error fetching stamps:", err);
-          setLoading(false);
-        });
-    }
-  }, [user, hasFetched]);
-
-
+  const stamps = []; // TODO: replace with trip-based stamps in future
+  const loading = false;
 
   return (
     <div style={{ paddingBottom: '100px' }} className="animate-fade">

@@ -41,8 +41,7 @@ function AppContent() {
         <Route path="/gathering/:id" element={<PrivateRoute><GatheringDetailPage /></PrivateRoute>} />
         <Route path="/itinerary/create" element={<PrivateRoute><ItineraryEditorPage /></PrivateRoute>} />
         <Route path="/itinerary/edit/:id" element={<PrivateRoute><ItineraryEditorPage /></PrivateRoute>} />
-        <Route path="/itinerary/:id" element={<PrivateRoute><ItineraryDetailPage type="itinerary" /></PrivateRoute>} />
-        <Route path="/mission/:id" element={<PrivateRoute><ItineraryDetailPage type="mission" /></PrivateRoute>} />
+        <Route path="/itinerary/:id" element={<PrivateRoute><ItineraryDetailPage /></PrivateRoute>} />
         <Route path="/map" element={<PrivateRoute><MapPage /></PrivateRoute>} />
         <Route path="/chat" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
         <Route path="/mypage" element={<PrivateRoute><MyPage /></PrivateRoute>} />
