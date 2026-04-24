@@ -5,8 +5,9 @@ import { Plus, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
 import { useMissionsViewModel } from '../viewmodels/useMissionsViewModel';
+import JourneyRepository from '../repositories/JourneyRepository';
 
-const ItineraryTab = ({ onMissionStart }) => {
+const ItineraryTab = ({ onMissionStart, onAddToJourney }) => {
     const navigate = useNavigate();
     const {
         itineraries,
@@ -23,20 +24,41 @@ const ItineraryTab = ({ onMissionStart }) => {
         activeMissions, 
         actions: { startMission: apiStartMission } 
     } = useMissionsViewModel();
+    const [boardTarget, setBoardTarget] = React.useState(null);
  
     // Map itineraries to include mission data if already participating
     const mappedItineraries = itineraries.map(it => {
         const mission = activeMissions.find(m => m.itineraryId === it.id && m.status !== MissionStatus.COMPLETED);
-        return mission ? { ...it, ...mission, isParticipating: true } : it;
+        return mission
+            ? { ...it, ...mission, itineraryId: it.id, isParticipating: true }
+            : { ...it, itineraryId: it.id };
     });
 
-    const handleStartMission = async (itineraryId) => {
+    const handleStartMission = async (itinerary) => {
+        setBoardTarget(itinerary);
+    };
+
+    const handleBoardToChallenge = async () => {
+        if (!boardTarget?.id) return;
         try {
-            await apiStartMission(itineraryId);
+            await apiStartMission(boardTarget.id);
+            setBoardTarget(null);
             if (onMissionStart) onMissionStart();
         } catch (err) {
             console.error("Failed to start mission:", err);
         }
+    };
+
+    const handleBoardToJourney = () => {
+        if (!boardTarget?.id) return;
+        JourneyRepository.add(boardTarget.id)
+            .then(() => {
+                setBoardTarget(null);
+                if (onAddToJourney) onAddToJourney();
+            })
+            .catch((err) => {
+                console.error('Failed to add journey:', err);
+            });
     };
 
     useEffect(() => {
@@ -90,7 +112,11 @@ const ItineraryTab = ({ onMissionStart }) => {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {mappedItineraries.map((it, idx) => (
-                        <div key={it.id} className="animate-fade" style={{ animationDelay: `${idx * 0.1}s` }}>
+                        <div
+                            key={`${it.itineraryId ?? it.id}-${it.missionId ?? 'none'}`}
+                            className="animate-fade"
+                            style={{ animationDelay: `${idx * 0.1}s` }}
+                        >
                             <TicketCard
                                 itinerary={it}
                                 onViewRoute={(itinerary) => {
@@ -124,6 +150,37 @@ const ItineraryTab = ({ onMissionStart }) => {
                     )}
                 </div>
             </div>
+            {boardTarget && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(15,23,42,0.35)',
+                    zIndex: 1200,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px'
+                }}>
+                    <div style={{
+                        width: '100%',
+                        maxWidth: '420px',
+                        background: 'white',
+                        borderRadius: '20px',
+                        border: '1px solid var(--border-color)',
+                        padding: '20px'
+                    }}>
+                        <h3 style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>BOARD 방식 선택</h3>
+                        <p style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                            "{boardTarget.title || boardTarget.itineraryTitle}"을 어디에 넣을까요?
+                        </p>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button className="secondary-btn" style={{ flex: 1 }} onClick={() => setBoardTarget(null)}>취소</button>
+                            <button className="secondary-btn" style={{ flex: 1 }} onClick={handleBoardToJourney}>여정에 넣기</button>
+                            <button className="primary-btn" style={{ flex: 1 }} onClick={handleBoardToChallenge}>챌린지에 넣기</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -107,7 +107,7 @@ const TicketCard = ({ itinerary, onViewRoute, onStartMission, onEdit }) => {
                             onViewRoute && onViewRoute(itinerary);
                             return;
                         }
-                        onStartMission && await onStartMission(itinerary.id);
+                        onStartMission && await onStartMission(itinerary);
                     }}
                     style={{ 
                         flex: (isHost && !isMission) ? 1.5 : 2, 

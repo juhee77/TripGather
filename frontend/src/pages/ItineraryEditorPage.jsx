@@ -14,6 +14,9 @@ const ItineraryEditorPage = () => {
     const isEdit = !!id;
     const [formData, setFormData] = useState({
         title: '',
+        region: '',
+        startDate: '',
+        endDate: '',
         description: '',
         stampImageUrl: '',
         routePoints: []
@@ -31,6 +34,9 @@ const ItineraryEditorPage = () => {
                         const itinerary = await res.json();
                         setFormData({
                             title: itinerary.title || '',
+                            region: itinerary.location || '',
+                            startDate: itinerary.dates?.includes('~') ? itinerary.dates.split('~')[0]?.trim() : '',
+                            endDate: itinerary.dates?.includes('~') ? itinerary.dates.split('~')[1]?.trim() : '',
                             description: itinerary.description || '',
                             stampImageUrl: itinerary.stampImageUrl || '',
                             routePoints: itinerary.routePoints ? [...itinerary.routePoints].sort((a, b) => 
@@ -124,8 +130,16 @@ const ItineraryEditorPage = () => {
         }
         setSaving(true);
         try {
+            const dates = (formData.startDate || formData.endDate)
+                ? `${formData.startDate || ''} ~ ${formData.endDate || ''}`
+                : '';
             const payload = {
-                ...formData,
+                title: formData.title,
+                description: formData.description,
+                stampImageUrl: formData.stampImageUrl,
+                routePoints: formData.routePoints,
+                location: formData.region,
+                dates,
                 author: isEdit ? undefined : currentUser?.name,
                 authorEmail: isEdit ? undefined : currentUser?.email
             };
@@ -186,6 +200,54 @@ const ItineraryEditorPage = () => {
                             as="textarea"
                             style={{ height: '120px', resize: 'none', lineHeight: '1.6' }}
                         />
+
+                        <FormInput
+                            label="REGION"
+                            icon={MapPin}
+                            name="region"
+                            value={formData.region}
+                            onChange={handleChange}
+                            placeholder="예: 오사카, 제주도, 파리"
+                        />
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div>
+                                <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
+                                    START DATE
+                                </label>
+                                <input
+                                    name="startDate"
+                                    type="date"
+                                    value={formData.startDate}
+                                    onChange={handleChange}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border-color)',
+                                        background: 'var(--surface)'
+                                    }}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
+                                    END DATE
+                                </label>
+                                <input
+                                    name="endDate"
+                                    type="date"
+                                    value={formData.endDate}
+                                    onChange={handleChange}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border-color)',
+                                        background: 'var(--surface)'
+                                    }}
+                                />
+                            </div>
+                        </div>
 
                         <div>
                             <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>STAMP DESIGN (REWARD)</label>
