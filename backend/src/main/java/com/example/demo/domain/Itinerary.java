@@ -27,7 +27,9 @@ public class Itinerary {
 
     private String location;
 
-    private String dates;
+    private java.time.LocalDate startDate;
+
+    private java.time.LocalDate endDate;
 
     @Column(columnDefinition = "TEXT")
     private String bgImageUrl;

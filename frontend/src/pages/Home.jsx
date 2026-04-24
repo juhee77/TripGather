@@ -29,6 +29,7 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState('라운지');
   const [showOnlyHosted, setShowOnlyHosted] = useState(false);
   const [journeyItineraries, setJourneyItineraries] = useState([]);
+  const [sortBy, setSortBy] = useState('latest'); // 'latest' or 'startDate'
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
   const {
     activeMissions,
@@ -49,6 +50,15 @@ const Home = () => {
 
   const handleEditItinerary = (itinerary) => {
     navigate(`/itinerary/edit/${itinerary.id}`);
+  };
+
+  const handleRemoveJourney = async (itineraryId) => {
+    try {
+      await JourneyRepository.remove(itineraryId);
+      setJourneyItineraries(prev => prev.filter(j => j.id !== itineraryId));
+    } catch (err) {
+      alert('여정 제거에 실패했습니다.');
+    }
   };
 
   return (
@@ -331,16 +341,55 @@ const Home = () => {
                 return isOwner || journeyIds.has(it.id);
               });
 
-              return myJourneys.map((it, idx) => (
-                <div key={it.id} style={{ animationDelay: `${idx * 0.1}s` }} className="animate-fade">
-                  <TicketCard
-                    itinerary={it}
-                    onViewRoute={() => navigate(`/itinerary/${it.id}`)}
-                    onEdit={() => navigate(`/itinerary/edit/${it.id}`)}
-                    onStartMission={() => {}}
-                  />
-                </div>
-              ));
+              const sortedJourneys = [...myJourneys].sort((a, b) => {
+                if (sortBy === 'startDate') {
+                  if (!a.startDate) return 1;
+                  if (!b.startDate) return -1;
+                  return new Date(a.startDate) - new Date(b.startDate);
+                }
+                // latest (createdAt)
+                return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+              });
+
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px', gap: '8px' }}>
+                    <button 
+                      onClick={() => setSortBy('startDate')}
+                      style={{ 
+                        fontSize: '12px', fontWeight: 800, padding: '6px 12px', borderRadius: '8px',
+                        background: sortBy === 'startDate' ? 'var(--text-primary)' : 'white',
+                        color: sortBy === 'startDate' ? 'white' : 'var(--text-sub)',
+                        border: '1px solid var(--border-color)'
+                      }}
+                    >
+                      시작일 순
+                    </button>
+                    <button 
+                      onClick={() => setSortBy('latest')}
+                      style={{ 
+                        fontSize: '12px', fontWeight: 800, padding: '6px 12px', borderRadius: '8px',
+                        background: sortBy === 'latest' ? 'var(--text-primary)' : 'white',
+                        color: sortBy === 'latest' ? 'white' : 'var(--text-sub)',
+                        border: '1px solid var(--border-color)'
+                      }}
+                    >
+                      최근 추가 순
+                    </button>
+                  </div>
+                  {sortedJourneys.map((it, idx) => (
+                    <div key={it.id} style={{ animationDelay: `${idx * 0.1}s` }} className="animate-fade">
+                      <TicketCard
+                        itinerary={it}
+                        onViewRoute={() => navigate(`/itinerary/${it.id}`)}
+                        onEdit={() => navigate(`/itinerary/edit/${it.id}`)}
+                        onRemove={journeyIds.has(it.id) ? handleRemoveJourney : null}
+                        onStartMission={() => {}}
+                      />
+                    </div>
+                  ))}
+                </>
+              );
             })()}
             {itineraries.filter((it) => {
               const journeyIds = new Set(journeyItineraries.map(j => j.id));

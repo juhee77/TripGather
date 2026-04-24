@@ -21,7 +21,8 @@ public class GatheringResponse {
     private Double lat;
     private Double lng;
     private String category;
-    private String dates;
+    private java.time.LocalDate startDate;
+    private java.time.LocalDate endDate;
     private int currentJoining;
     private int maxJoining;
     private String bgImageUrl;
@@ -50,7 +51,8 @@ public class GatheringResponse {
                 .lat(gathering.getLat())
                 .lng(gathering.getLng())
                 .category(gathering.getCategory())
-                .dates(gathering.getDates())
+                .startDate(gathering.getStartDate())
+                .endDate(gathering.getEndDate())
                 .currentJoining(gathering.getCurrentJoining())
                 .maxJoining(gathering.getMaxJoining())
                 .bgImageUrl(gathering.getBgImageUrl())

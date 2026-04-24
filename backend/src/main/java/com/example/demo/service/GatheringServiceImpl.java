@@ -145,7 +145,8 @@ public class GatheringServiceImpl implements GatheringUseCase {
         Gathering gathering = gatheringRepository.findById(id).get();
         gathering.setTitle(updateData.getTitle());
         gathering.setLocation(updateData.getLocation());
-        gathering.setDates(updateData.getDates());
+        gathering.setStartDate(updateData.getStartDate());
+        gathering.setEndDate(updateData.getEndDate());
         gathering.setMaxJoining(updateData.getMaxJoining());
         gathering.setBgImageUrl(updateData.getBgImageUrl());
         gathering.setCategory(updateData.getCategory());

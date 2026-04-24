@@ -20,7 +20,8 @@ public class ItineraryResponse {
     private String authorEmail;
     private String description;
     private String location;
-    private String dates;
+    private java.time.LocalDate startDate;
+    private java.time.LocalDate endDate;
     private String bgImageUrl;
     private String stampImageUrl;
     private LocalDateTime createdAt;
@@ -35,7 +36,8 @@ public class ItineraryResponse {
                 .authorEmail(itinerary.getAuthorEmail())
                 .description(itinerary.getDescription())
                 .location(itinerary.getLocation())
-                .dates(itinerary.getDates())
+                .startDate(itinerary.getStartDate())
+                .endDate(itinerary.getEndDate())
                 .bgImageUrl(itinerary.getBgImageUrl())
                 .stampImageUrl(itinerary.getStampImageUrl())
                 .createdAt(itinerary.getCreatedAt())
