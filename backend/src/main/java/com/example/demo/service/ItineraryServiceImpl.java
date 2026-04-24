@@ -22,6 +22,18 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         return itineraryRepository.findAllByOrderByCreatedAtDesc();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<Itinerary> getPublicItineraries() {
+        return itineraryRepository.findByIsPublicTrueOrderByCreatedAtDesc();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Itinerary> getUserJourneys(String email) {
+        return itineraryRepository.findByOwnerEmailOrderByCreatedAtDesc(email);
+    }
+
     @Transactional(readOnly = true)
     public Itinerary getById(Long id) {
         return itineraryRepository.findById(id)
@@ -33,6 +45,59 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         if (itinerary.getRoutePoints() != null) {
             itinerary.getRoutePoints().forEach(rp -> rp.setItinerary(itinerary));
         }
+        // Initially, the author is the owner
+        if (itinerary.getOwnerEmail() == null) {
+            itinerary.setOwnerEmail(itinerary.getAuthorEmail());
+        }
+        return itineraryRepository.save(itinerary);
+    }
+
+    @Override
+    @Transactional
+    public Itinerary cloneItinerary(Long originalId, String ownerEmail) {
+        Itinerary original = getById(originalId);
+        
+        Itinerary clone = Itinerary.builder()
+                .title(original.getTitle() + " (Copy)")
+                .description(original.getDescription())
+                .author(original.getAuthor())
+                .authorEmail(original.getAuthorEmail())
+                .ownerEmail(ownerEmail)
+                .originalId(originalId)
+                .isPublic(false) // Clones are private by default
+                .location(original.getLocation())
+                .startDate(original.getStartDate())
+                .endDate(original.getEndDate())
+                .bgImageUrl(original.getBgImageUrl())
+                .stampImageUrl(original.getStampImageUrl())
+                .build();
+
+        if (original.getRoutePoints() != null) {
+            original.getRoutePoints().forEach(originalPoint -> {
+                com.example.demo.domain.RoutePoint clonedPoint = com.example.demo.domain.RoutePoint.builder()
+                        .label(originalPoint.getLabel())
+                        .dayNumber(originalPoint.getDayNumber())
+                        .dayLabel(originalPoint.getDayLabel())
+                        .sequenceOrder(originalPoint.getSequenceOrder())
+                        .startTime(originalPoint.getStartTime())
+                        .endTime(originalPoint.getEndTime())
+                        .itinerary(clone)
+                        .build();
+                clone.getRoutePoints().add(clonedPoint);
+            });
+        }
+
+        return itineraryRepository.save(clone);
+    }
+
+    @Override
+    @Transactional
+    public Itinerary togglePublicStatus(Long id, String email, boolean isPublic) {
+        Itinerary itinerary = getById(id);
+        if (!itinerary.getOwnerEmail().equals(email)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION); // Use standard forbidden error
+        }
+        itinerary.setPublic(isPublic);
         return itineraryRepository.save(itinerary);
     }
 
@@ -44,8 +109,9 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         itinerary.setStampImageUrl(update.getStampImageUrl());
         itinerary.setStartDate(update.getStartDate());
         itinerary.setEndDate(update.getEndDate());
+        itinerary.setPublic(update.isPublic());
         
-        // RoutePoints 업데이트 로직 (간단화를 위해 기존 삭제 후 재등록 패턴 또는 병합)
+        // RoutePoints 업데이트 로직
         if (update.getRoutePoints() != null) {
             itinerary.getRoutePoints().clear();
             update.getRoutePoints().forEach(rp -> {
@@ -54,12 +120,15 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
             });
         }
         
-        // 작성자 정보 보존 (업데이트 시 변경 불가하도록 강화)
+        // 작성자 및 소유자 관리
         if (update.getAuthor() != null && itinerary.getAuthor() == null) {
             itinerary.setAuthor(update.getAuthor());
         }
         if (update.getAuthorEmail() != null && (itinerary.getAuthorEmail() == null || itinerary.getAuthorEmail().isEmpty())) {
             itinerary.setAuthorEmail(update.getAuthorEmail());
+        }
+        if (update.getOwnerEmail() != null) {
+            itinerary.setOwnerEmail(update.getOwnerEmail());
         }
         
         return itineraryRepository.save(itinerary);

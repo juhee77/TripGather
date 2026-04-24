@@ -19,7 +19,6 @@ public class DataInitializer {
             ItineraryRepository itineraryRepo, 
             GatheringMemberRepository memberRepo,
             ChatMessageRepository chatRepo,
-            UserMissionRepository missionRepo,
             org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
         
         return args -> {
@@ -198,22 +197,6 @@ public class DataInitializer {
                         .build();
                 jejuTrip.getRoutePoints().forEach(rp -> rp.setItinerary(jejuTrip));
                 itineraryRepo.save(jejuTrip);
-
-                // User Mission 데이터 추가
-                UserMission mission = UserMission.builder()
-                        .user(jihyun)
-                        .itinerary(seoulTrip)
-                        .status(MissionStatus.ACTIVE)
-                        .startedAt(LocalDateTime.now().minusDays(1))
-                        .stampImageUrl("https://cdn-icons-png.flaticon.com/512/3715/3715013.png")
-                        .build();
-
-                UserMissionStep s1 = UserMissionStep.builder().userMission(mission).routePoint(seoul_day1_p1).isCompleted(true).photoUrl("").memo("타워 구경 완료!").build();
-                UserMissionStep s2 = UserMissionStep.builder().userMission(mission).routePoint(seoul_day1_p2).isCompleted(true).photoUrl("").memo("한복 입고 사진 찍음").build();
-                UserMissionStep s3 = UserMissionStep.builder().userMission(mission).routePoint(seoul_day1_p3).isCompleted(false).photoUrl("").memo("").build();
-
-                mission.getSteps().addAll(List.of(s1, s2, s3));
-                missionRepo.save(mission);
             }
         };
     }

@@ -18,6 +18,9 @@ public class ItineraryResponse {
     private String title;
     private String author;
     private String authorEmail;
+    private String ownerEmail;
+    private Long originalId;
+    private boolean isPublic;
     private String description;
     private String location;
     private java.time.LocalDate startDate;
@@ -34,6 +37,9 @@ public class ItineraryResponse {
                 .title(itinerary.getTitle())
                 .author(itinerary.getAuthor())
                 .authorEmail(itinerary.getAuthorEmail())
+                .ownerEmail(itinerary.getOwnerEmail())
+                .originalId(itinerary.getOriginalId())
+                .isPublic(itinerary.isPublic())
                 .description(itinerary.getDescription())
                 .location(itinerary.getLocation())
                 .startDate(itinerary.getStartDate())

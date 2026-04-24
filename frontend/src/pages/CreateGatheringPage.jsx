@@ -78,7 +78,8 @@ const CreateGatheringPage = () => {
 
     const newGathering = {
       ...formData,
-      dates: `${formData.date} ${formData.time}`,
+      startDate: formData.date,
+      endDate: formData.date,
       maxJoining: parseInt(formData.maxJoining, 10),
       currentJoining: 1,
       bgImageUrl: finalBgImageUrl || DEFAULT_BG

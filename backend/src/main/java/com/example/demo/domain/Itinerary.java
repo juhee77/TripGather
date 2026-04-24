@@ -23,6 +23,23 @@ public class Itinerary {
     
     private String authorEmail;
 
+    /**
+     * ownerEmail represents the user who currently "owns" this instance of the itinerary.
+     * When cloned, this becomes the user who added it to their trips.
+     */
+    private String ownerEmail;
+
+    /**
+     * originalId tracks the source itinerary if this is a clone.
+     */
+    private Long originalId;
+
+    /**
+     * isPublic determines if this itinerary shows up in the "Travel Feed".
+     */
+    @Builder.Default
+    private boolean isPublic = false;
+
     private String description;
 
     private String location;

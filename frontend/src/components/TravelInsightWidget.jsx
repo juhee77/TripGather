@@ -1,17 +1,15 @@
 import React, { useMemo } from 'react';
-import { MissionStatus } from '../constants/enums';
 import { Sparkles, Lightbulb, TrendingUp, Compass } from 'lucide-react';
 
-const TravelInsightWidget = ({ user, myMissions }) => {
-  const completedMissions = useMemo(() => myMissions?.filter(m => m.status === MissionStatus.COMPLETED) || [], [myMissions]);
+const TravelInsightWidget = ({ user }) => {
   const points = user?.points || 0;
 
   const insight = useMemo(() => {
-    if (completedMissions.length >= 5) {
+    if (points >= 1000) {
       return {
         icon: <Sparkles size={20} color="var(--primary-orange)" />,
         title: "베테랑 탐험가 등극!",
-        message: `벌써 ${completedMissions.length}개의 스탬프를 모으셨네요. 당신은 이제 완벽한 TripGather 전문가입니다!`
+        message: `${points} 포인트를 보유 중! 당신은 이제 완벽한 TripGather 전문가입니다!`
       };
     } else if (points > 100) {
       return {
@@ -19,11 +17,11 @@ const TravelInsightWidget = ({ user, myMissions }) => {
         title: "포인트 부자!",
         message: "활동 포인트가 100점을 넘었습니다! 포인트로 더 즐거운 여행을 계획해 보세요."
       };
-    } else if (completedMissions.length > 0) {
+    } else if (points > 0) {
       return {
         icon: <Compass size={20} color="#4dabf7" />,
         title: "성장하는 여행자",
-        message: "첫 스탬프의 설렘을 잊지 마세요. 다음 여행지도 당신을 기다리고 있습니다!"
+        message: "첫 여행의 설렘을 잊지 마세요. 다음 여행지도 당신을 기다리고 있습니다!"
       };
     } else {
       return {
@@ -32,7 +30,7 @@ const TravelInsightWidget = ({ user, myMissions }) => {
         message: "아직 첫 모임에 참여하지 않으셨나요? 지금 근처의 인기 있는 모임을 확인해 보세요!"
       };
     }
-  }, [completedMissions, points]);
+  }, [points]);
 
   return (
     <div className="glass animate-fade" style={{ 

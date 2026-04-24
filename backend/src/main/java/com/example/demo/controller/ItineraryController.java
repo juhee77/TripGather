@@ -18,7 +18,7 @@ public class ItineraryController {
 
     @GetMapping
     public ResponseEntity<List<ItineraryResponse>> getAllItineraries() {
-        return ResponseEntity.ok(itineraryService.getAllItineraries().stream()
+        return ResponseEntity.ok(itineraryService.getPublicItineraries().stream()
                 .map(ItineraryResponse::from)
                 .toList());
     }

@@ -4,11 +4,9 @@ import TicketCard from '../components/TicketCard';
 import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
 import ProfileTab from '../components/ProfileTab';
-import MissionTab from '../components/MissionTab'; // Added
-import TravelInsightWidget from '../components/TravelInsightWidget'; // Added Phase 4
+import TravelInsightWidget from '../components/TravelInsightWidget';
 import { useUser } from '../contexts/UserContext';
 import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
-import { useMissionsViewModel } from '../viewmodels/useMissionsViewModel'; // Added
 import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
 import { Search, Map as MapIcon, Plus, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -31,15 +29,7 @@ const Home = () => {
   const [journeyItineraries, setJourneyItineraries] = useState([]);
   const [sortBy, setSortBy] = useState('latest'); // 'latest' or 'startDate'
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
-  const {
-    activeMissions,
-    actions: { fetchMissions, completeMission, completeStep }
-  } = useMissionsViewModel();
   const { itineraries } = useItinerariesViewModel();
-
-  useEffect(() => {
-    if (currentUser) fetchMissions();
-  }, [currentUser, fetchMissions]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -239,7 +229,7 @@ const Home = () => {
           
           {/* AI Travel Insight Widget */}
           <div style={{ marginTop: '20px' }}>
-            <TravelInsightWidget user={currentUser} myMissions={activeMissions} />
+            <TravelInsightWidget user={currentUser} />
           </div>
         </div>
       )}
@@ -251,7 +241,7 @@ const Home = () => {
         marginBottom: '28px'
       }}>
         <nav style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }} className="hide-scrollbar">
-          {['라운지', '비행 계획', '챌린지', '내 여정', '내 여권'].map((tab) => (
+          {['라운지', '여행 피드', '내 여행', '내 여권'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -321,15 +311,9 @@ const Home = () => {
           </div>
         )}
 
-        {activeTab === '챌린지' && (
-          <MissionTab 
-            activeMissions={activeMissions} 
-            onMissionComplete={completeMission}
-            onStepComplete={completeStep}
-          />
-        )}
 
-        {activeTab === '내 여정' && (
+
+        {activeTab === '내 여행' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {(() => {
               const journeyIds = new Set(journeyItineraries.map(j => j.id));
@@ -423,9 +407,8 @@ const Home = () => {
           </div>
         )}
 
-        {activeTab === '비행 계획' && (
+        {activeTab === '여행 피드' && (
           <ItineraryTab
-            onMissionStart={() => { fetchMissions(); setActiveTab('챌린지'); }}
             onAddToJourney={async () => {
               try {
                 const mine = await JourneyRepository.fetchMine();
@@ -433,7 +416,7 @@ const Home = () => {
               } catch (e) {
                 console.error(e);
               }
-              setActiveTab('내 여정');
+              setActiveTab('내 여행');
             }}
             onEdit={handleEditItinerary}
           />
@@ -444,7 +427,7 @@ const Home = () => {
         )}
       </div>
 
-      {['라운지', '비행 계획', '챌린지'].includes(activeTab) && (
+      {['라운지', '여행 피드'].includes(activeTab) && (
         <div style={{ 
           position: 'fixed', 
           bottom: '100px', 
@@ -458,6 +441,7 @@ const Home = () => {
           <button
             onClick={() => {
               if (activeTab === '라운지') navigate('/create');
+              else if (activeTab === '여행 피드') navigate('/itinerary/create');
               else navigate('/itinerary/create');
             }}
             className="primary-btn fab-button"
