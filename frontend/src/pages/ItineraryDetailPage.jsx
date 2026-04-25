@@ -115,9 +115,13 @@ const ItineraryDetailPage = () => {
         if (!currentUser?.email) return alert('로그인이 필요합니다.');
         setActionLoading(true);
         try {
-            await JourneyRepository.add(localItinerary.id, currentUser.email);
+            const res = await JourneyRepository.add(localItinerary.id, currentUser.email);
             alert('새 여행으로 추가되었습니다. ✈️');
-            navigate('/');
+            if (res && res.id) {
+                navigate(`/itinerary/${res.id}`);
+            } else {
+                navigate('/');
+            }
         } catch (e) {
             alert('추가에 실패했습니다.');
         } finally {
@@ -134,7 +138,7 @@ const ItineraryDetailPage = () => {
             });
             if (res.ok) {
                 alert('기존 여행에 추가되었습니다! 🗺️');
-                navigate('/');
+                navigate(`/itinerary/${selectedTargetId}`);
             } else {
                 alert('추가에 실패했습니다.');
             }
@@ -323,7 +327,7 @@ const ItineraryDetailPage = () => {
                                                             {point.startTime && (
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                                     <Plane size={12} color="var(--primary-orange)" style={{ transform: 'rotate(90deg)' }} />
-                                                                    <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)' }}>ARR</span>
+                                                                    <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)' }}>ARRIVAL</span>
                                                                     <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{point.startTime}</span>
                                                                 </div>
                                                             )}
@@ -333,7 +337,7 @@ const ItineraryDetailPage = () => {
                                                             {point.endTime && (
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                                     <Plane size={12} color="var(--primary-orange)" />
-                                                                    <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)' }}>DEP</span>
+                                                                    <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)' }}>DEPARTURE</span>
                                                                     <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{point.endTime}</span>
                                                                 </div>
                                                             )}

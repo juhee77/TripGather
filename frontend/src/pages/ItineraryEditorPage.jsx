@@ -151,7 +151,8 @@ const ItineraryEditorPage = () => {
                 body: JSON.stringify(payload),
             });
             if (response.ok) {
-                navigate(-1);
+                const savedData = await response.json();
+                navigate(`/itinerary/${savedData.id}`);
             } else {
                 const errText = await response.text();
                 alert(`저장에 실패했습니다: ${errText}`);
@@ -203,7 +204,7 @@ const ItineraryEditorPage = () => {
                         />
 
                         <FormInput
-                            label="REGION"
+                            label="DESTINATION"
                             icon={MapPin}
                             name="region"
                             value={formData.region}
@@ -415,11 +416,11 @@ const ItineraryEditorPage = () => {
                                                             <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>ARR (LANDING)</span>
+                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>ARRIVAL (LANDING)</span>
                                                                         <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)' }}>{point.startTime}</span>
                                                                     </div>
                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-end' }}>
-                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>DEP (TAKE-OFF)</span>
+                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>DEPARTURE (TAKE-OFF)</span>
                                                                         <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)' }}>{point.endTime}</span>
                                                                     </div>
                                                                 </div>
