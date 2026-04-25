@@ -179,10 +179,41 @@ const ItineraryDetailPage = () => {
 
                 <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
                     {/* Header Info Card */}
-                    <div className="ticket-wrapper" style={{ padding: '24px', marginBottom: '32px', background: 'white' }}>
+                    <div className="ticket-wrapper" style={{ padding: '24px', marginBottom: '32px', background: 'white', position: 'relative' }}>
+                        {isOwner && (
+                            <div style={{ 
+                                position: 'absolute', top: '12px', right: '12px', display: 'flex', alignItems: 'center', gap: '8px',
+                                padding: '6px 12px', background: 'var(--bg-lite)', borderRadius: '12px', border: '1px solid var(--border-color)'
+                            }}>
+                                <span style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-muted)' }}>FEED SHARE</span>
+                                <button
+                                    onClick={async () => {
+                                        const newStatus = !localItinerary.isPublic;
+                                        const success = await saveItinerary({ ...localItinerary, isPublic: newStatus });
+                                        if (success) {
+                                            // Optional: notify success
+                                        }
+                                    }}
+                                    style={{
+                                        width: '36px', height: '18px', borderRadius: '9px',
+                                        background: localItinerary.isPublic ? 'var(--primary-orange)' : '#DEE2E6',
+                                        position: 'relative', border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <div style={{
+                                        width: '12px', height: '12px', borderRadius: '50%', background: 'white',
+                                        position: 'absolute', top: '3px', left: localItinerary.isPublic ? '21px' : '3px',
+                                        transition: 'all 0.2s'
+                                    }} />
+                                </button>
+                            </div>
+                        )}
                         <div className="flex-between" style={{ marginBottom: '12px' }}>
-                            <span className="label-orange">JOURNEY LOG</span>
-                            <div className="status-pill">PLANNED</div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <span className="label-orange">JOURNEY LOG</span>
+                                {localItinerary.isPublic && <span style={{ padding: '2px 8px', background: 'var(--primary-orange)', color: 'white', borderRadius: '6px', fontSize: '9px', fontWeight: 900 }}>PUBLIC</span>}
+                            </div>
+                            <div className="status-pill">SAVED</div>
                         </div>
                         <p className="text-s" style={{ color: 'var(--text-main)', fontSize: '15px', lineHeight: 1.6 }}>
                             {localItinerary.description}

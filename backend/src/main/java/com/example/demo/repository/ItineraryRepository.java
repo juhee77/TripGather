@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface ItineraryRepository extends JpaRepository<Itinerary, Long> {
     List<Itinerary> findAllByOrderByCreatedAtDesc();
-    List<Itinerary> findByIsPublicTrueOrderByCreatedAtDesc();
+    List<Itinerary> findByPublicStatusTrueOrderByCreatedAtDesc();
     List<Itinerary> findByOwnerEmailOrderByCreatedAtDesc(String ownerEmail);
 }
