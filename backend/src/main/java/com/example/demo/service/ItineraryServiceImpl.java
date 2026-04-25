@@ -24,10 +24,8 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public java.util.List<Itinerary> getPublicItineraries() {
-        return itineraryRepository.findAll().stream()
-                .filter(Itinerary::isPublicStatus)
-                .toList();
+    public List<Itinerary> getPublicItineraries() {
+        return itineraryRepository.findByPublicStatusTrueOrderByCreatedAtDesc();
     }
 
     @Transactional(readOnly = true)
