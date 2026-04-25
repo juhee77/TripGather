@@ -16,9 +16,9 @@
   --text-primary: #0F172A;
   --text-main: #1E293B;
   --text-secondary: #475569;
-  --text-muted: #94A3B8;
+  --text-muted: #64748B; /* Darker than previous #94A3B8 for better visibility */
   
-  --border-color: rgba(226, 232, 240, 0.6);
+  --border-color: rgba(226, 232, 240, 0.8); /* Slightly more visible border */
   --glass-border: rgba(255, 255, 255, 0.5);
   --highlight-muted: rgba(0, 0, 0, 0.03);
   
@@ -206,6 +206,12 @@ label { display: block; font-size: 11px; font-weight: 800; color: var(--text-sec
   letter-spacing: 1px;
   text-transform: uppercase;
   display: block;
+}
+
+.info-value {
+  color: var(--text-primary);
+  font-weight: 800;
+  font-size: 16px;
 }
 
 .input-light {

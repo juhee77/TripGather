@@ -5,6 +5,7 @@ import com.example.demo.usecase.ChatUseCase;
 import com.example.demo.service.NotificationService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -13,13 +14,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ResponseBody;
-import com.example.demo.domain.Gathering;
-import com.example.demo.domain.GatheringMember;
 
 import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class ChatController {
 
     private final ChatUseCase chatService;
@@ -29,34 +29,22 @@ public class ChatController {
     // 클라이언트가 /app/chat/{gatheringId}/send 로 메시지를 보내면 호출됨
     @MessageMapping("/chat/{gatheringId}/send")
     @SendTo("/topic/chat/{gatheringId}")
-    public ChatMessageResponse sendMessage(@DestinationVariable Long gatheringId, ChatMessageRequest request, java.security.Principal principal) {
+    public ChatMessageResponse sendMessage(@DestinationVariable Long gatheringId, @org.springframework.messaging.handler.annotation.Payload ChatMessageRequest request, java.security.Principal principal) {
+        log.info("[Chat] Received message for gathering {}: {}", gatheringId, request.getContent());
+        
         // Membership check: Only approved members/host can send messages
         String email = (principal != null) ? principal.getName() : request.getSenderEmail();
+        log.info("[Chat] Sender email: {}, Principal: {}", email, (principal != null ? principal.getName() : "NULL"));
+
         if (!gatheringService.isAuthorizedMember(gatheringId, email)) {
-            // In a real app, we might throw an exception or send an error message back via a private topic
-            // For now, we'll just not save/broadcast or allow it if it's public (but usually chat is for members)
-            // Let's restrict to members only for safety.
+            log.warn("[Chat] Unauthorized chat attempt by {} for gathering {}", email, gatheringId);
             return null; 
         }
 
-        com.example.demo.domain.ChatMessage saved = chatService.saveMessage(gatheringId, email, request.getContent());
+        ChatMessageResponse response = chatService.saveMessage(gatheringId, email, request.getContent());
         
-        ChatMessageResponse response = ChatMessageResponse.from(saved);
-
-        // 실시간 알림 전송 (참여자들에게)
-        com.example.demo.domain.Gathering gathering = saved.getGathering();
-        if (gathering != null && gathering.getMembers() != null) {
-            for (com.example.demo.domain.GatheringMember member : gathering.getMembers()) {
-                String receiverEmail = member.getUser().getEmail();
-                if (!receiverEmail.equals(email)) {
-                    notificationService.send(receiverEmail, "chat-received", response);
-                }
-            }
-            String hostEmail = gathering.getHost().getEmail();
-            if (!hostEmail.equals(email)) {
-                notificationService.send(hostEmail, "chat-received", response);
-            }
-        }
+        // 실시간 알림 전송 (참여자들에게 개별 SSE 알림 - 배경 알림용)
+        notificationService.sendToAllMembers(gatheringId, "chat-received", response);
 
         return response;
     }
@@ -80,6 +68,8 @@ public class ChatController {
     }
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class ChatMessageRequest {
         private String content;
         private String senderEmail;

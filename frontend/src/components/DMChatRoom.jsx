@@ -43,8 +43,10 @@ const DMChatRoom = ({ otherUser, onBack }) => {
 
         // WebSocket 연결
         const socket = new SockJS(apiUrl('/ws-stomp'));
+        const token = localStorage.getItem('token');
         const client = new Client({
             webSocketFactory: () => socket,
+            connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
             debug: (str) => console.log(str),
             onConnect: () => {
                 console.log('Connected to DM WebSocket');

@@ -192,21 +192,22 @@ const ItineraryDetailPage = () => {
                                 <span style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-muted)' }}>FEED SHARE</span>
                                 <button
                                     onClick={async () => {
-                                        const newStatus = !localItinerary.isPublic;
-                                        const success = await saveItinerary({ ...localItinerary, isPublic: newStatus });
+                                        const currentPublic = localItinerary.isPublic ?? localItinerary.publicStatus;
+                                        const newStatus = !currentPublic;
+                                        const success = await saveItinerary({ ...localItinerary, isPublic: newStatus, publicStatus: newStatus });
                                         if (success) {
-                                            // Optional: notify success
+                                            setLocalItinerary(prev => ({ ...prev, isPublic: newStatus, publicStatus: newStatus }));
                                         }
                                     }}
                                     style={{
                                         width: '36px', height: '18px', borderRadius: '9px',
-                                        background: localItinerary.isPublic ? 'var(--primary-orange)' : '#DEE2E6',
+                                        background: (localItinerary.isPublic || localItinerary.publicStatus) ? 'var(--primary-orange)' : '#DEE2E6',
                                         position: 'relative', border: 'none', cursor: 'pointer', transition: 'all 0.2s'
                                     }}
                                 >
                                     <div style={{
                                         width: '12px', height: '12px', borderRadius: '50%', background: 'white',
-                                        position: 'absolute', top: '3px', left: localItinerary.isPublic ? '21px' : '3px',
+                                        position: 'absolute', top: '3px', left: (localItinerary.isPublic || localItinerary.publicStatus) ? '21px' : '3px',
                                         transition: 'all 0.2s'
                                     }} />
                                 </button>
@@ -215,7 +216,7 @@ const ItineraryDetailPage = () => {
                         <div className="flex-between" style={{ marginBottom: '12px' }}>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 <span className="label-orange">JOURNEY LOG</span>
-                                {localItinerary.isPublic && <span style={{ padding: '2px 8px', background: 'var(--primary-orange)', color: 'white', borderRadius: '6px', fontSize: '9px', fontWeight: 900 }}>PUBLIC</span>}
+                                {(localItinerary.isPublic || localItinerary.publicStatus) && <span style={{ padding: '2px 8px', background: 'var(--primary-orange)', color: 'white', borderRadius: '6px', fontSize: '9px', fontWeight: 900 }}>PUBLIC</span>}
                             </div>
                             <div className="status-pill">SAVED</div>
                         </div>
@@ -327,7 +328,7 @@ const ItineraryDetailPage = () => {
                                                             {point.startTime && (
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                                     <Plane size={12} color="var(--primary-orange)" style={{ transform: 'rotate(90deg)' }} />
-                                                                    <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)' }}>ARRIVAL</span>
+                                                                    <span className="label-muted" style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>ARRIVAL</span>
                                                                     <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{point.startTime}</span>
                                                                 </div>
                                                             )}
@@ -337,7 +338,7 @@ const ItineraryDetailPage = () => {
                                                             {point.endTime && (
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                                     <Plane size={12} color="var(--primary-orange)" />
-                                                                    <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)' }}>DEPARTURE</span>
+                                                                    <span className="label-muted" style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>DEPARTURE</span>
                                                                     <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{point.endTime}</span>
                                                                 </div>
                                                             )}
