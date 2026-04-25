@@ -24,19 +24,20 @@ public class ChatServiceImpl implements ChatUseCase {
     private final UserRepository userRepository;
 
     @Transactional
-    public ChatMessage saveMessage(Long gatheringId, String email, String content) {
+    public com.example.demo.dto.ChatMessageResponse saveMessage(Long gatheringId, String email, String content) {
         Gathering gathering = gatheringRepository.findById(gatheringId)
                 .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        ChatMessage message = ChatMessage.builder()
+        com.example.demo.domain.ChatMessage message = com.example.demo.domain.ChatMessage.builder()
                 .content(content)
                 .sender(user)
                 .gathering(gathering)
                 .build();
 
-        return chatMessageRepository.save(message);
+        com.example.demo.domain.ChatMessage saved = chatMessageRepository.save(message);
+        return com.example.demo.dto.ChatMessageResponse.from(saved);
     }
 
     @Transactional(readOnly = true)

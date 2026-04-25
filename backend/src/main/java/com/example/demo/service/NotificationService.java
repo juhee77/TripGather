@@ -45,4 +45,12 @@ public class NotificationService {
             }
         }
     }
+
+    public void sendToAllMembers(Long gatheringId, String name, Object data) {
+        // This is a simplified version; in a real app, you'd fetch members and send to each if connected.
+        // For now, we'll just log and send to any connected emitters that might be interested,
+        // but typically SSE is 1:1. So we broadcast to all for this specific event type if needed,
+        // or just rely on the fact that members will be subscribed by their email.
+        emitters.forEach((email, emitter) -> send(email, name, data));
+    }
 }

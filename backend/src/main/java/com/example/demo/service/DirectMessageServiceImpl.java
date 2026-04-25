@@ -2,32 +2,32 @@ package com.example.demo.service;
 
 import com.example.demo.domain.DirectMessage;
 import com.example.demo.domain.User;
+import com.example.demo.exception.CustomException;
+import com.example.demo.exception.ErrorCode;
 import com.example.demo.repository.DirectMessageRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.usecase.DirectMessageUseCase;
+import com.example.demo.dto.DMResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.demo.usecase.DirectMessageUseCase;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class DirectMessageServiceImpl implements DirectMessageUseCase {
 
     private final DirectMessageRepository dmRepository;
     private final UserRepository userRepository;
 
+    @Override
     @Transactional
-    public DirectMessage sendDM(String senderEmail, String receiverEmail, String content) {
+    public DMResponse sendDM(String senderEmail, String receiverEmail, String content) {
         User sender = userRepository.findByEmail(senderEmail)
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         User receiver = userRepository.findByEmail(receiverEmail)
-                .orElseThrow(() -> new RuntimeException("Receiver not found"));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         DirectMessage dm = DirectMessage.builder()
                 .sender(sender)
@@ -35,42 +35,43 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
                 .content(content)
                 .build();
 
-        return dmRepository.save(dm);
+        DirectMessage saved = dmRepository.save(dm);
+        return DMResponse.from(saved);
     }
 
+    @Override
+    @Transactional(readOnly = true)
     public List<DirectMessage> getChatHistory(String email1, String email2) {
         User user1 = userRepository.findByEmail(email1)
-                .orElseThrow(() -> new RuntimeException("User not found: " + email1));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         User user2 = userRepository.findByEmail(email2)
-                .orElseThrow(() -> new RuntimeException("User not found: " + email2));
-
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         return dmRepository.findChatHistory(user1, user2);
     }
 
+    @Override
     @Transactional
     public void markAsRead(Long dmId) {
-        dmRepository.findById(dmId).ifPresent(dm -> dm.setRead(true));
+        DirectMessage dm = dmRepository.findById(dmId)
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND)); 
+        dm.setRead(true);
     }
 
+    @Override
     @Transactional
     public void markMessagesAsRead(String myEmail, String otherUserEmail) {
         User me = userRepository.findByEmail(myEmail)
-                .orElseThrow(() -> new RuntimeException("User not found: " + myEmail));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         User other = userRepository.findByEmail(otherUserEmail)
-                .orElseThrow(() -> new RuntimeException("User not found: " + otherUserEmail));
-
-        List<DirectMessage> unreadMessages = dmRepository.findByReceiverAndIsReadFalse(me);
-        unreadMessages.forEach(dm -> {
-            if (dm.getSender().equals(other)) {
-                dm.setRead(true);
-            }
-        });
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        
+        List<DirectMessage> unread = dmRepository.findUnreadMessages(other, me);
+        unread.forEach(dm -> dm.setRead(true));
     }
 
+    @Override
+    @Transactional(readOnly = true)
     public List<User> getChatPartners(String myEmail) {
-        Set<User> partners = new HashSet<>();
-        partners.addAll(dmRepository.findReceiversBySenderEmail(myEmail));
-        partners.addAll(dmRepository.findSendersByReceiverEmail(myEmail));
-        return new ArrayList<>(partners);
+        return dmRepository.findChatPartners(myEmail);
     }
 }

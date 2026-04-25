@@ -20,6 +20,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/dm")
+@lombok.extern.slf4j.Slf4j
 public class DirectMessageController {
 
     private final DirectMessageUseCase dmService;
@@ -28,17 +29,19 @@ public class DirectMessageController {
     private final NotificationService notificationService;
 
     @MessageMapping("/dm/send")
-    public void sendDM(DMRequest request) {
-        DirectMessage saved = dmService.sendDM(request.getSenderEmail(), request.getReceiverEmail(), request.getContent());
+    public void sendDM(@org.springframework.messaging.handler.annotation.Payload DMRequest request, java.security.Principal principal) {
+        String senderEmail = (principal != null) ? principal.getName() : request.getSenderEmail();
+        log.info("[DM] Sending from {} (Principal: {}) to {}: {}", senderEmail, (principal != null ? principal.getName() : "NULL"), request.getReceiverEmail(), request.getContent());
         
-        DMResponse response = DMResponse.from(saved);
+        // Use the DTO directly from the service
+        DMResponse response = dmService.sendDM(senderEmail, request.getReceiverEmail(), request.getContent());
 
         // 발신자와 수신자 모두에게 메시지 전송 (실시간 반영)
-        messagingTemplate.convertAndSend("/topic/dm/" + saved.getReceiver().getEmail(), response);
-        messagingTemplate.convertAndSend("/topic/dm/" + saved.getSender().getEmail(), response);
+        messagingTemplate.convertAndSend("/topic/dm/" + response.getReceiverEmail(), response);
+        messagingTemplate.convertAndSend("/topic/dm/" + response.getSenderEmail(), response);
 
         // 실시간 알림 전송 (SSE)
-        notificationService.send(saved.getReceiver().getEmail(), "dm-received", response);
+        notificationService.send(response.getReceiverEmail(), "dm-received", response);
     }
 
     @GetMapping("/history/{otherUserEmail}")
