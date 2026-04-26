@@ -42,12 +42,13 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("구독하지 않은 이메일로 전송 시 예외 미발생 (Silent fail)")
-    void send_WhenNotSubscribed_SilentFail() {
+    @DisplayName("모든 연결된 사용자에게 전송 성공")
+    void sendToAllMembers_Success() {
         // given
-        String email = "unknown@example.com";
+        notificationService.subscribe("u1@ex.com");
+        notificationService.subscribe("u2@ex.com");
 
         // when & then
-        assertDoesNotThrow(() -> notificationService.send(email, "testEvent", "Hello World"));
+        assertDoesNotThrow(() -> notificationService.sendToAllMembers(1L, "broadcast", "Hi All"));
     }
 }

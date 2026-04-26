@@ -29,67 +29,105 @@ class ItineraryServiceImplTest {
     private ItineraryServiceImpl itineraryService;
 
     @Test
-    @DisplayName("상세 조회 실패 - 존재하지 않는 일정")
-    void getById_Fail_NotFound() {
+    @DisplayName("일정 생성 - RoutePoints와 함께 생성")
+    void createItinerary_WithRoutePoints() {
         // given
-        Long id = 1L;
-        given(itineraryRepository.findById(id)).willReturn(Optional.empty());
-
-        // when & then
-        assertThrows(CustomException.class, () -> itineraryService.getById(id));
-    }
-
-    @Test
-    @DisplayName("일정 생성 - RoutePoints가 null일 때")
-    void createItinerary_NoRoutePoints() {
-        // given
-        Itinerary itinerary = Itinerary.builder().title("No Route").build();
+        Itinerary itinerary = Itinerary.builder().title("With Points").build();
+        com.example.demo.domain.RoutePoint rp = com.example.demo.domain.RoutePoint.builder().label("P1").build();
+        itinerary.setRoutePoints(new ArrayList<>(java.util.List.of(rp)));
+        
         given(itineraryRepository.save(any(Itinerary.class))).willAnswer(i -> i.getArgument(0));
 
         // when
         Itinerary saved = itineraryService.createItinerary(itinerary);
 
         // then
-        assertThat(saved.getTitle()).isEqualTo("No Route");
+        assertThat(saved.getRoutePoints().get(0).getItinerary()).isEqualTo(saved);
         verify(itineraryRepository).save(itinerary);
     }
 
     @Test
-    @DisplayName("일정 수정 - RoutePoints가 null일 때")
-    void updateItinerary_NoRoutePoints() {
+    @DisplayName("일정 복제 성공")
+    void cloneItinerary_Success() {
         // given
-        Long id = 1L;
-        Itinerary existing = Itinerary.builder().id(id).title("Old").routePoints(new ArrayList<>()).build();
-        Itinerary update = Itinerary.builder().title("New").build();
+        Long originalId = 1L;
+        com.example.demo.domain.RoutePoint rp = com.example.demo.domain.RoutePoint.builder().label("P1").build();
+        Itinerary original = Itinerary.builder()
+                .id(originalId)
+                .title("Original")
+                .routePoints(new ArrayList<>(java.util.List.of(rp)))
+                .build();
 
-        given(itineraryRepository.findById(id)).willReturn(Optional.of(existing));
+        given(itineraryRepository.findById(originalId)).willReturn(Optional.of(original));
         given(itineraryRepository.save(any(Itinerary.class))).willAnswer(i -> i.getArgument(0));
 
         // when
-        Itinerary updated = itineraryService.updateItinerary(id, update);
+        Itinerary cloned = itineraryService.cloneItinerary(originalId, "newOwner@ex.com");
 
         // then
-        assertThat(updated.getTitle()).isEqualTo("New");
-        verify(itineraryRepository).save(existing);
+        assertThat(cloned.getOriginalId()).isEqualTo(originalId);
+        assertThat(cloned.getOwnerEmail()).isEqualTo("newOwner@ex.com");
+        assertThat(cloned.getTitle()).contains("(Copy)");
+        assertThat(cloned.getRoutePoints()).hasSize(1);
     }
+
     @Test
-    @DisplayName("일정 수정 - RoutePoints가 있을 때")
-    void updateItinerary_WithRoutePoints() {
+    @DisplayName("공개 상태 전환 성공")
+    void togglePublicStatus_Success() {
         // given
         Long id = 1L;
-        Itinerary existing = Itinerary.builder().id(id).title("Old").routePoints(new ArrayList<>()).build();
-        com.example.demo.domain.RoutePoint rp = com.example.demo.domain.RoutePoint.builder().label("Point").build();
-        Itinerary update = Itinerary.builder().title("New").routePoints(java.util.List.of(rp)).build();
+        String email = "owner@ex.com";
+        Itinerary itinerary = Itinerary.builder().id(id).ownerEmail(email).publicStatus(false).build();
 
-        given(itineraryRepository.findById(id)).willReturn(Optional.of(existing));
+        given(itineraryRepository.findById(id)).willReturn(Optional.of(itinerary));
         given(itineraryRepository.save(any(Itinerary.class))).willAnswer(i -> i.getArgument(0));
 
         // when
-        Itinerary updated = itineraryService.updateItinerary(id, update);
+        Itinerary result = itineraryService.togglePublicStatus(id, email, true);
 
         // then
-        assertThat(updated.getTitle()).isEqualTo("New");
-        assertThat(updated.getRoutePoints()).hasSize(1);
-        verify(itineraryRepository).save(existing);
+        assertThat(result.isPublicStatus()).isTrue();
+    }
+
+    @Test
+    @DisplayName("공개 상태 전환 실패 - 소유자가 아님")
+    void togglePublicStatus_Fail_NotOwner() {
+        // given
+        Long id = 1L;
+        Itinerary itinerary = Itinerary.builder().id(id).ownerEmail("owner@ex.com").build();
+        given(itineraryRepository.findById(id)).willReturn(Optional.of(itinerary));
+
+        // when & then
+        assertThrows(CustomException.class, () -> itineraryService.togglePublicStatus(id, "hacker@ex.com", true));
+    }
+
+    @Test
+    @DisplayName("일정 병합 성공")
+    void mergeItinerary_Success() {
+        // given
+        Long sId = 1L;
+        Long tId = 2L;
+        com.example.demo.domain.RoutePoint sPoint = com.example.demo.domain.RoutePoint.builder().label("Source P").build();
+        Itinerary source = Itinerary.builder().id(sId).routePoints(new ArrayList<>(java.util.List.of(sPoint))).build();
+        
+        com.example.demo.domain.RoutePoint tPoint = com.example.demo.domain.RoutePoint.builder()
+                .label("Target P")
+                .dayNumber(1)
+                .dayLabel("Day 1")
+                .sequenceOrder(1)
+                .build();
+        Itinerary target = Itinerary.builder().id(tId).routePoints(new ArrayList<>(java.util.List.of(tPoint))).build();
+
+        given(itineraryRepository.findById(sId)).willReturn(Optional.of(source));
+        given(itineraryRepository.findById(tId)).willReturn(Optional.of(target));
+        given(itineraryRepository.save(any(Itinerary.class))).willAnswer(i -> i.getArgument(0));
+
+        // when
+        Itinerary result = itineraryService.mergeItinerary(sId, tId, 1);
+
+        // then
+        assertThat(result.getRoutePoints()).hasSize(2);
+        assertThat(result.getRoutePoints().get(1).getLabel()).isEqualTo("Source P");
+        assertThat(result.getRoutePoints().get(1).getSequenceOrder()).isEqualTo(2);
     }
 }

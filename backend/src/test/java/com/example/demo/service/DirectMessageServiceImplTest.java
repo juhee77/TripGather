@@ -42,11 +42,16 @@ class DirectMessageServiceImplTest {
         given(userRepository.findByEmail("sender@example.com")).willReturn(Optional.of(sender));
         given(userRepository.findByEmail("receiver@example.com")).willReturn(Optional.of(receiver));
 
-        DirectMessage fakeMsg = DirectMessage.builder().content("hi").build();
+        DirectMessage fakeMsg = DirectMessage.builder()
+                .content("hi")
+                .sender(sender)
+                .receiver(receiver)
+                .sentAt(java.time.LocalDateTime.now())
+                .build();
         given(dmRepository.save(any(DirectMessage.class))).willReturn(fakeMsg);
 
         // when
-        DirectMessage result = dmService.sendDM("sender@example.com", "receiver@example.com", "hi");
+        com.example.demo.dto.DMResponse result = dmService.sendDM("sender@example.com", "receiver@example.com", "hi");
 
         // then
         assertThat(result.getContent()).isEqualTo("hi");
@@ -62,7 +67,7 @@ class DirectMessageServiceImplTest {
         // when & then
         assertThatThrownBy(() -> dmService.sendDM("sender@example.com", "receiver@example.com", "hi"))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Sender not found");
+                .hasMessageContaining("사용자를 찾을 수 없습니다.");
     }
 
     @Test
@@ -108,7 +113,7 @@ class DirectMessageServiceImplTest {
         given(userRepository.findByEmail("other@ex.com")).willReturn(Optional.of(other));
 
         DirectMessage unreadDM = DirectMessage.builder().sender(other).receiver(me).isRead(false).build();
-        given(dmRepository.findByReceiverAndIsReadFalse(me)).willReturn(List.of(unreadDM));
+        given(dmRepository.findUnreadMessages(other, me)).willReturn(List.of(unreadDM));
 
         // when
         dmService.markMessagesAsRead("me@ex.com", "other@ex.com");
@@ -124,8 +129,7 @@ class DirectMessageServiceImplTest {
         User partner1 = User.builder().id(2L).build();
         User partner2 = User.builder().id(3L).build();
 
-        given(dmRepository.findReceiversBySenderEmail("me@ex.com")).willReturn(List.of(partner1));
-        given(dmRepository.findSendersByReceiverEmail("me@ex.com")).willReturn(List.of(partner2));
+        given(dmRepository.findChatPartners("me@ex.com")).willReturn(List.of(partner1, partner2));
 
         // when
         List<User> partners = dmService.getChatPartners("me@ex.com");

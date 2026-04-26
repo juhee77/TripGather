@@ -22,6 +22,7 @@ public enum ErrorCode {
 
     GATHERING_NOT_FOUND(HttpStatus.NOT_FOUND, "GATHERING_NOT_FOUND", "해당 모임을 찾을 수 없습니다."),
     MEMBER_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER_REQUEST_NOT_FOUND", "해당 멤버 요청을 찾을 수 없습니다."),
+    DM_NOT_FOUND(HttpStatus.NOT_FOUND, "DM_NOT_FOUND", "해당 메시지를 찾을 수 없습니다."),
 
     EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS", "이미 존재하는 이메일입니다."),
 

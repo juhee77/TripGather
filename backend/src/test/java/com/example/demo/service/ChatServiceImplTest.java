@@ -52,7 +52,7 @@ class ChatServiceImplTest {
         given(chatMessageRepository.save(any(ChatMessage.class))).willReturn(savedMessage);
 
         // when
-        ChatMessage result = chatService.saveMessage(1L, "test@example.com", "hello");
+        com.example.demo.dto.ChatMessageResponse result = chatService.saveMessage(1L, "test@example.com", "hello");
 
         // then
         assertThat(result).isNotNull();

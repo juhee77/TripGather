@@ -53,7 +53,7 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
     @Transactional
     public void markAsRead(Long dmId) {
         DirectMessage dm = dmRepository.findById(dmId)
-                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND)); 
+                .orElseThrow(() -> new CustomException(ErrorCode.DM_NOT_FOUND)); 
         dm.setRead(true);
     }
 

@@ -51,7 +51,7 @@ class ItineraryControllerTest {
     void getAllItineraries_Success() throws Exception {
         // given
         Itinerary i1 = Itinerary.builder().id(1L).title("Trip 1").author("User 1").build();
-        given(itineraryService.getAllItineraries()).willReturn(List.of(i1));
+        given(itineraryService.getPublicItineraries()).willReturn(List.of(i1));
 
         // when & then
         mockMvc.perform(get("/api/itineraries"))
