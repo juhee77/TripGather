@@ -415,11 +415,17 @@ const ItineraryEditorPage = () => {
                                                         {point.startTime ? (
                                                             <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>ARRIVAL (LANDING)</span>
-                                                                        <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)' }}>{point.startTime}</span>
+                                                                    <div className="time-group">
+                                                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>ARR (LANDING)</span>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                            <p style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+                                                                                {point.startTime}
+                                                                            </p>
+                                                                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>ICT</span>
+                                                                        </div>
                                                                     </div>
-                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-end' }}>
+                                                                    <div style={{ height: '32px', width: '1px', background: 'var(--border-color)', opacity: 0.5 }}></div>
+                                                                    <div className="time-group" style={{ textAlign: 'right' }}>
                                                                         <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>DEPARTURE (TAKE-OFF)</span>
                                                                         <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)' }}>{point.endTime}</span>
                                                                     </div>

@@ -18,7 +18,7 @@ const ModalHeader = ({ title, subtitle, onClose, actions, dark = false }) => {
           {title}
         </h2>
         {subtitle && (
-          <p style={{ fontSize: '12px', color: dark ? 'rgba(255,255,255,0.5)' : 'var(--text-muted)', fontWeight: 600 }}>
+          <p style={{ fontSize: '12px', color: dark ? 'rgba(255,255,255,0.5)' : 'var(--text-secondary)', fontWeight: 700 }}>
             {subtitle}
           </p>
         )}

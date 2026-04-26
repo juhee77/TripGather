@@ -184,41 +184,43 @@ const ItineraryDetailPage = () => {
                 <div className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
                     {/* Header Info Card */}
                     <div className="ticket-wrapper" style={{ padding: '24px', marginBottom: '32px', background: 'white', position: 'relative' }}>
-                        {isOwner && (
-                            <div style={{ 
-                                position: 'absolute', top: '12px', right: '12px', display: 'flex', alignItems: 'center', gap: '8px',
-                                padding: '6px 12px', background: 'var(--bg-lite)', borderRadius: '12px', border: '1px solid var(--border-color)'
-                            }}>
-                                <span style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-muted)' }}>FEED SHARE</span>
-                                <button
-                                    onClick={async () => {
-                                        const currentPublic = localItinerary.isPublic ?? localItinerary.publicStatus;
-                                        const newStatus = !currentPublic;
-                                        const success = await saveItinerary({ ...localItinerary, isPublic: newStatus, publicStatus: newStatus });
-                                        if (success) {
-                                            setLocalItinerary(prev => ({ ...prev, isPublic: newStatus, publicStatus: newStatus }));
-                                        }
-                                    }}
-                                    style={{
-                                        width: '36px', height: '18px', borderRadius: '9px',
-                                        background: (localItinerary.isPublic || localItinerary.publicStatus) ? 'var(--primary-orange)' : '#DEE2E6',
-                                        position: 'relative', border: 'none', cursor: 'pointer', transition: 'all 0.2s'
-                                    }}
-                                >
-                                    <div style={{
-                                        width: '12px', height: '12px', borderRadius: '50%', background: 'white',
-                                        position: 'absolute', top: '3px', left: (localItinerary.isPublic || localItinerary.publicStatus) ? '21px' : '3px',
-                                        transition: 'all 0.2s'
-                                    }} />
-                                </button>
-                            </div>
-                        )}
-                        <div className="flex-between" style={{ marginBottom: '12px' }}>
-                            <div style={{ display: 'flex', gap: '8px' }}>
+                        <div className="flex-between" style={{ marginBottom: '12px', alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                 <span className="label-orange">JOURNEY LOG</span>
                                 {(localItinerary.isPublic || localItinerary.publicStatus) && <span style={{ padding: '2px 8px', background: 'var(--primary-orange)', color: 'white', borderRadius: '6px', fontSize: '9px', fontWeight: 900 }}>PUBLIC</span>}
+                                {isOwner && (
+                                    <div style={{ 
+                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                        padding: '4px 10px', background: 'var(--bg-lite)', borderRadius: '10px', border: '1px solid var(--border-color)',
+                                        marginLeft: '8px'
+                                    }}>
+                                        <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-secondary)' }}>FEED SHARE</span>
+                                        <button
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                const currentPublic = localItinerary.isPublic ?? localItinerary.publicStatus;
+                                                const newStatus = !currentPublic;
+                                                const success = await saveItinerary({ ...localItinerary, isPublic: newStatus, publicStatus: newStatus });
+                                                if (success) {
+                                                    setLocalItinerary(prev => ({ ...prev, isPublic: newStatus, publicStatus: newStatus }));
+                                                }
+                                            }}
+                                            style={{
+                                                width: '32px', height: '16px', borderRadius: '8px',
+                                                background: (localItinerary.isPublic || localItinerary.publicStatus) ? 'var(--primary-orange)' : '#DEE2E6',
+                                                position: 'relative', border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <div style={{
+                                                width: '10px', height: '10px', borderRadius: '50%', background: 'white',
+                                                position: 'absolute', top: '3px', left: (localItinerary.isPublic || localItinerary.publicStatus) ? '19px' : '3px',
+                                                transition: 'all 0.2s'
+                                            }} />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                            <div className="status-pill">SAVED</div>
+                            <div className="status-pill" style={{ flexShrink: 0 }}>SAVED</div>
                         </div>
                         <p className="text-s" style={{ color: 'var(--text-main)', fontSize: '15px', lineHeight: 1.6 }}>
                             {localItinerary.description}
