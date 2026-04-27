@@ -11,6 +11,11 @@ public class NotificationService {
 
     // 사용자 이메일을 키로 하여 SseEmitter 관리
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
+    private final com.example.demo.repository.GatheringMemberRepository gatheringMemberRepository;
+
+    public NotificationService(com.example.demo.repository.GatheringMemberRepository gatheringMemberRepository) {
+        this.gatheringMemberRepository = gatheringMemberRepository;
+    }
 
     public SseEmitter subscribe(String email) {
         SseEmitter emitter = new SseEmitter(60L * 1000 * 60); // 1시간 타임아웃
@@ -47,10 +52,9 @@ public class NotificationService {
     }
 
     public void sendToAllMembers(Long gatheringId, String name, Object data) {
-        // This is a simplified version; in a real app, you'd fetch members and send to each if connected.
-        // For now, we'll just log and send to any connected emitters that might be interested,
-        // but typically SSE is 1:1. So we broadcast to all for this specific event type if needed,
-        // or just rely on the fact that members will be subscribed by their email.
-        emitters.forEach((email, emitter) -> send(email, name, data));
+        // Fetch approved members and host email from repository
+        gatheringMemberRepository.findByGatheringId(gatheringId).stream()
+                .filter(m -> m.getStatus() == com.example.demo.domain.MemberStatus.APPROVED)
+                .forEach(m -> send(m.getUser().getEmail(), name, data));
     }
 }

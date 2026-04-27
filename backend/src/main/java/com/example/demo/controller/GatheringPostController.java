@@ -28,6 +28,7 @@ public class GatheringPostController {
 
     private final GatheringPostRepository postRepository;
     private final com.example.demo.usecase.GatheringUseCase gatheringService;
+    private final com.example.demo.usecase.GatheringMemberUseCase gatheringMemberService;
     private final UserRepository userRepository;
 
     @GetMapping("/{gatheringId}/posts")
@@ -35,7 +36,7 @@ public class GatheringPostController {
         Gathering gathering = gatheringService.getGathering(gatheringId);
         
         String email = (principal != null) ? principal.getName() : null;
-        boolean isMember = gatheringService.isAuthorizedMember(gatheringId, email);
+        boolean isMember = gatheringMemberService.isAuthorizedMember(gatheringId, email);
 
         // If gallery is private and user is not a member, hide everything
         if (!gathering.isGalleryPublic() && !isMember) {
@@ -59,7 +60,7 @@ public class GatheringPostController {
             Principal principal) {
         
         if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
-        if (!gatheringService.isAuthorizedMember(gatheringId, principal.getName())) {
+        if (!gatheringMemberService.isAuthorizedMember(gatheringId, principal.getName())) {
             throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "승인된 크루원만 접근 가능합니다.");
         }
             

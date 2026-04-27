@@ -25,6 +25,7 @@ public class ChatController {
     private final ChatUseCase chatService;
     private final NotificationService notificationService;
     private final com.example.demo.usecase.GatheringUseCase gatheringService;
+    private final com.example.demo.usecase.GatheringMemberUseCase gatheringMemberService;
 
     // 클라이언트가 /app/chat/{gatheringId}/send 로 메시지를 보내면 호출됨
     @MessageMapping("/chat/{gatheringId}/send")
@@ -36,7 +37,7 @@ public class ChatController {
         String email = (principal != null) ? principal.getName() : request.getSenderEmail();
         log.info("[Chat] Sender email: {}, Principal: {}", email, (principal != null ? principal.getName() : "NULL"));
 
-        if (!gatheringService.isAuthorizedMember(gatheringId, email)) {
+        if (!gatheringMemberService.isAuthorizedMember(gatheringId, email)) {
             log.warn("[Chat] Unauthorized chat attempt by {} for gathering {}", email, gatheringId);
             return null; 
         }
@@ -57,7 +58,7 @@ public class ChatController {
         // Check privacy: if not public, only members or host can view
         if (!gathering.isChatPublic()) {
             String email = (principal != null) ? principal.getName() : null;
-            if (!gatheringService.isAuthorizedMember(gatheringId, email)) {
+            if (!gatheringMemberService.isAuthorizedMember(gatheringId, email)) {
                 return java.util.Collections.emptyList();
             }
         }

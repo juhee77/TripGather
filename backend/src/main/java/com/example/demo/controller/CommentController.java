@@ -20,6 +20,7 @@ import java.util.List;
 public class CommentController {
     private final CommentRepository commentRepository;
     private final com.example.demo.usecase.GatheringUseCase gatheringService;
+    private final com.example.demo.usecase.GatheringMemberUseCase gatheringMemberService;
 
     @GetMapping
     public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long gatheringId, Principal principal) {
@@ -28,7 +29,7 @@ public class CommentController {
         // Check privacy: if not public, only members or host can view
         if (!gathering.isCommentPublic()) {
             String email = (principal != null) ? principal.getName() : null;
-            if (!gatheringService.isAuthorizedMember(gatheringId, email)) {
+            if (!gatheringMemberService.isAuthorizedMember(gatheringId, email)) {
                 return ResponseEntity.ok(java.util.Collections.emptyList());
             }
         }
@@ -46,7 +47,7 @@ public class CommentController {
         
         // Check privacy: if not public, only members can comment
         if (!gathering.isCommentPublic()) {
-            if (!gatheringService.isAuthorizedMember(gatheringId, principal.getName())) {
+            if (!gatheringMemberService.isAuthorizedMember(gatheringId, principal.getName())) {
                 throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "모임 멤버만 댓글을 작성할 수 있습니다.");
             }
         }
