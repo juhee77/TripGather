@@ -7,17 +7,10 @@ public interface GatheringUseCase {
     List<Gathering> getAllGatherings(String location);
     List<Gathering> searchGatherings(String query, String category, String location, Boolean availableOnly);
     Gathering createGathering(Gathering gathering);
-    Gathering joinGathering(Long id);
-    void approveMember(Long gatheringId, Long userId);
-    void rejectMember(Long gatheringId, Long userId);
     Gathering updateGathering(Long id, Gathering updateData);
     void deleteGathering(Long id);
-    List<Gathering> getJoinedGatherings();
     List<Gathering> getHostedGatherings();
-    void leaveGathering(Long id);
     Gathering getGathering(Long id);
     void likeGathering(Long id);
     boolean isLikedByUser(Long gatheringId, String email);
-    void inviteMember(Long gatheringId, Long userId);
-    boolean isAuthorizedMember(Long gatheringId, String email);
 }
