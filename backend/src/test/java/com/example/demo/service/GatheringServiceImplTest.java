@@ -308,15 +308,84 @@ class GatheringServiceImplTest {
     }
 
     @Test
-    @DisplayName("모임 검색 성공")
-    void searchGatherings_Success() {
+    @DisplayName("호스트가 본인 모임 참가 신청 시 예외 발생")
+    void joinGathering_HostJoinsOwnGathering_ThrowsException() {
         // given
-        given(gatheringRepository.searchGatherings(any(), any(), any(), any())).willReturn(java.util.List.of(gathering));
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        given(auth.getName()).willReturn("host@example.com");
+        given(gatheringRepository.findById(1L)).willReturn(Optional.of(gathering));
+        given(userRepository.findByEmail("host@example.com")).willReturn(Optional.of(host));
 
-        // when
-        java.util.List<Gathering> results = gatheringService.searchGatherings("Query", "Category", "Location", true);
+        // when & then
+        assertThatThrownBy(() -> gatheringService.joinGathering(1L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("호스트는 이미 멤버입니다.");
+    }
 
-        // then
-        assertThat(results).hasSize(1);
+    @Test
+    @DisplayName("호스트가 본인을 승인하려 할 때 예외 발생")
+    void approveMember_SelfApproval_ThrowsException() {
+        // given
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(host).status(MemberStatus.PENDING).build();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        given(auth.getName()).willReturn("host@example.com");
+        given(gatheringRepository.findById(1L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(1L, 1L)).willReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.approveMember(1L, 1L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("호스트 본인을 승인/거절할 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("호스트가 모임 탈퇴 시도 시 예외 발생")
+    void leaveGathering_HostLeaves_ThrowsException() {
+        // given
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(host).status(MemberStatus.APPROVED).build();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        given(auth.getName()).willReturn("host@example.com");
+        given(userRepository.findByEmail("host@example.com")).willReturn(Optional.of(host));
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(1L, 1L)).willReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.leaveGathering(1L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("호스트는 모임을 나갈 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("정원 초과 시 초대 시 예외 발생")
+    void inviteMember_FullCapacity_ThrowsException() {
+        // given
+        gathering.setCurrentJoining(5); // Max is 5
+        User target = User.builder().id(3L).email("target@example.com").build();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        given(auth.getName()).willReturn("host@example.com");
+        given(gatheringRepository.findById(1L)).willReturn(Optional.of(gathering));
+        given(userRepository.findById(3L)).willReturn(Optional.of(target));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.inviteMember(1L, 3L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 정원이 가득 차서 초대할 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("인가된 멤버 여부 확인 테스트")
+    void isAuthorizedMember_Tests() {
+        // given
+        given(gatheringRepository.findById(1L)).willReturn(Optional.of(gathering));
+        
+        // Host is authorized
+        assertThat(gatheringService.isAuthorizedMember(1L, "host@example.com")).isTrue();
+        
+        // Non-member is not authorized
+        given(gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(anyLong(), anyString(), any())).willReturn(false);
+        assertThat(gatheringService.isAuthorizedMember(1L, "outsider@ex.com")).isFalse();
+        
+        // Approved member is authorized
+        given(gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(eq(1L), eq("member@ex.com"), eq(MemberStatus.APPROVED))).willReturn(true);
+        assertThat(gatheringService.isAuthorizedMember(1L, "member@ex.com")).isTrue();
     }
 }

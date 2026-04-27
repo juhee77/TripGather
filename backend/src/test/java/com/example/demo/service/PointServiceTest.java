@@ -58,4 +58,17 @@ class PointServiceTest {
                 .isThrownBy(() -> pointService.addPoints(1L, 50, 1, "출석 체크"))
                 .withMessage("사용자를 찾을 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("포인트 차감 시 잔액이 부족하면 예외 발생")
+    void addPoints_InsufficientBalance_ThrowsException() {
+        // given
+        User user = User.builder().id(1L).points(50).build();
+        given(userRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.of(user));
+
+        // when & then
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> pointService.addPoints(1L, -100, 0, "포인트 사용"))
+                .withMessage("잔액이 부족합니다.");
+    }
 }

@@ -20,6 +20,9 @@ public class PointService {
         User user = userRepository.findByIdWithPessimisticLock(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
+        if (user.getPoints() + amount < 0) {
+            throw new IllegalArgumentException("잔액이 부족합니다.");
+        }
         user.setPoints(user.getPoints() + amount);
         if (stampsToAdd > 0) {
             user.setStampsCount(user.getStampsCount() + stampsToAdd);
