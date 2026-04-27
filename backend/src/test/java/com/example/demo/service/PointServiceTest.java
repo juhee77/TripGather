@@ -14,7 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -54,9 +54,9 @@ class PointServiceTest {
         given(userRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.empty());
 
         // when & then
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> pointService.addPoints(1L, 50, 1, "출석 체크"))
-                .withMessage("사용자를 찾을 수 없습니다.");
+        assertThatThrownBy(() -> pointService.addPoints(1L, 50, 1, "출석 체크"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("사용자를 찾을 수 없습니다.");
     }
 
     @Test
@@ -67,8 +67,8 @@ class PointServiceTest {
         given(userRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.of(user));
 
         // when & then
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> pointService.addPoints(1L, -100, 0, "포인트 사용"))
-                .withMessage("잔액이 부족합니다.");
+        assertThatThrownBy(() -> pointService.addPoints(1L, -100, 0, "포인트 사용"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("잔액이 부족합니다.");
     }
 }
