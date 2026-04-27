@@ -58,6 +58,7 @@
 - `Spring Security`, `OAuth2 (Kakao/Naver)`, `JWT`
 - `WebSocket`, `STOMP`, `SockJS`
 - `MinIO` (S3 Compatible Storage)
+- `JUnit 5`, `Mockito`, `JaCoCo` (Testing & Coverage)
 - `Lombok`, `Flyway` (Migration)
 
 ### **Frontend**
@@ -66,6 +67,16 @@
 - `Vanilla CSS` (Custom Design System)
 - `Lucide React` (Icons)
 - `StompJS`, `Axios`
+
+---
+
+## 🛡️ 품질 보증 및 안정성 (Quality & Stability)
+
+프로젝트의 지속 가능성과 견고한 비즈니스 로직을 보장하기 위해 높은 수준의 테스트 표준을 유지합니다.
+
+- **[JaCoCo 기반 커버리지 관리]**: 핵심 비즈니스 로직인 서비스 패키지의 라인 커버리지를 **80% 이상**으로 유지하도록 강제 설정되어 있습니다. (현재 전체 커버리지 **86%** 달성)
+- **[엣지 케이스 검증]**: 포인트 잔액 부족 시 결제 차단 로직, 중복 가입 방지, 호스트 권한 우회 시도 등 발생 가능한 다양한 예외 상황에 대해 촘촘한 테스트 스위트를 구축했습니다.
+- **[레이어드 아키텍처 테스트]**: Controller, Service, Repository 각 계층에 대해 Mockito를 활용한 정교한 유닛 테스트 및 통합 테스트를 수행합니다.
 
 ---
 
@@ -78,6 +89,10 @@
 ### **2. 실시간 채팅 데이터 매핑**
 - **문제**: 그룹 대화 중 송신자 정보를 효율적으로 표시하고, DM 파트너를 식별하는 로직의 복잡성.
 - **해결**: `senderEmail` 기반의 캐싱 및 `useChatViewModel` 내 파트너 필터링 로직을 통해 렌더링 부하를 줄이고 로직의 간결함을 유지했습니다.
+
+### **3. 서비스 레이어 테스트 안정성 확보**
+- **문제**: 복잡한 연관 관계(Member-Gathering-Itinerary)로 인한 단위 테스트 시 NPE 발생 및 컴파일 오류 발생.
+- **해결**: `@ExtendWith(MockitoExtension.class)`와 `BDDMockito`를 적극 활용하여 가짜 객체(Mock) 간의 상호작용을 정교하게 모델링하고, JaCoCo 리포트를 분석하여 누락된 예외 케이스를 100% 보강했습니다.
 
 ---
 
