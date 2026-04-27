@@ -43,6 +43,8 @@ class CommentControllerTest {
     private CommentRepository commentRepository;
     @Mock
     private com.example.demo.usecase.GatheringUseCase gatheringService;
+    @Mock
+    private com.example.demo.usecase.GatheringMemberUseCase gatheringMemberService;
 
     @InjectMocks
     private CommentController commentController;
@@ -90,7 +92,7 @@ class CommentControllerTest {
     void getComments_PrivateGathering_NonMember_EmptyList() throws Exception {
         // given
         given(gatheringService.getGathering(2L)).willReturn(privateGathering);
-        given(gatheringService.isAuthorizedMember(anyLong(), any())).willReturn(false);
+        given(gatheringMemberService.isAuthorizedMember(anyLong(), any())).willReturn(false);
 
         // when & then
         mockMvc.perform(get("/api/gatherings/2/comments"))
@@ -120,7 +122,7 @@ class CommentControllerTest {
     void addComment_PrivateGathering_Member_Success() throws Exception {
         // given
         given(gatheringService.getGathering(2L)).willReturn(privateGathering);
-        given(gatheringService.isAuthorizedMember(2L, "user@example.com")).willReturn(true);
+        given(gatheringMemberService.isAuthorizedMember(2L, "user@example.com")).willReturn(true);
         Comment savedComment = Comment.builder().id(2L).content("Member Comment").author("user@example.com").build();
         given(commentRepository.save(any(Comment.class))).willReturn(savedComment);
 
@@ -138,7 +140,7 @@ class CommentControllerTest {
     void addComment_PrivateGathering_NonMember_Forbidden() throws Exception {
         // given
         given(gatheringService.getGathering(2L)).willReturn(privateGathering);
-        given(gatheringService.isAuthorizedMember(anyLong(), any())).willReturn(false);
+        given(gatheringMemberService.isAuthorizedMember(anyLong(), any())).willReturn(false);
 
         // when & then
         mockMvc.perform(post("/api/gatherings/2/comments")

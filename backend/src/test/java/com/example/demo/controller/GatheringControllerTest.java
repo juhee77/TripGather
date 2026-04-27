@@ -32,6 +32,9 @@ class GatheringControllerTest {
     private GatheringUseCase gatheringService;
 
     @MockBean
+    private com.example.demo.usecase.GatheringMemberUseCase gatheringMemberService;
+
+    @MockBean
     private com.example.demo.security.JwtTokenProvider jwtTokenProvider;
 
     @MockBean
@@ -114,7 +117,7 @@ class GatheringControllerTest {
     void joinGathering_Success() throws Exception {
         // given
         Gathering gathering = Gathering.builder().id(1L).title("Test").build();
-        given(gatheringService.joinGathering(anyLong())).willReturn(gathering);
+        given(gatheringMemberService.joinGathering(anyLong())).willReturn(gathering);
 
         // when & then
         mockMvc.perform(post("/api/gatherings/1/join")
@@ -204,7 +207,7 @@ class GatheringControllerTest {
     @DisplayName("내가 참가한 모임 조회 성공")
     void getJoinedGatherings_Success() throws Exception {
         Gathering g = Gathering.builder().id(1L).title("Joined").build();
-        given(gatheringService.getJoinedGatherings()).willReturn(List.of(g));
+        given(gatheringMemberService.getJoinedGatherings()).willReturn(List.of(g));
 
         mockMvc.perform(get("/api/gatherings/my/joined"))
                 .andExpect(status().isOk())
