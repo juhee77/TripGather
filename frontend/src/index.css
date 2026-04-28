@@ -69,13 +69,15 @@ body {
   max-width: 480px;
   /* Default mobile view */
   margin: 0 auto;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   background-color: var(--bg-color);
   position: relative;
   box-shadow: 0 0 100px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   transition: max-width 0.3s ease;
+  overflow: hidden;
 }
 
 @media (min-width: 768px) {
@@ -94,8 +96,9 @@ body {
 
 .app-container {
   flex: 1;
-  padding-bottom: 100px;
+  padding-bottom: 120px;
   overflow-y: auto;
+  overflow-x: hidden;
   scroll-behavior: smooth;
   background-color: var(--bg-color);
 }
