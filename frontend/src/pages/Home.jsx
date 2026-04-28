@@ -24,7 +24,12 @@ const Home = () => {
     actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, likeGathering }
   } = useGatheringsViewModel();
 
-  const [activeTab, setActiveTab] = useState('라운지');
+  const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem('tg_activeTab') || '라운지');
+
+  useEffect(() => {
+    sessionStorage.setItem('tg_activeTab', activeTab);
+  }, [activeTab]);
+
   const [showOnlyHosted, setShowOnlyHosted] = useState(false);
   const [journeyItineraries, setJourneyItineraries] = useState([]);
   const [sortBy, setSortBy] = useState('latest'); // 'latest' or 'startDate'

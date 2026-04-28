@@ -81,7 +81,6 @@ class GatheringRepository {
       method: 'POST'
     });
     if (!response.ok) throw new Error('Failed to toggle like');
-    return response.json();
   }
 }
 

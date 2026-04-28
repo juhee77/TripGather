@@ -251,7 +251,7 @@ label {
 .label-muted {
   font-size: 10px;
   font-weight: 900;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   letter-spacing: 1px;
   text-transform: uppercase;
   display: block;
