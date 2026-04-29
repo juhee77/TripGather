@@ -76,7 +76,7 @@ const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount 
         </div>
         <div className="social-stats">
           <button 
-            className="stat-item icon-btn" 
+            className={`stat-item icon-btn ${likedByCurrentUser ? 'like-animating' : ''}`} 
             onClick={handleLikeClick}
             style={{ 
               color: likedByCurrentUser ? '#FF6B6B' : 'var(--text-muted)',

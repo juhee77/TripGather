@@ -8,7 +8,7 @@ import TravelInsightWidget from '../components/TravelInsightWidget';
 import { useUser } from '../contexts/UserContext';
 import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
 import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
-import { Search, Map as MapIcon, Plus, MessageCircle } from 'lucide-react';
+import { Search, Map as MapIcon, Plus, MessageCircle, PlaneOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
 import JourneyRepository from '../repositories/JourneyRepository';
@@ -21,6 +21,7 @@ const Home = () => {
     selectedRegion,
     searchQuery,
     availableOnly,
+    isLoading,
     actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, likeGathering }
   } = useGatheringsViewModel();
 
@@ -280,46 +281,73 @@ const Home = () => {
       <div style={{ padding: '0 20px', flex: 1 }}>
         {activeTab === '라운지' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {gatherings.filter(g => {
-              // The QueryDSL backend already handles location, searchQuery, and availableOnly.
-              // We only apply the showOnlyHosted filter on the client side since it strictly checks current user matching.
-              const hostMatch = !showOnlyHosted || (
-                currentUser && g.host && (
-                  (typeof g.host === 'string' && g.host === currentUser.name) ||
-                  (g.host.email === currentUser.email)
-                )
-              );
-              return hostMatch;
-            }).map((g, idx) => (
-              <div 
-                key={g.id} 
-                onClick={() => navigate(`/gathering/${g.id}`)} 
-                style={{ cursor: 'pointer', animationDelay: `${idx * 0.1}s` }}
-                className="animate-fade"
-              >
-                <FeedCard
-                  title={g.title}
-                  host={typeof g.host === 'string' ? g.host : g.host?.name}
-                  date={g.dates}
-                  location={g.location}
-                  joining={`${g.currentJoining}/${g.maxJoining}`}
-                  bgImage={g.bgImageUrl}
-                  pendingCount={
-                    (currentUser && g.host && (
+            {isLoading ? (
+              // Skeleton UI
+              [...Array(3)].map((_, idx) => (
+                <div key={`skeleton-${idx}`} className="ticket-skeleton" style={{ animationDelay: `${idx * 0.15}s` }} />
+              ))
+            ) : (
+              <>
+                {gatherings.filter(g => {
+                  // The QueryDSL backend already handles location, searchQuery, and availableOnly.
+                  // We only apply the showOnlyHosted filter on the client side since it strictly checks current user matching.
+                  const hostMatch = !showOnlyHosted || (
+                    currentUser && g.host && (
                       (typeof g.host === 'string' && g.host === currentUser.name) ||
                       (g.host.email === currentUser.email)
-                    )) ? g.members?.filter(m => m.status === MemberStatus.PENDING).length || 0 : 0
-                  }
-                  likedByCurrentUser={g.likedByCurrentUser}
-                  onLike={() => likeGathering(g.id)}
-                />
-              </div>
-            ))}
-            {gatherings.filter(g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))).length === 0 && (
-              <div style={{ textAlign: 'center', padding: '100px 0' }}>
-                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🏜️</div>
-                <p className="text-s" style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>선택하신 지역에 모임이 없습니다.</p>
-              </div>
+                    )
+                  );
+                  return hostMatch;
+                }).map((g, idx) => (
+                  <div 
+                    key={g.id} 
+                    onClick={() => navigate(`/gathering/${g.id}`)} 
+                    style={{ cursor: 'pointer', animationDelay: `${idx * 0.1}s` }}
+                    className="animate-fade"
+                  >
+                    <FeedCard
+                      title={g.title}
+                      host={typeof g.host === 'string' ? g.host : g.host?.name}
+                      date={g.dates}
+                      location={g.location}
+                      joining={`${g.currentJoining}/${g.maxJoining}`}
+                      bgImage={g.bgImageUrl}
+                      pendingCount={
+                        (currentUser && g.host && (
+                          (typeof g.host === 'string' && g.host === currentUser.name) ||
+                          (g.host.email === currentUser.email)
+                        )) ? g.members?.filter(m => m.status === MemberStatus.PENDING).length || 0 : 0
+                      }
+                      likedByCurrentUser={g.likedByCurrentUser}
+                      onLike={() => likeGathering(g.id)}
+                    />
+                  </div>
+                ))}
+                
+                {/* Empty State */}
+                {gatherings.filter(g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))).length === 0 && (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    padding: '80px 0',
+                    background: 'var(--surface)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px dashed var(--border-color)',
+                    marginTop: '20px'
+                  }}>
+                    <div style={{ 
+                      width: '80px', height: '80px', 
+                      margin: '0 auto 16px auto', 
+                      background: 'rgba(255, 92, 0, 0.1)',
+                      borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <PlaneOff size={40} color="var(--primary-orange)" />
+                    </div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '8px' }}>탑승할 항공편이 없습니다</h3>
+                    <p className="text-s" style={{ color: 'var(--text-secondary)' }}>선택하신 지역에 예정된 일정이 없네요.<br/>새로운 여정을 개설해 보는 건 어떨까요?</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

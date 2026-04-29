@@ -1,4 +1,5 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap");
 
 :root {
   /* Color Palette - Vibrant & Premium (Day Travel Priority) */
@@ -231,6 +232,7 @@ button:active {
   font-size: 11px;
   font-weight: 900;
   color: var(--primary-orange);
+  font-family: 'JetBrains Mono', monospace;
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
@@ -255,6 +257,7 @@ label {
   font-size: 10px;
   font-weight: 900;
   color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
   letter-spacing: 1px;
   text-transform: uppercase;
   display: block;
@@ -264,7 +267,46 @@ label {
   color: var(--text-primary);
   font-weight: 800;
   font-size: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -0.2px;
 }
+
+/* Typography Utilities */
+.font-mono {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.ticket-skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #cbd5e1 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: var(--radius-lg);
+  min-height: 200px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes like-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+.like-animating {
+  animation: like-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
 
 .input-light {
   width: 100%;
