@@ -256,7 +256,7 @@ label {
 .label-muted {
   font-size: 10px;
   font-weight: 900;
-  color: var(--text-secondary);
+  color: var(--text-muted); /* Darkened for better visibility */
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -529,4 +529,17 @@ label {
 
 .dual-range-thumb:focus {
   outline: none;
+}
+
+@keyframes stamp-pop {
+  0% { transform: scale(3) rotate(-45deg); opacity: 0; }
+  80% { transform: scale(0.9) rotate(-10deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-15deg); opacity: 0.8; }
+}
+
+.clean-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 8px 0;
 }

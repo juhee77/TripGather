@@ -38,6 +38,22 @@ const TicketCard = ({ itinerary, onViewRoute, onEdit, onRemove, isMine: isMinePr
                     <Plane size={16} fill="var(--primary-orange)" /> TRIPGATHER AIR
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {itinerary.stampImageUrl && (
+                        <div style={{ 
+                            background: 'rgba(74, 222, 128, 0.1)', 
+                            padding: '6px 14px', 
+                            borderRadius: '8px',
+                            fontSize: '10px',
+                            fontWeight: 900,
+                            color: '#4ADE80',
+                            letterSpacing: '0.5px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                        }}>
+                            <span>STAMPED</span>
+                        </div>
+                    )}
                     <div style={{ 
                         background: 'rgba(99, 102, 241, 0.1)', 
                         padding: '6px 14px', 
@@ -97,18 +113,6 @@ const TicketCard = ({ itinerary, onViewRoute, onEdit, onRemove, isMine: isMinePr
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-                <PrimaryButton 
-                    variant="secondary"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (onInfo) onInfo(itinerary);
-                        else if (onViewRoute) onViewRoute(itinerary);
-                    }}
-                    style={{ flex: 1, height: '52px', borderRadius: '14px' }}
-                >
-                    INFO
-                </PrimaryButton>
-                
                 {isMine && (
                     <PrimaryButton 
                         variant="secondary"

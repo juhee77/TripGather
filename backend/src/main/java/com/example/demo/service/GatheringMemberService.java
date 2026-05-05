@@ -163,15 +163,39 @@ public class GatheringMemberService implements GatheringMemberUseCase {
     }
 
     public boolean isAuthorizedMember(Long gatheringId, String email) {
-        if (email == null || email.isEmpty() || email.equals("anonymousUser")) return false;
+        if (email == null || email.isEmpty() || email.equals("anonymousUser")) {
+            System.out.println("[Auth] Unauthorized: No email provided or anonymousUser");
+            return false;
+        }
         
         Gathering gathering = gatheringRepository.findById(gatheringId).orElse(null);
-        if (gathering == null) return false;
+        if (gathering == null) {
+            System.out.println("[Auth] Unauthorized: Gathering not found " + gatheringId);
+            return false;
+        }
         
-        if (gathering.getHost() != null && gathering.getHost().getEmail().equals(email)) return true;
+        // Host check
+        if (gathering.getHost() != null && gathering.getHost().getEmail().equalsIgnoreCase(email)) {
+            return true;
+        }
         
-        return gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(
+        // Fallback for broken data: check linked itinerary author
+        if (gathering.getHost() == null && gathering.getLinkedItinerary() != null) {
+            if (gathering.getLinkedItinerary().getAuthorEmail() != null && 
+                gathering.getLinkedItinerary().getAuthorEmail().equalsIgnoreCase(email)) {
+                return true;
+            }
+        }
+        
+        // Member check
+        boolean isApproved = gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(
                 gatheringId, email, MemberStatus.APPROVED);
+        
+        if (!isApproved) {
+            System.out.println("[Auth] Unauthorized: User " + email + " is not an approved member of gathering " + gatheringId);
+        }
+        
+        return isApproved;
     }
 
     private void validateHost(Long gatheringId) {

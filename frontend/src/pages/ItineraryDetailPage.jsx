@@ -150,6 +150,23 @@ const ItineraryDetailPage = () => {
         }
     };
 
+    const isAllFinished = localItinerary.routePoints?.length > 0 && 
+        localItinerary.routePoints.every(p => p.isCompleted);
+
+    const handleApplyStamp = async () => {
+        setActionLoading(true);
+        try {
+            // Using placeholder for now
+            const stampUrl = '/src/assets/stamp-placeholder.png';
+            const success = await saveItinerary({ ...localItinerary, stampImageUrl: stampUrl });
+            if (success) {
+                alert('축하합니다! 여행 완료 스탬프가 찍혔습니다. ✈️');
+            }
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const groupedByDay = (() => {
         const sourcePoints = localItinerary.routePoints || [];
         const pointsWithIdx = sourcePoints.map((p, index) => ({ ...p, originalIndex: index }));
@@ -189,6 +206,7 @@ const ItineraryDetailPage = () => {
                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                 <span className="label-orange">JOURNEY LOG</span>
                                 {(localItinerary.isPublic || localItinerary.publicStatus) && <span style={{ padding: '2px 8px', background: 'var(--primary-orange)', color: 'white', borderRadius: '6px', fontSize: '9px', fontWeight: 900 }}>PUBLIC</span>}
+                                {localItinerary.stampImageUrl && <span style={{ padding: '2px 8px', background: '#4ADE80', color: 'white', borderRadius: '6px', fontSize: '9px', fontWeight: 900 }}>STAMPED</span>}
                                 {isOwner && (
                                     <div style={{ 
                                         display: 'flex', alignItems: 'center', gap: '8px',
@@ -231,6 +249,25 @@ const ItineraryDetailPage = () => {
                             <div style={{ marginTop: '16px', display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
                                 <span>📅 {localItinerary.startDate} ~ {localItinerary.endDate}</span>
                                 {localItinerary.location && <span>📍 {localItinerary.location}</span>}
+                            </div>
+                        )}
+
+                        {/* Stamp Image Display */}
+                        {localItinerary.stampImageUrl && (
+                            <div style={{ 
+                                position: 'absolute', bottom: '10px', right: '20px', 
+                                transform: 'rotate(-15deg)', pointerEvents: 'none',
+                                animation: 'stamp-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                            }}>
+                                <img 
+                                    src={localItinerary.stampImageUrl} 
+                                    alt="Stamp" 
+                                    style={{ 
+                                        width: '120px', height: '120px', opacity: 0.8, 
+                                        filter: 'sepia(0.3) hue-rotate(-10deg) contrast(1.1)',
+                                        dropShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                                    }} 
+                                />
                             </div>
                         )}
                     </div>
@@ -403,8 +440,20 @@ const ItineraryDetailPage = () => {
                             </PrimaryButton>
                         )}
                         {isOwner && (
-                            <div style={{ flex: 1, textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
-                                내 여권을 확인하거나 여행 피드에서 다른 영감을 찾아보세요! ✈️
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+                                {isAllFinished && !localItinerary.stampImageUrl && (
+                                    <PrimaryButton
+                                        onClick={handleApplyStamp}
+                                        style={{ background: 'var(--primary-gradient)', color: 'white', fontWeight: 900 }}
+                                    >
+                                        여정 완료 스탬프 찍기 ✈️
+                                    </PrimaryButton>
+                                )}
+                                <div style={{ flex: 1, textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>
+                                    {isAllFinished 
+                                        ? "모든 일정을 완수하셨네요! 멋진 여행이었습니다. 😊"
+                                        : "내 여권을 확인하거나 여행 피드에서 다른 영감을 찾아보세요! ✈️"}
+                                </div>
                             </div>
                         )}
                     </div>

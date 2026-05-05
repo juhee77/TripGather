@@ -177,7 +177,7 @@ const Home = () => {
                 className="ticket-wrapper animate-fade" 
                 style={{ 
                   borderRadius: '28px',
-                  background: 'white',
+                  background: 'var(--surface-solid)',
                   border: '1px solid var(--border-color)',
                   padding: 0
                 }}

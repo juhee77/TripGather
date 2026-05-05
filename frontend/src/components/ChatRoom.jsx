@@ -18,9 +18,12 @@ const ChatRoom = ({ gathering, onBack, onStartDM, inline = false }) => {
         isHost: checkHost
     } = useChatViewModel(gathering, currentUser);
 
-    const isActualHost = currentUser && gathering?.host && (
-        (typeof gathering.host === 'string' && gathering.host === currentUser.name) ||
-        (gathering.host.email === currentUser.email)
+    const isActualHost = currentUser && (
+        (gathering?.host && (
+            (typeof gathering.host === 'string' && (gathering.host === currentUser.name || gathering.host === currentUser.email)) ||
+            (gathering.host.email === currentUser.email)
+        )) ||
+        (!gathering?.host && gathering?.linkedItinerary?.authorEmail === currentUser.email)
     );
 
     const myStatus = gathering?.members?.find(m => m.user.email === currentUser?.email)?.status;

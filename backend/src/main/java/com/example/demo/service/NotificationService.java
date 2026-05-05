@@ -52,7 +52,14 @@ public class NotificationService {
     }
 
     public void sendToAllMembers(Long gatheringId, String name, Object data) {
-        // Fetch approved members and host email from repository
+        com.example.demo.domain.Gathering gathering = gatheringMemberRepository.findById(gatheringId)
+                .map(com.example.demo.domain.GatheringMember::getGathering)
+                .orElse(null);
+        
+        if (gathering != null && gathering.getHost() != null) {
+            send(gathering.getHost().getEmail(), name, data);
+        }
+
         gatheringMemberRepository.findByGatheringId(gatheringId).stream()
                 .filter(m -> m.getStatus() == com.example.demo.domain.MemberStatus.APPROVED)
                 .forEach(m -> send(m.getUser().getEmail(), name, data));
