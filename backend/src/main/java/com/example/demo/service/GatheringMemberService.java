@@ -168,7 +168,7 @@ public class GatheringMemberService implements GatheringMemberUseCase {
         Gathering gathering = gatheringRepository.findById(gatheringId).orElse(null);
         if (gathering == null) return false;
         
-        if (gathering.getHost().getEmail().equals(email)) return true;
+        if (gathering.getHost() != null && gathering.getHost().getEmail().equals(email)) return true;
         
         return gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(
                 gatheringId, email, MemberStatus.APPROVED);
