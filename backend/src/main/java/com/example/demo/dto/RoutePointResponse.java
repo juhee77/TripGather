@@ -20,6 +20,7 @@ public class RoutePointResponse {
     private String endTime;
     private Double lat;
     private Double lng;
+    private Boolean isCompleted;
 
     public static RoutePointResponse from(RoutePoint routePoint) {
         if (routePoint == null) return null;
@@ -33,6 +34,7 @@ public class RoutePointResponse {
                 .endTime(routePoint.getEndTime())
                 .lat(routePoint.getLat())
                 .lng(routePoint.getLng())
+                .isCompleted(routePoint.getIsCompleted())
                 .build();
     }
 }

@@ -41,4 +41,8 @@ public class RoutePoint {
     private Double lat;
 
     private Double lng;
+
+    @Column(name = "is_completed")
+    @Builder.Default
+    private Boolean isCompleted = false;
 }

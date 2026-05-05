@@ -1,0 +1,1 @@
+ALTER TABLE route_point ADD COLUMN is_completed BOOLEAN DEFAULT FALSE;

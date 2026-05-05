@@ -21,6 +21,7 @@ const ItineraryDetailPage = () => {
     const [selectedTargetId, setSelectedTargetId] = useState('');
     const [selectedDay, setSelectedDay] = useState(1);
     const [actionLoading, setActionLoading] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
 
     useEffect(() => {
         setIsVisible(true);
@@ -247,14 +248,26 @@ const ItineraryDetailPage = () => {
                                 <div style={{ flex: 1, height: '1px', background: 'var(--border-color)', marginLeft: '16px' }} />
                                 {isOwner && (
                                     <button 
+                                        onClick={() => setIsEditMode(!isEditMode)}
+                                        style={{ 
+                                            marginLeft: '16px', background: isEditMode ? 'var(--primary-gradient)' : 'var(--bg-color)', border: '1px solid var(--border-color)', 
+                                            padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 800,
+                                            color: isEditMode ? 'white' : 'var(--text-primary)', cursor: 'pointer'
+                                        }}
+                                    >
+                                        {isEditMode ? '완료' : '편집'}
+                                    </button>
+                                )}
+                                {isOwner && isEditMode && (
+                                    <button 
                                         onClick={() => addStop(day.dayNumber)}
                                         style={{ 
-                                            marginLeft: '16px', background: 'var(--highlight-muted)', border: 'none', 
-                                            padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 800,
+                                            marginLeft: '8px', background: 'var(--highlight-muted)', border: 'none', 
+                                            padding: '4px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 800,
                                             color: 'var(--primary-orange)', cursor: 'pointer'
                                         }}
                                     >
-                                        + ADD STOP
+                                        + ADD
                                     </button>
                                 )}
                             </div>
@@ -264,18 +277,18 @@ const ItineraryDetailPage = () => {
                                     <div 
                                         key={pIdx} 
                                         className="ticket-wrapper animate-fade" 
-                                        draggable={isOwner}
+                                        draggable={isOwner && isEditMode}
                                         onDragStart={(e) => {
-                                            if (!isOwner) return;
+                                            if (!isOwner || !isEditMode) return;
                                             e.dataTransfer.setData('sourceIdx', point.originalIndex);
                                             e.currentTarget.style.opacity = '0.4';
                                         }}
                                         onDragEnd={(e) => {
                                             e.currentTarget.style.opacity = '1';
                                         }}
-                                        onDragOver={(e) => isOwner && e.preventDefault()}
+                                        onDragOver={(e) => isOwner && isEditMode && e.preventDefault()}
                                         onDrop={(e) => {
-                                            if (!isOwner) return;
+                                            if (!isOwner || !isEditMode) return;
                                             e.preventDefault();
                                             const from = parseInt(e.dataTransfer.getData('sourceIdx'));
                                             handleDrop(from, point.originalIndex);
@@ -284,11 +297,12 @@ const ItineraryDetailPage = () => {
                                             padding: '20px', 
                                             border: '1px solid var(--border-color)',
                                             background: 'white',
-                                            cursor: isOwner ? 'grab' : 'default',
-                                            position: 'relative'
+                                            cursor: isOwner && isEditMode ? 'grab' : 'default',
+                                            position: 'relative',
+                                            opacity: point.isCompleted ? 0.7 : 1
                                         }}
                                     >
-                                        {isOwner && (
+                                        {isOwner && isEditMode && (
                                             <button 
                                                 onClick={() => removeStop(point.originalIndex)}
                                                 style={{ 
@@ -302,16 +316,28 @@ const ItineraryDetailPage = () => {
 
                                         <div className="flex-between" style={{ marginBottom: '8px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <div style={{ 
+                                                <div 
+                                                    onClick={(e) => {
+                                                        if (isOwner && !isEditMode) {
+                                                            e.stopPropagation();
+                                                            const newPoints = [...(localItinerary.routePoints || [])];
+                                                            newPoints[point.originalIndex].isCompleted = !newPoints[point.originalIndex].isCompleted;
+                                                            saveItinerary({ ...localItinerary, routePoints: newPoints });
+                                                        }
+                                                    }}
+                                                    style={{ 
                                                     width: '24px', height: '24px', borderRadius: '50%', 
-                                                    background: 'var(--bg-color)',
-                                                    color: 'var(--text-muted)',
-                                                    fontSize: '12px', fontWeight: 900, display: 'flex', justifyContent: 'center', alignItems: 'center'
+                                                    background: point.isCompleted ? 'var(--primary-orange)' : 'var(--bg-color)',
+                                                    color: point.isCompleted ? 'white' : 'var(--text-muted)',
+                                                    cursor: (isOwner && !isEditMode) ? 'pointer' : 'default',
+                                                    fontSize: '12px', fontWeight: 900, display: 'flex', justifyContent: 'center', alignItems: 'center',
+                                                    border: point.isCompleted ? 'none' : '1px solid var(--border-color)',
+                                                    transition: 'all 0.2s'
                                                 }}>
-                                                    {pIdx + 1}
+                                                    {point.isCompleted ? <Check size={14} strokeWidth={4} /> : (pIdx + 1)}
                                                 </div>
                                                 <div style={{ flex: 1 }}>
-                                                    {isOwner ? (
+                                                    {isOwner && isEditMode ? (
                                                         <input 
                                                             defaultValue={point.label}
                                                             onBlur={(e) => renameStop(point.originalIndex, e.target.value)}
@@ -319,7 +345,7 @@ const ItineraryDetailPage = () => {
                                                             style={{ fontWeight: 800, color: 'var(--text-primary)', border: 'none', background: 'transparent', width: '100%', fontSize: '15px' }}
                                                         />
                                                     ) : (
-                                                        <h4 style={{ fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{point.label}</h4>
+                                                        <h4 style={{ fontWeight: 800, color: point.isCompleted ? 'var(--text-muted)' : 'var(--text-primary)', margin: 0, textDecoration: point.isCompleted ? 'line-through' : 'none' }}>{point.label}</h4>
                                                     )}
                                                     
                                                     {(point.startTime || point.endTime) && (

@@ -80,6 +80,7 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
                         .sequenceOrder(originalPoint.getSequenceOrder())
                         .startTime(originalPoint.getStartTime())
                         .endTime(originalPoint.getEndTime())
+                        .isCompleted(false)
                         .itinerary(clone)
                         .build();
                 clone.getRoutePoints().add(clonedPoint);
@@ -168,6 +169,7 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
                     .sequenceOrder(startSeq + count)
                     .startTime(sourcePoint.getStartTime())
                     .endTime(sourcePoint.getEndTime())
+                    .isCompleted(false)
                     .itinerary(target)
                     .build();
             target.getRoutePoints().add(newPoint);
