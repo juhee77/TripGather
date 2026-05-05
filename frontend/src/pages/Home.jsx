@@ -8,7 +8,7 @@ import TravelInsightWidget from '../components/TravelInsightWidget';
 import { useUser } from '../contexts/UserContext';
 import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
 import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
-import { Search, Map as MapIcon, Plus, MessageCircle, PlaneOff } from 'lucide-react';
+import { Search, Map as MapIcon, Plus, MessageCircle, Plane } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
 import JourneyRepository from '../repositories/JourneyRepository';
@@ -341,7 +341,7 @@ const Home = () => {
                       borderRadius: '50%',
                       display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
-                      <PlaneOff size={40} color="var(--primary-orange)" />
+                      <Plane size={40} color="var(--primary-orange)" />
                     </div>
                     <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '8px' }}>탑승할 항공편이 없습니다</h3>
                     <p className="text-s" style={{ color: 'var(--text-secondary)' }}>선택하신 지역에 예정된 일정이 없네요.<br/>새로운 여정을 개설해 보는 건 어떨까요?</p>
