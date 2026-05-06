@@ -163,7 +163,8 @@ const Home = () => {
           {(() => {
             const myUpcoming = gatherings
               .filter(g => {
-                const isHost = typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email;
+                const isHost = (g.host && (typeof g.host === 'string' ? g.host === currentUser?.name : g.host?.email === currentUser?.email)) ||
+                               (!g.host && g.linkedItinerary?.authorEmail === currentUser?.email);
                 const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === MemberStatus.APPROVED));
                 return (isHost || isApproved);
               })
@@ -292,9 +293,12 @@ const Home = () => {
                   // The QueryDSL backend already handles location, searchQuery, and availableOnly.
                   // We only apply the showOnlyHosted filter on the client side since it strictly checks current user matching.
                   const hostMatch = !showOnlyHosted || (
-                    currentUser && g.host && (
-                      (typeof g.host === 'string' && g.host === currentUser.name) ||
-                      (g.host.email === currentUser.email)
+                    currentUser && (
+                      (g.host && (
+                        (typeof g.host === 'string' && g.host === currentUser.name) ||
+                        (g.host.email === currentUser.email)
+                      )) ||
+                      (!g.host && g.linkedItinerary?.authorEmail === currentUser.email)
                     )
                   );
                   return hostMatch;

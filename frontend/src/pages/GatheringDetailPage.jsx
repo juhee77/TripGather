@@ -49,9 +49,12 @@ const GatheringDetailPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
 
-  const isHost = currentUser && gathering?.host && (
-    (typeof gathering.host === 'string' && gathering.host === currentUser.name) ||
-    (gathering.host.email === currentUser.email)
+  const isHost = currentUser && (
+    (gathering?.host && (
+      (typeof gathering.host === 'string' && gathering.host === currentUser.name) ||
+      (gathering.host.email === currentUser.email)
+    )) ||
+    (!gathering?.host && gathering?.linkedItinerary?.authorEmail === currentUser.email)
   );
 
   const myStatus = gathering?.members?.find(m => m.user.email === currentUser?.email)?.status;
