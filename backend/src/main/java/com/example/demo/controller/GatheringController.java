@@ -52,13 +52,13 @@ public class GatheringController {
     }
 
     @PostMapping
-    public ResponseEntity<GatheringResponse> createGathering(@RequestBody Gathering gathering) {
-        return ResponseEntity.ok(GatheringResponse.from(gatheringService.createGathering(gathering)));
+    public ResponseEntity<GatheringResponse> createGathering(@RequestBody com.example.demo.dto.GatheringRequest request) {
+        return ResponseEntity.ok(GatheringResponse.from(gatheringService.createGathering(request.toEntity())));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<GatheringResponse> updateGathering(@PathVariable Long id, @RequestBody Gathering gathering) {
-        return ResponseEntity.ok(GatheringResponse.from(gatheringService.updateGathering(id, gathering)));
+    public ResponseEntity<GatheringResponse> updateGathering(@PathVariable Long id, @RequestBody com.example.demo.dto.GatheringRequest request) {
+        return ResponseEntity.ok(GatheringResponse.from(gatheringService.updateGathering(id, request.toEntity())));
     }
 
     @DeleteMapping("/{id}")

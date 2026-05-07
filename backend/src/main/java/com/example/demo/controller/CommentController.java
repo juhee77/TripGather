@@ -7,6 +7,7 @@ import com.example.demo.repository.CommentRepository;
 import com.example.demo.repository.GatheringRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.exception.CustomException;
 import com.example.demo.exception.ErrorCode;
@@ -40,7 +41,7 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity<CommentResponse> addComment(@PathVariable Long gatheringId, @RequestBody com.example.demo.domain.Comment comment, Principal principal) {
+    public ResponseEntity<CommentResponse> addComment(@PathVariable Long gatheringId, @RequestBody com.example.demo.dto.CommentRequest request, Principal principal) {
         if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
         
         com.example.demo.domain.Gathering gathering = gatheringService.getGathering(gatheringId);
@@ -52,6 +53,7 @@ public class CommentController {
             }
         }
         
+        com.example.demo.domain.Comment comment = request.toEntity();
         comment.setGathering(gathering);
         comment.setAuthor(principal.getName());
         

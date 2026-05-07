@@ -41,12 +41,12 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserResponse> createUser(@RequestBody User user) {
-        return ResponseEntity.ok(UserResponse.from(userService.createUser(user)));
+    public ResponseEntity<UserResponse> createUser(@RequestBody com.example.demo.dto.UserRequest request) {
+        return ResponseEntity.ok(UserResponse.from(userService.createUser(request.toEntity())));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @RequestBody User update) {
-        return ResponseEntity.ok(UserResponse.from(userService.updateProfile(id, update)));
+    public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @RequestBody com.example.demo.dto.UserRequest request) {
+        return ResponseEntity.ok(UserResponse.from(userService.updateProfile(id, request.toEntity())));
     }
 }

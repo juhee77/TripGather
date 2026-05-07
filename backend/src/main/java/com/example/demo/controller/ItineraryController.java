@@ -29,13 +29,13 @@ public class ItineraryController {
     }
 
     @PostMapping
-    public ResponseEntity<ItineraryResponse> createItinerary(@RequestBody Itinerary itinerary) {
-        return ResponseEntity.ok(ItineraryResponse.from(itineraryService.createItinerary(itinerary)));
+    public ResponseEntity<ItineraryResponse> createItinerary(@RequestBody com.example.demo.dto.ItineraryRequest request) {
+        return ResponseEntity.ok(ItineraryResponse.from(itineraryService.createItinerary(request.toEntity())));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ItineraryResponse> updateItinerary(@PathVariable Long id, @RequestBody Itinerary update) {
-        return ResponseEntity.ok(ItineraryResponse.from(itineraryService.updateItinerary(id, update)));
+    public ResponseEntity<ItineraryResponse> updateItinerary(@PathVariable Long id, @RequestBody com.example.demo.dto.ItineraryRequest request) {
+        return ResponseEntity.ok(ItineraryResponse.from(itineraryService.updateItinerary(id, request.toEntity())));
     }
 
     @DeleteMapping("/{id}")
