@@ -5,5 +5,5 @@ import java.util.List;
 
 public interface ChatUseCase {
     com.example.demo.dto.ChatMessageResponse saveMessage(Long gatheringId, String email, String content);
-    java.util.List<com.example.demo.domain.ChatMessage> getChatHistory(Long gatheringId);
+    java.util.List<com.example.demo.dto.ChatMessageResponse> getChatHistory(Long gatheringId);
 }

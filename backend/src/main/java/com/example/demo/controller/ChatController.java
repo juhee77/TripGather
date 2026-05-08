@@ -63,9 +63,7 @@ public class ChatController {
             }
         }
 
-        return chatService.getChatHistory(gatheringId).stream()
-                .map(ChatMessageResponse::from)
-                .toList();
+        return chatService.getChatHistory(gatheringId);
     }
 
     @Data

@@ -41,7 +41,10 @@ public class ChatServiceImpl implements ChatUseCase {
     }
 
     @Transactional(readOnly = true)
-    public List<ChatMessage> getChatHistory(Long gatheringId) {
-        return chatMessageRepository.findByGatheringIdOrderBySentAtAsc(gatheringId);
+    public List<com.example.demo.dto.ChatMessageResponse> getChatHistory(Long gatheringId) {
+        return chatMessageRepository.findByGatheringIdOrderBySentAtAsc(gatheringId)
+                .stream()
+                .map(com.example.demo.dto.ChatMessageResponse::from)
+                .toList();
     }
 }
