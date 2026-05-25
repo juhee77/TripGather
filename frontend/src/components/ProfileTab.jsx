@@ -1,18 +1,28 @@
-/* eslint-disable */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PassportCard from './PassportCard';
 import StampBook from './StampBook';
 import { LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useUserViewModel } from '../viewmodels/useUserViewModel';
+import { useUser } from '../contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 
 const ProfileTab = () => {
   const navigate = useNavigate();
-  const { user } = useUserViewModel();
+  const { user, refetch } = useUser();
   const { logout } = useAuth();
   const stamps = []; // TODO: replace with trip-based stamps in future
   const loading = false;
+
+  useEffect(() => {
+    refetch().catch(err => console.error("Failed to refetch user in ProfileTab:", err));
+
+    const handleFocus = () => {
+      refetch().catch(err => console.error("Failed to refetch user on focus in ProfileTab:", err));
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refetch]);
 
   return (
     <div style={{ paddingBottom: '100px' }} className="animate-fade">

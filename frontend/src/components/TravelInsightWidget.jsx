@@ -11,7 +11,7 @@ const TravelInsightWidget = ({ user }) => {
         title: "베테랑 탐험가 등극!",
         message: `${points} 포인트를 보유 중! 당신은 이제 완벽한 TripGather 전문가입니다!`
       };
-    } else if (points > 100) {
+    } else if (points >= 100) {
       return {
         icon: <TrendingUp size={20} color="#51cf66" />,
         title: "포인트 부자!",

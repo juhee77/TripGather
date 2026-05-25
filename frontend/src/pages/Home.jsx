@@ -15,7 +15,7 @@ import JourneyRepository from '../repositories/JourneyRepository';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user: currentUser } = useUser();
+  const { user: currentUser, refetch: refetchUser } = useUser();
   const {
     gatherings,
     selectedRegion,
@@ -45,12 +45,17 @@ const Home = () => {
         .catch((err) => console.error('Failed to fetch journeys:', err));
     };
     
-    loadJourneys();
+    const refreshData = () => {
+      loadJourneys();
+      refetchUser().catch((err) => console.error('Failed to refetch user:', err));
+    };
+    
+    refreshData();
 
     // Refetch when window regains focus (e.g. after coming back from edit/detail)
-    window.addEventListener('focus', loadJourneys);
-    return () => window.removeEventListener('focus', loadJourneys);
-  }, [currentUser?.email]);
+    window.addEventListener('focus', refreshData);
+    return () => window.removeEventListener('focus', refreshData);
+  }, [currentUser?.email, refetchUser]);
 
   const handleEditItinerary = (itinerary) => {
     navigate(`/itinerary/edit/${itinerary.id}`);

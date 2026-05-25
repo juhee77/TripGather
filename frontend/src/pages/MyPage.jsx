@@ -17,6 +17,17 @@ const MyPage = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [saving, setSaving] = useState(false);
   const fileInputRef = React.useRef(null);
+
+  useEffect(() => {
+    refetch().catch(err => console.error("Failed to refetch user in MyPage:", err));
+
+    const handleFocus = () => {
+      refetch().catch(err => console.error("Failed to refetch user on focus in MyPage:", err));
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refetch]);
   
 
 
