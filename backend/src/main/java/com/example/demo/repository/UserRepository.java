@@ -10,6 +10,8 @@ import jakarta.persistence.LockModeType;
 
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.Modifying;
+
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
@@ -20,5 +22,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdWithPessimisticLock(@Param("id") Long id);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE User u SET u.deleted = true WHERE u.id = :id")
+    void softDeleteById(@Param("id") Long id);
 }
 

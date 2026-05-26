@@ -296,7 +296,7 @@ class GatheringServiceImplTest {
         gatheringService.deleteGathering(10L);
 
         // then
-        verify(gatheringRepository).deleteById(10L);
+        verify(gatheringRepository).softDeleteById(10L);
     }
 
     @Test

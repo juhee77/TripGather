@@ -76,10 +76,13 @@ class ChatServiceImplTest {
     @DisplayName("채팅 히스토리 조회 성공 테스트")
     void getChatHistory_Success() {
         // given
-        given(chatMessageRepository.findByGatheringIdOrderBySentAtAsc(1L)).willReturn(List.of(new ChatMessage(), new ChatMessage()));
+        User sender = User.builder().name("tester").email("test@example.com").build();
+        ChatMessage msg1 = ChatMessage.builder().content("msg1").sender(sender).build();
+        ChatMessage msg2 = ChatMessage.builder().content("msg2").sender(sender).build();
+        given(chatMessageRepository.findByGatheringIdOrderBySentAtAsc(1L)).willReturn(List.of(msg1, msg2));
 
         // when
-        List<ChatMessage> history = chatService.getChatHistory(1L);
+        List<com.example.demo.dto.ChatMessageResponse> history = chatService.getChatHistory(1L);
 
         // then
         assertThat(history).hasSize(2);

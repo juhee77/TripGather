@@ -17,8 +17,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class User implements UserDetails {
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@org.hibernate.annotations.SQLRestriction("deleted = false")
+public class User extends BaseEntity implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -64,21 +65,7 @@ public class User implements UserDetails {
     @Column(name = "verification_token")
     private String verificationToken;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
 
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @com.fasterxml.jackson.annotation.JsonIgnore

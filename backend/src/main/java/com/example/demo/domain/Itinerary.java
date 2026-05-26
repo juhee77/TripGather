@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Itinerary {
+@org.hibernate.annotations.SQLRestriction("deleted = false")
+public class Itinerary extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -59,11 +60,5 @@ public class Itinerary {
     @Builder.Default
     private java.util.List<RoutePoint> routePoints = new java.util.ArrayList<>();
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
 }

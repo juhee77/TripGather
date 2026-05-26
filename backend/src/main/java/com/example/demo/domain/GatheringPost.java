@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GatheringPost {
+@org.hibernate.annotations.SQLRestriction("deleted = false")
+public class GatheringPost extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,10 +33,5 @@ public class GatheringPost {
     @Builder.Default
     private boolean isPublic = false;
 
-    private LocalDateTime createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
 }

@@ -136,7 +136,7 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
 
     @Transactional
     public void deleteItinerary(Long id) {
-        itineraryRepository.deleteById(id);
+        itineraryRepository.softDeleteById(id);
     }
 
     @Override

@@ -10,7 +10,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Gathering {
+@org.hibernate.annotations.SQLRestriction("deleted = false")
+public class Gathering extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -70,8 +71,7 @@ public class Gathering {
     @Transient
     private int memberCount;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
+
 
     @Builder.Default
     private boolean isGalleryPublic = false;
@@ -94,8 +94,4 @@ public class Gathering {
         }
     }
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
 }

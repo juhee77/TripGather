@@ -103,7 +103,7 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Transactional
     public void deleteGathering(Long id) {
         validateHost(id);
-        gatheringRepository.deleteById(id);
+        gatheringRepository.softDeleteById(id);
     }
 
     @Override

@@ -14,4 +14,8 @@ public interface GatheringRepository extends JpaRepository<Gathering, Long>, Gat
     
     @org.springframework.data.jpa.repository.Query("SELECT g FROM Gathering g JOIN g.members m WHERE m.user.email = :email AND m.status = 'APPROVED' ORDER BY g.createdAt DESC")
     List<Gathering> findJoinedGatherings(String email);
+
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
+    @org.springframework.data.jpa.repository.Query("UPDATE Gathering g SET g.deleted = true WHERE g.id = :id")
+    void softDeleteById(@org.springframework.data.repository.query.Param("id") Long id);
 }

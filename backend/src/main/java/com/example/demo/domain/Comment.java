@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
-public class Comment {
+@org.hibernate.annotations.SQLRestriction("deleted = false")
+public class Comment extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,11 +24,5 @@ public class Comment {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
 }
