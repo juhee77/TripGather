@@ -43,6 +43,15 @@
 - **WebSocket (STOMP)**: 저지연 실시간 채팅 처리.
 - **MinIO**: 이미지 및 파일 업로드를 위한 고성능 스토리지.
 
+### **[Database] Soft Delete & JPA Auditing Architecture**
+- **BaseEntity**: 모든 주요 비즈니스 테이블(`users`, `gathering`, `itinerary`, `comment`, `gathering_post`)에 공통 생성/수정시점 및 삭제 상태(`deleted`) 속성을 완벽 상속합니다.
+- **투명한 조회 필터링 (@SQLRestriction)**: 하이버네이트 최신 규격에 맞춘 가상 필터를 적용하여, `deleted = false`인 활성 상태의 로우만 쿼리 레벨에서 마법같이 자동 조회되도록 보장합니다.
+- **벌크 논리 삭제 성능 튜닝**: 리포지토리 레벨에 direct UPDATE를 실행하는 `@Modifying` 메서드(`softDeleteById`)를 심어, 불필요한 `SELECT` 조회를 제거하고 최적의 처리 속도를 달성했습니다.
+
+<p align="center">
+  <img src="./docs/assets/architecture/soft_delete_architecture.png" width="750" alt="Soft Delete & Auditing Architecture" />
+</p>
+
 ### **[Frontend] ViewModel Pattern & Glassmorphism**
 - **React 19 & Vite**: 빠른 개발 속도와 최신 리액트 기능 활용.
 - **Custom Hook ViewModel**: UI 레이어와 비즈니스 로직(API 통신 등)을 완벽히 분리.
@@ -93,6 +102,10 @@
 ### **3. 서비스 레이어 테스트 안정성 확보**
 - **문제**: 복잡한 연관 관계(Member-Gathering-Itinerary)로 인한 단위 테스트 시 NPE 발생 및 컴파일 오류 발생.
 - **해결**: `@ExtendWith(MockitoExtension.class)`와 `BDDMockito`를 적극 활용하여 가짜 객체(Mock) 간의 상호작용을 정교하게 모델링하고, JaCoCo 리포트를 분석하여 누락된 예외 케이스를 100% 보강했습니다.
+
+### **4. JPA Auditing 설정 격리와 WebMvcTest 통합 안정성**
+- **문제**: 메인 Application 클래스에 `@EnableJpaAuditing`을 선언할 경우, JPA 메타모델을 띄우지 않는 컨트롤러 단위 슬라이스 테스트(`@WebMvcTest`)들이 구동에 실패하며 20여 개의 테스트가 전체 격파되는 이슈 발생.
+- **해결**: `@EnableJpaAuditing` 설정을 별도의 `JpaConfig` 설정 빈으로 우아하게 분리 지정함으로써, 컨트롤러 모의 테스트와 실질적인 JPA 엔티티 감시 리스너 설정이 독립적이고 무결하게 작동하도록 격리 조치했습니다.
 
 ---
 
