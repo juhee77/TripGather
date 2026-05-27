@@ -1,8 +1,10 @@
 # TripGather (가칭: 일정 공유 & 동네 모임 어플) 🗺️ 🤝
 
 <div align="center">
-  <img src="./docs/assets/logo/logo.png" width="200" alt="TripGather Logo" />
-  <p><strong>나의 여권에 찍히는 스탬프, 우리 동네에서 시작하는 새로운 여행</strong></p>
+  <img src="./docs/assets/logo/logo.png" width="160" alt="TripGather Logo" />
+  <br />
+  <img src="./docs/assets/logo/tripgather_ux_poster.png" width="650" alt="TripGather Marketing Poster" />
+  <p><strong>"나의 여권에 찍히는 스탬프, 우리 동네에서 시작하는 새로운 여행"</strong></p>
 </div>
 
 ## 🌟 프로젝트 개요
@@ -43,19 +45,48 @@
 - **WebSocket (STOMP)**: 저지연 실시간 채팅 처리.
 - **MinIO**: 이미지 및 파일 업로드를 위한 고성능 스토리지.
 
-### **[Database] Soft Delete & JPA Auditing Architecture**
-- **BaseEntity**: 모든 주요 비즈니스 테이블(`users`, `gathering`, `itinerary`, `comment`, `gathering_post`)에 공통 생성/수정시점 및 삭제 상태(`deleted`) 속성을 완벽 상속합니다.
-- **투명한 조회 필터링 (@SQLRestriction)**: 하이버네이트 최신 규격에 맞춘 가상 필터를 적용하여, `deleted = false`인 활성 상태의 로우만 쿼리 레벨에서 마법같이 자동 조회되도록 보장합니다.
-- **벌크 논리 삭제 성능 튜닝**: 리포지토리 레벨에 direct UPDATE를 실행하는 `@Modifying` 메서드(`softDeleteById`)를 심어, 불필요한 `SELECT` 조회를 제거하고 최적의 처리 속도를 달성했습니다.
+### **[Database] Secure & Performant Data Integrity**
+- **BaseEntity & Auditing**: 생성/수정 추적 및 공통 논리 삭제(`deleted`) 구조를 상속하여 모든 데이터의 안정성을 기본 보장합니다.
+- **SQL Restriction**: 하이버네이트 최신 표준(`@SQLRestriction`)을 활용해 가상 삭제 데이터를 투명하고 안전하게 자동 조회 필터링합니다.
 
-<p align="center">
-  <img src="./docs/assets/architecture/soft_delete_architecture.png" width="750" alt="Soft Delete & Auditing Architecture" />
-</p>
+---
 
-### **[Frontend] ViewModel Pattern & Glassmorphism**
-- **React 19 & Vite**: 빠른 개발 속도와 최신 리액트 기능 활용.
-- **Custom Hook ViewModel**: UI 레이어와 비즈니스 로직(API 통신 등)을 완벽히 분리.
-- **Premium Design System**: Vanilla CSS를 활용한 글래스모피즘 및 'Night Flight' 특화 UI.
+## 🗺️ 사용자 경험 (UX) & 화면 흐름도 (Screen Flow)
+
+TripGather는 사용자가 우리 동네의 모임을 발견하는 첫 순간부터, 일정을 계획하고, 크루들과 실시간 소통을 하며 미션을 완료해 스탬프를 쌓아 나가는 모든 순간을 **여정(Journey)**이라는 프리미엄 UX 프레임워크로 감쌉니다.
+
+```mermaid
+graph TD
+    A["🔍 라운지 (Lounge Feed)<br>동네 모임 & 보딩패스 탐색"] -->|여정 상세 확인| B["✈️ 여정 정보 (Itinerary Detail)<br>경로(Flight Path) & 세부 일정 탐색"]
+    B -->|참여 신청 & 승인| C["🎫 탑승 대기 (My Gatherings)<br>참여 확정 모임 관리"]
+    C -->|실시간 소통 & 조정| D["💬 무전기 채팅 (Radio Room)<br>실시간 STOMP 크루 무전망"]
+    D -->|미션 달성 & 스탬프| E["📔 디지털 여권 (Passport)<br>디지털 스탬프 날인 & 포인트 적립"]
+    E -->|포인트 확인| F["👤 프로필 마이페이지 (Profile)<br>활동 지수 & 포인트 대시보드"]
+    
+    style A fill:#1a1c2e,stroke:#3b82f6,stroke-width:2px,color:#fff
+    style B fill:#1a1c2e,stroke:#8b5cf6,stroke-width:2px,color:#fff
+    style C fill:#1a1c2e,stroke:#10b981,stroke-width:2px,color:#fff
+    style D fill:#1a1c2e,stroke:#f59e0b,stroke-width:2px,color:#fff
+    style E fill:#1a1c2e,stroke:#ec4899,stroke-width:2px,color:#fff
+    style F fill:#1a1c2e,stroke:#6366f1,stroke-width:2px,color:#fff
+```
+
+### 📱 실제 서비스 화면 갤러리 (UX Screens)
+
+| 🔍 1. 라운지 탐색 피드 (`feed.png`) | ✈️ 2. 감각적 여정 상세 (`detail.png`) |
+| :---: | :---: |
+| ![Lounge Feed](./docs/assets/screenshots/feed.png) | ![Itinerary Detail](./docs/assets/screenshots/detail.png) |
+| 동네 모임들을 보딩패스 카드로 멋지게 탐색합니다. | 이동 경로와 시간대별 일정을 비행 테마로 감상합니다. |
+
+| 🎫 3. 승인된 모임 관리 (`my_gatherings.png`) | 💬 4. 크루 무전 실시간 채팅 (`chat.png`) |
+| :---: | :---: |
+| ![My Gatherings](./docs/assets/screenshots/my_gatherings.png) | ![Radio Chat](./docs/assets/screenshots/chat.png) |
+| 내가 호스트이거나 승인된 모임 목록을 정교하게 제어합니다. | STOMP 기반의 초고속 무전 대화망으로 크루들과 대화합니다. |
+
+| 📔 5. 미션 달성 여권 스탬프 (`passport.png`) | 👤 6. 포인트 리워드 마이페이지 (`profile.png`) |
+| :---: | :---: |
+| ![Passport Stamps](./docs/assets/screenshots/passport.png) | ![Profile MyPage](./docs/assets/screenshots/profile.png) |
+| 달성한 크루 미션을 기념하며 디지털 스탬프를 날인받습니다. | 내 실시간 활동 점수 및 누적 혜택 포인트를 연동 관리합니다. |
 
 ---
 
