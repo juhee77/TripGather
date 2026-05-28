@@ -54,11 +54,7 @@ public class GatheringServiceImpl implements GatheringUseCase {
         
         Gathering savedGathering = gatheringRepository.save(gathering);
         
-        GatheringMember hostMember = GatheringMember.builder()
-                .gathering(savedGathering)
-                .user(host)
-                .status(MemberStatus.APPROVED)
-                .build();
+        GatheringMember hostMember = GatheringMember.createApprovedHost(savedGathering, host);
         
         savedGathering.getMembers().add(hostMember);
         gatheringMemberRepository.save(hostMember);
@@ -132,10 +128,7 @@ public class GatheringServiceImpl implements GatheringUseCase {
             gatheringLikeRepository.delete(existingLike.get());
             gathering.setLikeCount(Math.max(0, gathering.getLikeCount() - 1));
         } else {
-            GatheringLike newLike = GatheringLike.builder()
-                    .user(user)
-                    .gathering(gathering)
-                    .build();
+            GatheringLike newLike = GatheringLike.create(user, gathering);
             gatheringLikeRepository.save(newLike);
             gathering.setLikeCount(gathering.getLikeCount() + 1);
         }

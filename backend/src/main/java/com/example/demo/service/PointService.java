@@ -30,12 +30,7 @@ public class PointService {
             user.setStampsCount(user.getStampsCount() + stampsToAdd);
         }
 
-        PointTransaction tx = PointTransaction.builder()
-                .user(user)
-                .amount(amount)
-                .transactionType(amount >= 0 ? "EARN" : "USE")
-                .description(description)
-                .build();
+        PointTransaction tx = PointTransaction.create(user, amount, description);
 
         pointTransactionRepository.save(tx);
     }

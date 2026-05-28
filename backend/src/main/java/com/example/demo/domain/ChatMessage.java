@@ -33,4 +33,12 @@ public class ChatMessage {
     protected void onCreate() {
         this.sentAt = LocalDateTime.now();
     }
+
+    public static ChatMessage create(String content, User sender, Gathering gathering) {
+        return ChatMessage.builder()
+                .content(content)
+                .sender(sender)
+                .gathering(gathering)
+                .build();
+    }
 }

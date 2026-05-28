@@ -33,4 +33,11 @@ public class GatheringLike {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    public static GatheringLike create(User user, Gathering gathering) {
+        return GatheringLike.builder()
+                .user(user)
+                .gathering(gathering)
+                .build();
+    }
 }

@@ -39,4 +39,13 @@ public class PointTransaction {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    public static PointTransaction create(User user, int amount, String description) {
+        return PointTransaction.builder()
+                .user(user)
+                .amount(amount)
+                .transactionType(amount >= 0 ? "EARN" : "USE")
+                .description(description)
+                .build();
+    }
 }

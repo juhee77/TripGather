@@ -39,4 +39,12 @@ public class DirectMessage {
         this.sentAt = LocalDateTime.now();
         this.isRead = false;
     }
+
+    public static DirectMessage create(User sender, User receiver, String content) {
+        return DirectMessage.builder()
+                .sender(sender)
+                .receiver(receiver)
+                .content(content)
+                .build();
+    }
 }
