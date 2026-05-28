@@ -40,7 +40,7 @@ public class DirectMessage {
         this.isRead = false;
     }
 
-    public static DirectMessage create(User sender, User receiver, String content) {
+    public static DirectMessage of(User sender, User receiver, String content) {
         return DirectMessage.builder()
                 .sender(sender)
                 .receiver(receiver)

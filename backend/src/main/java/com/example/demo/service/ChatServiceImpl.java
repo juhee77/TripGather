@@ -30,7 +30,7 @@ public class ChatServiceImpl implements ChatUseCase {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        ChatMessage message = ChatMessage.create(content, user, gathering);
+        ChatMessage message = ChatMessage.of(content, user, gathering);
 
         com.example.demo.domain.ChatMessage saved = chatMessageRepository.save(message);
         return com.example.demo.dto.ChatMessageResponse.from(saved);

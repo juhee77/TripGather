@@ -29,7 +29,7 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
         User receiver = userRepository.findByEmail(receiverEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        DirectMessage dm = DirectMessage.create(sender, receiver, content);
+        DirectMessage dm = DirectMessage.of(sender, receiver, content);
 
         DirectMessage saved = dmRepository.save(dm);
         return DMResponse.from(saved);

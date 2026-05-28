@@ -30,7 +30,7 @@ public class PointService {
             user.setStampsCount(user.getStampsCount() + stampsToAdd);
         }
 
-        PointTransaction tx = PointTransaction.create(user, amount, description);
+        PointTransaction tx = PointTransaction.of(user, amount, description);
 
         pointTransactionRepository.save(tx);
     }

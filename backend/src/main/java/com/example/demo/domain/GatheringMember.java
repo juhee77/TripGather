@@ -36,7 +36,7 @@ public class GatheringMember {
         this.requestedAt = LocalDateTime.now();
     }
 
-    public static GatheringMember createApprovedHost(Gathering gathering, User host) {
+    public static GatheringMember ofApprovedHost(Gathering gathering, User host) {
         return GatheringMember.builder()
                 .gathering(gathering)
                 .user(host)

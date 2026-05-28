@@ -40,7 +40,7 @@ public class PointTransaction {
         this.createdAt = LocalDateTime.now();
     }
 
-    public static PointTransaction create(User user, int amount, String description) {
+    public static PointTransaction of(User user, int amount, String description) {
         return PointTransaction.builder()
                 .user(user)
                 .amount(amount)
