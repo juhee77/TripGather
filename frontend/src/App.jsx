@@ -12,6 +12,8 @@ import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import GatheringDetailPage from './pages/GatheringDetailPage';
 import CreateGatheringPage from './pages/CreateGatheringPage';
 import ItineraryDetailPage from './pages/ItineraryDetailPage';
+import TripHubPage from './pages/TripHubPage';
+import CreateTripPage from './pages/CreateTripPage';
 import ItineraryEditorPage from './pages/ItineraryEditorPage';
 import HostDashboardPage from './pages/HostDashboardPage';
 import './index.css';
@@ -42,6 +44,8 @@ function AppContent() {
         <Route path="/itinerary/create" element={<PrivateRoute><ItineraryEditorPage /></PrivateRoute>} />
         <Route path="/itinerary/edit/:id" element={<PrivateRoute><ItineraryEditorPage /></PrivateRoute>} />
         <Route path="/itinerary/:id" element={<PrivateRoute><ItineraryDetailPage /></PrivateRoute>} />
+        <Route path="/trip/:id" element={<PrivateRoute><TripHubPage /></PrivateRoute>} />
+        <Route path="/trip/create" element={<PrivateRoute><CreateTripPage /></PrivateRoute>} />
         <Route path="/map" element={<PrivateRoute><MapPage /></PrivateRoute>} />
         <Route path="/chat" element={<PrivateRoute><ChatPage /></PrivateRoute>} />
         <Route path="/mypage" element={<PrivateRoute><MyPage /></PrivateRoute>} />

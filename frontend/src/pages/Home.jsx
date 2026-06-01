@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FeedCard from '../components/FeedCard';
 import TicketCard from '../components/TicketCard';
+import TripCard from '../components/TripCard';
 import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
 import ProfileTab from '../components/ProfileTab';
@@ -37,6 +38,8 @@ const Home = () => {
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
   const { itineraries } = useItinerariesViewModel();
 
+  const [trips, setTrips] = useState([]);
+
   useEffect(() => {
     if (!currentUser?.email) return;
     const loadJourneys = () => {
@@ -45,8 +48,18 @@ const Home = () => {
         .catch((err) => console.error('Failed to fetch journeys:', err));
     };
     
+    const loadTrips = async () => {
+      try {
+        const res = await authFetch('/api/trips');
+        if (res.ok) setTrips(await res.json());
+      } catch (err) {
+        console.error('Failed to fetch trips:', err);
+      }
+    };
+    
     const refreshData = () => {
       loadJourneys();
+      loadTrips();
       refetchUser().catch((err) => console.error('Failed to refetch user:', err));
     };
     
@@ -363,86 +376,42 @@ const Home = () => {
 
         {activeTab === '내 여행' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {(() => {
-              const myJourneys = journeyItineraries;
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 900 }}>나의 여행 허브</h2>
+              <button 
+                onClick={() => navigate('/trip/create')}
+                style={{ 
+                  background: 'var(--text-primary)', color: 'white', 
+                  border: 'none', padding: '8px 12px', borderRadius: '12px',
+                  fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px',
+                  cursor: 'pointer'
+                }}>
+                <Plus size={16} /> 새 여행
+              </button>
+            </div>
 
-              const sortedJourneys = [...myJourneys].sort((a, b) => {
-                if (sortBy === 'startDate') {
-                  if (!a.startDate) return 1;
-                  if (!b.startDate) return -1;
-                  return new Date(a.startDate) - new Date(b.startDate);
-                }
-                // latest (createdAt)
-                return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-              });
+            {trips.map((trip, idx) => (
+              <TripCard 
+                key={trip.id} 
+                trip={trip} 
+                onClick={() => navigate(`/trip/${trip.id}`)} 
+              />
+            ))}
 
-              return (
-                <>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px', gap: '8px' }}>
-                    <button 
-                      onClick={() => setSortBy('startDate')}
-                      style={{ 
-                        fontSize: '12px', fontWeight: 800, padding: '6px 12px', borderRadius: '8px',
-                        background: sortBy === 'startDate' ? 'var(--text-primary)' : 'white',
-                        color: sortBy === 'startDate' ? 'white' : 'var(--text-sub)',
-                        border: '1px solid var(--border-color)'
-                      }}
-                    >
-                      시작일 순
-                    </button>
-                    <button 
-                      onClick={() => setSortBy('latest')}
-                      style={{ 
-                        fontSize: '12px', fontWeight: 800, padding: '6px 12px', borderRadius: '8px',
-                        background: sortBy === 'latest' ? 'var(--text-primary)' : 'white',
-                        color: sortBy === 'latest' ? 'white' : 'var(--text-sub)',
-                        border: '1px solid var(--border-color)'
-                      }}
-                    >
-                      최신 순
-                    </button>
-                  </div>
-                  {sortedJourneys.map((it, idx) => (
-                    <div key={it.id} className="animate-fade" style={{ animationDelay: `${idx * 0.05}s` }}>
-                      <TicketCard
-                        itinerary={it}
-                        isMine={true}
-                        onEdit={() => handleEditItinerary(it)}
-                        onRemove={() => handleRemoveJourney(it.id)}
-                        onViewRoute={() => navigate(`/itinerary/${it.id}`)}
-                      />
-                    </div>
-                  ))}
-                </>
-              );
-            })()}
-            {itineraries.filter((it) => {
-              const journeyIds = new Set(journeyItineraries.map(j => j.id));
-              const isOwner =
-                (it.author && it.author === currentUser?.name) ||
-                (it.authorEmail && it.authorEmail === currentUser?.email) ||
-                (typeof it.author === 'object' && it.author?.email === currentUser?.email);
-              return isOwner || journeyIds.has(it.id);
-            }).length === 0 && (
+            {trips.length === 0 && (
               <div className="glass" style={{
-                textAlign: 'center',
-                padding: '60px 24px',
-                borderRadius: 'var(--radius-lg)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '16px',
-                background: 'white',
-                border: '1px solid var(--border-color)'
+                textAlign: 'center', padding: '60px 24px', borderRadius: 'var(--radius-lg)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+                background: 'white', border: '1px solid var(--border-color)'
               }}>
-                <div style={{ fontSize: '48px' }}>🧳</div>
+                <div style={{ fontSize: '48px' }}>✈️</div>
                 <p style={{ fontWeight: 700, color: 'var(--text-primary)', textAlign: 'center' }}>
-                  아직 내 여정이 없습니다.<br />
+                  아직 계획된 여행이 없습니다.<br />
                   <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                    비행 계획에서 BOARD 후 "여정에 넣기"를 선택하거나, 직접 일정을 생성해보세요.
+                    새로운 여행을 만들고 일정을 채워보세요!
                   </span>
                 </p>
-                <button className="primary-btn" onClick={() => setActiveTab('비행 계획')}>비행 계획 보러가기</button>
+                <button className="primary-btn" onClick={() => navigate('/trip/create')}>새 여행 만들기</button>
               </div>
             )}
           </div>
