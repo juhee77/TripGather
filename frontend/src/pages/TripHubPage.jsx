@@ -1,27 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, List, Map, Globe, CheckSquare, Star } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, List, Map, Globe, CheckSquare, Star, Plus } from 'lucide-react';
 import { authFetch } from '../api/client';
 import PackingList from '../components/PackingList';
 import TranslatorWidget from '../components/TranslatorWidget';
 import ReviewSection from '../components/ReviewSection';
-import ItineraryTab from '../components/ItineraryTab';
+import TicketCard from '../components/TicketCard';
 
 const TripHubPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [trip, setTrip] = useState(null);
+  const [linkedItineraries, setLinkedItineraries] = useState([]);
   const [activeTab, setActiveTab] = useState('일정');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTrip();
+    fetchTripAndItineraries();
   }, [id]);
 
-  const fetchTrip = async () => {
+  const fetchTripAndItineraries = async () => {
     try {
-      const res = await authFetch(`/api/trips/${id}`);
-      if (res.ok) setTrip(await res.json());
+      const [tripRes, itinerariesRes] = await Promise.all([
+        authFetch(`/api/trips/${id}`),
+        authFetch(`/api/trips/${id}/itineraries`)
+      ]);
+      if (tripRes.ok) setTrip(await tripRes.json());
+      if (itinerariesRes.ok) setLinkedItineraries(await itinerariesRes.json());
     } catch (err) {
       console.error(err);
     } finally {
@@ -103,7 +108,35 @@ const TripHubPage = () => {
 
       {/* Content */}
       <div style={{ padding: '20px' }}>
-        {activeTab === '일정' && <div><ItineraryTab tripId={trip.id} /></div>}
+        {activeTab === '일정' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800 }}>연결된 일정</h3>
+              <button onClick={() => navigate('/itinerary/create')} style={{
+                background: 'var(--bg-lite)', color: 'var(--text-primary)', border: '1px solid var(--border-color)',
+                padding: '6px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer'
+              }}>
+                <Plus size={14} /> 새 일정 추가
+              </button>
+            </div>
+            {linkedItineraries.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)', fontWeight: 600, background: 'white', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
+                이 여행에 아직 연결된 세부 일정이 없습니다.
+              </div>
+            ) : (
+              linkedItineraries.map((it, idx) => (
+                <div key={it.id} className="animate-fade" style={{ animationDelay: `${idx * 0.05}s` }}>
+                  <TicketCard
+                    itinerary={it}
+                    isMine={true}
+                    onViewRoute={() => navigate(`/itinerary/${it.id}`)}
+                    onEdit={() => navigate(`/itinerary/edit/${it.id}`)}
+                  />
+                </div>
+              ))
+            )}
+          </div>
+        )}
         {activeTab === '추천' && <div>추천 코스 준비 중...</div>}
         {activeTab === '번역' && <TranslatorWidget country={trip.country} />}
         {activeTab === '준비물' && <PackingList tripId={trip.id} />}
