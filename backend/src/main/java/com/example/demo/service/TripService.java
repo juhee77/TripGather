@@ -24,6 +24,7 @@ public class TripService {
     private final TripItineraryRepository tripItineraryRepository;
     private final ItineraryRepository itineraryRepository;
     private final SecurityService securityService;
+    private final PackingService packingService; // 자동 템플릿 세팅을 위한 서비스 주입
 
     @Transactional
     public TripResponse createTrip(TripRequest request) {
@@ -36,6 +37,10 @@ public class TripService {
             trip.setStatus(TripStatus.valueOf(request.getStatus()));
         }
         Trip saved = tripRepository.save(trip);
+        
+        // 텅 빈 화면(Empty State) 이탈 방지: 기본 필수 준비물 세트 자동 세팅
+        packingService.initDefaultItems(saved.getId());
+        
         return TripResponse.from(saved);
     }
 
