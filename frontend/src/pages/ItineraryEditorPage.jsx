@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { X, Type, FileText, Send, Plus, Trash2, MapPin, Clock, ChevronLeft, Plane } from 'lucide-react';
 import { authFetch } from '../api/client';
 import { useUser } from '../contexts/UserContext';
@@ -10,8 +10,10 @@ import stampPlaceholder from '../assets/stamp-placeholder.png';
 const ItineraryEditorPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user: currentUser } = useUser();
     const isEdit = !!id;
+    const tripId = new URLSearchParams(location.search).get('tripId');
     const [formData, setFormData] = useState({
         title: '',
         region: '',
@@ -152,6 +154,19 @@ const ItineraryEditorPage = () => {
             });
             if (response.ok) {
                 const savedData = await response.json();
+                
+                // 여행(Trip)에서 진입하여 생성한 경우, 자동 연결(Link) 처리
+                if (!isEdit && tripId) {
+                    try {
+                        await authFetch(`/api/trips/${tripId}/itineraries/${savedData.id}`, { method: 'POST' });
+                        navigate(`/trip/${tripId}`); // 저장 후 다시 내 여행 허브로 복귀
+                        return;
+                    } catch (linkErr) {
+                        console.error("Failed to link itinerary to trip:", linkErr);
+                        alert('일정은 생성되었으나 여행 허브와 연결하는 데 실패했습니다.');
+                    }
+                }
+                
                 navigate(`/itinerary/${savedData.id}`);
             } else {
                 const errText = await response.text();

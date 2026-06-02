@@ -112,7 +112,7 @@ const TripHubPage = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 800 }}>연결된 일정</h3>
-              <button onClick={() => navigate('/itinerary/create')} style={{
+              <button onClick={() => navigate(`/itinerary/create?tripId=${trip.id}`)} style={{
                 background: 'var(--bg-lite)', color: 'var(--text-primary)', border: '1px solid var(--border-color)',
                 padding: '6px 12px', borderRadius: '8px', fontWeight: 700, fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer'
               }}>
