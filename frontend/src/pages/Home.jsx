@@ -13,6 +13,7 @@ import { Search, Map as MapIcon, Plus, MessageCircle, Plane } from 'lucide-react
 import { useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
 import JourneyRepository from '../repositories/JourneyRepository';
+import { authFetch } from '../api/client';
 
 const Home = () => {
   const navigate = useNavigate();

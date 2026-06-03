@@ -17,9 +17,8 @@ const ItineraryDetailPage = () => {
     const [localItinerary, setLocalItinerary] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
-    const [myJourneys, setMyJourneys] = useState([]);
-    const [selectedTargetId, setSelectedTargetId] = useState('');
-    const [selectedDay, setSelectedDay] = useState(1);
+    const [myTrips, setMyTrips] = useState([]);
+    const [selectedTripId, setSelectedTripId] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
 
@@ -116,35 +115,78 @@ const ItineraryDetailPage = () => {
         if (!currentUser?.email) return alert('로그인이 필요합니다.');
         setActionLoading(true);
         try {
-            const res = await JourneyRepository.add(localItinerary.id, currentUser.email);
-            alert('새 여행으로 추가되었습니다. ✈️');
-            if (res && res.id) {
-                navigate(`/itinerary/${res.id}`);
-            } else {
-                navigate('/');
+            // 1. 일정(Itinerary) 클론 생성
+            const clonedItinerary = await JourneyRepository.add(localItinerary.id, currentUser.email);
+            if (!clonedItinerary || !clonedItinerary.id) {
+                throw new Error("Cloning itinerary failed");
             }
+
+            // 2. 클론된 일정을 담을 새로운 여행(Trip) 생성
+            const tripPayload = {
+                title: `${clonedItinerary.title || '새로운 여행'}`,
+                destination: clonedItinerary.location || '목적지 미정',
+                country: clonedItinerary.location || '국가 미정',
+                startDate: clonedItinerary.startDate || null,
+                endDate: clonedItinerary.endDate || null,
+                bgImageUrl: clonedItinerary.stampImageUrl || null,
+                status: 'PLANNING'
+            };
+
+            const tripRes = await authFetch('/api/trips', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(tripPayload)
+            });
+
+            if (!tripRes.ok) {
+                throw new Error("Creating trip failed");
+            }
+
+            const newTrip = await tripRes.json();
+
+            // 3. 생성된 여행(Trip)에 클론된 일정(Itinerary) 연결
+            const linkRes = await authFetch(`/api/trips/${newTrip.id}/itineraries/${clonedItinerary.id}`, {
+                method: 'POST'
+            });
+
+            if (!linkRes.ok) {
+                throw new Error("Linking itinerary to trip failed");
+            }
+
+            alert('새 여행으로 추가되었습니다. ✈️');
+            navigate(`/trip/${newTrip.id}`);
         } catch (e) {
+            console.error("Clone error: ", e);
             alert('추가에 실패했습니다.');
         } finally {
             setActionLoading(false);
         }
     };
 
-    const handleMerge = async () => {
-        if (!selectedTargetId) return alert('추가할 여정을 선택해주세요.');
+    const handleAddToTrip = async () => {
+        if (!selectedTripId) return alert('추가할 여행을 선택해주세요.');
         setActionLoading(true);
         try {
-            const res = await authFetch(`/api/my-trips/merge?sourceId=${localItinerary.id}&targetId=${selectedTargetId}&targetDay=${selectedDay}`, {
+            // 1. 일정(Itinerary) 클론 생성
+            const clonedItinerary = await JourneyRepository.add(localItinerary.id, currentUser.email);
+            if (!clonedItinerary || !clonedItinerary.id) {
+                throw new Error("Cloning itinerary failed");
+            }
+
+            // 2. 선택한 기존 여행(Trip)에 클론된 일정 연결
+            const linkRes = await authFetch(`/api/trips/${selectedTripId}/itineraries/${clonedItinerary.id}`, {
                 method: 'POST'
             });
-            if (res.ok) {
+
+            if (linkRes.ok) {
                 alert('기존 여행에 추가되었습니다! 🗺️');
-                navigate(`/itinerary/${selectedTargetId}`);
+                navigate(`/trip/${selectedTripId}`);
             } else {
-                alert('추가에 실패했습니다.');
+                throw new Error("Linking itinerary to existing trip failed");
             }
         } catch (e) {
-            alert('오류가 발생했습니다.');
+            console.error("Add to trip error: ", e);
+            alert('추가에 실패했습니다.');
         } finally {
             setActionLoading(false);
         }
@@ -426,11 +468,15 @@ const ItineraryDetailPage = () => {
                                 style={{ flex: 1 }}
                                 onClick={async () => {
                                     if (!currentUser?.email) return alert('로그인이 필요합니다.');
-                                    // Fetch my journeys to show in selection
                                     try {
-                                        const mine = await JourneyRepository.fetchMine(currentUser.email);
-                                        setMyJourneys(mine);
-                                        setShowAddModal(true);
+                                        const res = await authFetch('/api/trips');
+                                        if (res.ok) {
+                                            const tripsData = await res.json();
+                                            setMyTrips(tripsData);
+                                            setShowAddModal(true);
+                                        } else {
+                                            throw new Error("Failed to load trips");
+                                        }
                                     } catch (e) {
                                         handleClone(); // Fallback to direct clone
                                     }
@@ -477,8 +523,8 @@ const ItineraryDetailPage = () => {
                             >
                                 <div style={{ fontSize: '24px' }}>✈️</div>
                                 <div>
-                                    <div style={{ fontWeight: 800 }}>새로운 일정으로 만들기</div>
-                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>독립적인 새 여정으로 내 목록에 추가합니다.</div>
+                                    <div style={{ fontWeight: 800 }}>새로운 여행으로 만들기</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>독립적인 새 여행 카드를 생성하고 일정을 추가합니다.</div>
                                 </div>
                             </button>
 
@@ -488,52 +534,29 @@ const ItineraryDetailPage = () => {
                                 <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
                             </div>
 
-                            <div style={{ marginBottom: '16px' }}>
+                            <div style={{ marginBottom: '24px' }}>
                                 <label style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>여행 선택</label>
                                 <select 
-                                    value={selectedTargetId}
-                                    onChange={(e) => setSelectedTargetId(e.target.value)}
+                                    value={selectedTripId}
+                                    onChange={(e) => setSelectedTripId(e.target.value)}
                                     className="clean-input"
                                     style={{ width: '100%', background: 'var(--bg-color)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)' }}
                                 >
                                     <option value="">여행을 선택해주세요</option>
-                                    {myJourneys.map(j => (
-                                        <option key={j.id} value={j.id}>{j.title}</option>
+                                    {myTrips.map(t => (
+                                        <option key={t.id} value={t.id}>{t.title}</option>
                                     ))}
                                 </select>
                             </div>
 
-                            {selectedTargetId && (
-                                <div style={{ marginBottom: '24px' }}>
-                                    <label style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>추가할 일차 선택</label>
-                                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
-                                        {[1, 2, 3, 4, 5, 6, 7].map(day => (
-                                            <button
-                                                key={day}
-                                                onClick={() => setSelectedDay(day)}
-                                                style={{
-                                                    minWidth: '40px', height: '40px', borderRadius: '10px',
-                                                    background: selectedDay === day ? 'var(--text-primary)' : 'var(--bg-color)',
-                                                    color: selectedDay === day ? 'white' : 'var(--text-secondary)',
-                                                    border: '1px solid var(--border-color)',
-                                                    fontWeight: 800, cursor: 'pointer'
-                                                }}
-                                            >
-                                                {day}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 <button onClick={() => setShowAddModal(false)} className="clean-input" style={{ flex: 1, border: 'none', background: 'var(--bg-color)', cursor: 'pointer', fontWeight: 800, padding: '12px', borderRadius: '12px' }}>취소</button>
                                 <PrimaryButton 
-                                    onClick={handleMerge} 
-                                    disabled={!selectedTargetId || actionLoading}
+                                    onClick={handleAddToTrip} 
+                                    disabled={!selectedTripId || actionLoading}
                                     style={{ flex: 1.5 }}
                                 >
-                                    {actionLoading ? '추가 중...' : '기본 여정에 병합'}
+                                    {actionLoading ? '추가 중...' : '여행에 추가'}
                                 </PrimaryButton>
                             </div>
                         </div>
