@@ -19,6 +19,8 @@ const ItineraryDetailPage = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [myTrips, setMyTrips] = useState([]);
     const [selectedTripId, setSelectedTripId] = useState('');
+    const [existingItineraryId, setExistingItineraryId] = useState(null);
+    const [selectedDay, setSelectedDay] = useState(1);
     const [actionLoading, setActionLoading] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
 
@@ -163,26 +165,58 @@ const ItineraryDetailPage = () => {
         }
     };
 
+    const handleTripChange = async (tripId) => {
+        setSelectedTripId(tripId);
+        setExistingItineraryId(null);
+        if (!tripId) return;
+
+        try {
+            const res = await authFetch(`/api/trips/${tripId}/itineraries`);
+            if (res.ok) {
+                const itineraries = await res.json();
+                if (itineraries && itineraries.length > 0) {
+                    setExistingItineraryId(itineraries[0].id);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to check linked itineraries:", e);
+        }
+    };
+
     const handleAddToTrip = async () => {
         if (!selectedTripId) return alert('추가할 여행을 선택해주세요.');
         setActionLoading(true);
         try {
-            // 1. 일정(Itinerary) 클론 생성
-            const clonedItinerary = await JourneyRepository.add(localItinerary.id, currentUser.email);
-            if (!clonedItinerary || !clonedItinerary.id) {
-                throw new Error("Cloning itinerary failed");
-            }
+            if (existingItineraryId) {
+                // 1. 이미 연결된 일정이 있는 경우 -> 그 일정에 병합(Merge)
+                const mergeRes = await authFetch(`/api/my-trips/merge?sourceId=${localItinerary.id}&targetId=${existingItineraryId}&targetDay=${selectedDay}`, {
+                    method: 'POST'
+                });
 
-            // 2. 선택한 기존 여행(Trip)에 클론된 일정 연결
-            const linkRes = await authFetch(`/api/trips/${selectedTripId}/itineraries/${clonedItinerary.id}`, {
-                method: 'POST'
-            });
-
-            if (linkRes.ok) {
-                alert('기존 여행에 추가되었습니다! 🗺️');
-                navigate(`/trip/${selectedTripId}`);
+                if (mergeRes.ok) {
+                    alert('기존 여행 일정에 성공적으로 병합되었습니다! 🗺️');
+                    navigate(`/trip/${selectedTripId}`);
+                } else {
+                    const errText = await mergeRes.text();
+                    throw new Error(errText || "Merging itinerary failed");
+                }
             } else {
-                throw new Error("Linking itinerary to existing trip failed");
+                // 2. 연결된 일정이 없는 경우 -> 일정 클론 후 여행에 연결(Link)
+                const clonedItinerary = await JourneyRepository.add(localItinerary.id, currentUser.email);
+                if (!clonedItinerary || !clonedItinerary.id) {
+                    throw new Error("Cloning itinerary failed");
+                }
+
+                const linkRes = await authFetch(`/api/trips/${selectedTripId}/itineraries/${clonedItinerary.id}`, {
+                    method: 'POST'
+                });
+
+                if (linkRes.ok) {
+                    alert('기존 여행에 추가되었습니다! 🗺️');
+                    navigate(`/trip/${selectedTripId}`);
+                } else {
+                    throw new Error("Linking itinerary to existing trip failed");
+                }
             }
         } catch (e) {
             console.error("Add to trip error: ", e);
@@ -538,7 +572,7 @@ const ItineraryDetailPage = () => {
                                 <label style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>여행 선택</label>
                                 <select 
                                     value={selectedTripId}
-                                    onChange={(e) => setSelectedTripId(e.target.value)}
+                                    onChange={(e) => handleTripChange(e.target.value)}
                                     className="clean-input"
                                     style={{ width: '100%', background: 'var(--bg-color)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)' }}
                                 >
@@ -548,6 +582,30 @@ const ItineraryDetailPage = () => {
                                     ))}
                                 </select>
                             </div>
+
+                            {existingItineraryId && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label style={{ fontSize: '11px', fontWeight: 900, color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>추가할 일차 선택</label>
+                                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
+                                        {[1, 2, 3, 4, 5, 6, 7].map(day => (
+                                            <button
+                                                key={day}
+                                                type="button"
+                                                onClick={() => setSelectedDay(day)}
+                                                style={{
+                                                    minWidth: '40px', height: '40px', borderRadius: '10px',
+                                                    background: selectedDay === day ? 'var(--text-primary)' : 'var(--bg-color)',
+                                                    color: selectedDay === day ? 'white' : 'var(--text-secondary)',
+                                                    border: '1px solid var(--border-color)',
+                                                    fontWeight: 800, cursor: 'pointer'
+                                                }}
+                                            >
+                                                {day}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 <button onClick={() => setShowAddModal(false)} className="clean-input" style={{ flex: 1, border: 'none', background: 'var(--bg-color)', cursor: 'pointer', fontWeight: 800, padding: '12px', borderRadius: '12px' }}>취소</button>
