@@ -26,6 +26,11 @@ export async function authFetch(url, options = {}) {
 
   if (res.status === 401) {
     localStorage.removeItem('token');
+    // 토큰 만료 시 로그인 페이지로 강제 이동 및 알림
+    if (window.location.pathname !== '/login') {
+      alert('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      window.location.href = '/login';
+    }
   }
 
   return res;
