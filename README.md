@@ -36,18 +36,11 @@
 
 ---
 
-## 🏗️ 시스템 아키텍처 (Architecture)
+## 🏗️ 시스템 아키텍처 및 상세 개발 가이드
 
-### **[Backend] Layered Architecture & Clean Tech**
-- **Spring Boot 3.3**: 견고한 백엔드 프레임워크 기반.
-- **QueryDSL**: 복잡한 동적 쿼리를 타입 안정성 있게 처리.
-- **Spring Security & JWT**: OAuth2(카카오, 네이버) 연동 및 토큰 기반 보안 강화.
-- **WebSocket (STOMP)**: 저지연 실시간 채팅 처리.
-- **MinIO**: 이미지 및 파일 업로드를 위한 고성능 스토리지.
+TripGather의 보다 정교한 아키텍처 설계, 데이터 모델(ERD), 컴포넌트 구조, 로컬 상세 실행 방법 및 문제 해결 가이드는 아래의 상세 문서를 확인해 주세요.
 
-### **[Database] Secure & Performant Data Integrity**
-- **BaseEntity & Auditing**: 생성/수정 추적 및 공통 논리 삭제(`deleted`) 구조를 상속하여 모든 데이터의 안정성을 기본 보장합니다.
-- **SQL Restriction**: 하이버네이트 최신 표준(`@SQLRestriction`)을 활용해 가상 삭제 데이터를 투명하고 안전하게 자동 조회 필터링합니다.
+👉 **[상세 시스템 아키텍처 및 개발 가이드 바로가기 (ARCHITECTURE_AND_GUIDE.md)](./docs/ARCHITECTURE_AND_GUIDE.md)**
 
 ---
 
@@ -57,55 +50,64 @@ TripGather는 사용자가 우리 동네의 모임을 발견하는 첫 순간부
 
 ```mermaid
 graph TD
-    A["🔍 라운지 (Lounge Feed)<br>동네 모임 & 보딩패스 탐색"] -->|여정 상세 확인| B["✈️ 여정 정보 (Itinerary Detail)<br>경로(Flight Path) & 세부 일정 탐색"]
-    B -->|참여 신청 & 승인| C["🎫 탑승 대기 (My Gatherings)<br>참여 확정 모임 관리"]
-    C -->|실시간 소통 & 조정| D["💬 무전기 채팅 (Radio Room)<br>실시간 STOMP 크루 무전망"]
-    D -->|미션 달성 & 스탬프| E["📔 디지털 여권 (Passport)<br>디지털 스탬프 날인 & 포인트 적립"]
-    E -->|포인트 확인| F["👤 프로필 마이페이지 (Profile)<br>활동 지수 & 포인트 대시보드"]
+    A["🔑 로그인 (Login)<br>글래스모피즘 인증"] --> B["🔍 라운지 (Lounge Feed)<br>동네 모임 & 보딩패스 탐색"]
+    B -->|여정 상세 확인| C["✈️ 여정 정보 (Itinerary Detail)<br>경로(Flight Path) & 세부 일정 탐색"]
+    C -->|참여 신청 & 승인| D["🛂 나의 터미널 (Host Terminal)<br>신청 승인/거절 및 참여 관리"]
+    D -->|실시간 소통 & 조정| E["💬 무전기 채팅 (Radio Room)<br>실시간 STOMP 크루 무전망"]
+    E -->|미션 달성 & 스탬프| F["📔 디지털 여권 (Passport)<br>디지털 스탬프 날인 & 포인트 적립"]
     
-    style A fill:#1a1c2e,stroke:#3b82f6,stroke-width:2px,color:#fff
-    style B fill:#1a1c2e,stroke:#8b5cf6,stroke-width:2px,color:#fff
-    style C fill:#1a1c2e,stroke:#10b981,stroke-width:2px,color:#fff
-    style D fill:#1a1c2e,stroke:#f59e0b,stroke-width:2px,color:#fff
-    style E fill:#1a1c2e,stroke:#ec4899,stroke-width:2px,color:#fff
-    style F fill:#1a1c2e,stroke:#6366f1,stroke-width:2px,color:#fff
+    style A fill:#1a1c2e,stroke:#4b5563,stroke-width:2px,color:#fff
+    style B fill:#1a1c2e,stroke:#3b82f6,stroke-width:2px,color:#fff
+    style C fill:#1a1c2e,stroke:#8b5cf6,stroke-width:2px,color:#fff
+    style D fill:#1a1c2e,stroke:#10b981,stroke-width:2px,color:#fff
+    style E fill:#1a1c2e,stroke:#f59e0b,stroke-width:2px,color:#fff
+    style F fill:#1a1c2e,stroke:#ec4899,stroke-width:2px,color:#fff
 ```
 
-### 📱 실제 서비스 화면 갤러리 (UX Screens)
+### 📱 실제 서비스 화면 갤러리 (UX Gallery)
 
-| 🔍 1. 라운지 탐색 피드 (`feed.png`) | ✈️ 2. 감각적 여정 상세 (`detail.png`) |
+| 🔑 1. 로그인 화면 (`login.png`) | 🔍 2. 라운지 탐색 피드 (`feed.png`) |
 | :---: | :---: |
-| ![Lounge Feed](./docs/assets/screenshots/feed.png) | ![Itinerary Detail](./docs/assets/screenshots/detail.png) |
-| 동네 모임들을 보딩패스 카드로 멋지게 탐색합니다. | 이동 경로와 시간대별 일정을 비행 테마로 감상합니다. |
+| ![Login Page](./docs/assets/screenshots/login.png) | ![Lounge Feed](./docs/assets/screenshots/feed.png) |
+| 프리미엄 글래스모피즘을 적용한 로그인 화면 | 내 주변 여정을 보딩패스 카드로 멋지게 탐색합니다. |
 
-| 🎫 3. 승인된 모임 관리 (`my_gatherings.png`) | 💬 4. 크루 무전 실시간 채팅 (`chat.png`) |
+| ✈️ 3. 감각적 여정 상세 (`detail.png`) | ✍️ 4. 모임 개설 에디터 (`create_gathering.png`) |
 | :---: | :---: |
-| ![My Gatherings](./docs/assets/screenshots/my_gatherings.png) | ![Radio Chat](./docs/assets/screenshots/chat.png) |
-| 내가 호스트이거나 승인된 모임 목록을 정교하게 제어합니다. | STOMP 기반의 초고속 무전 대화망으로 크루들과 대화합니다. |
+| ![Itinerary Detail](./docs/assets/screenshots/detail.png) | ![Create Gathering](./docs/assets/screenshots/create_gathering.png) |
+| 이동 경로와 시간대별 일정을 비행 테마로 감상합니다. | 모임을 주최하기 위해 상세 조건과 일정을 입력합니다. |
 
-| 📔 5. 미션 달성 여권 스탬프 (`passport.png`) | 👤 6. 포인트 리워드 마이페이지 (`profile.png`) |
+| 🌌 5. 나이트 플라이트 에디터 (`itinerary_editor.png`) | 🎫 6. 탑승권 & 여행 허브 (`trip_hub.png`) |
 | :---: | :---: |
-| ![Passport Stamps](./docs/assets/screenshots/passport.png) | ![Profile MyPage](./docs/assets/screenshots/profile.png) |
-| 달성한 크루 미션을 기념하며 디지털 스탬프를 날인받습니다. | 내 실시간 활동 점수 및 누적 혜택 포인트를 연동 관리합니다. |
+| ![Itinerary Editor](./docs/assets/screenshots/itinerary_editor.png) | ![Trip Hub](./docs/assets/screenshots/trip_hub.png) |
+| 세련된 다크 테마 에디터로 여행 경로를 설계합니다. | 내 탑승권(Boarding Pass) 기반의 참여 정보를 확인합니다. |
+
+| 💬 7. 크루 무전 실시간 채팅 (`chat.png`) | 📔 8. 미션 달성 여권 스탬프 (`passport.png`) |
+| :---: | :---: |
+| ![Radio Chat](./docs/assets/screenshots/chat.png) | ![Passport Stamps](./docs/assets/screenshots/passport.png) |
+| STOMP 기반의 무전 대화망으로 크루들과 대화합니다. | 달성한 크루 미션을 디지털 스탬프로 기록합니다. |
+
+| 🛂 9. 나의 터미널 호스트 관리 (`host_dashboard.png`) | 🗺️ 10. 지도 기반 여정 탐색 (`map.png`) |
+| :---: | :---: |
+| ![Host Dashboard](./docs/assets/screenshots/host_dashboard.png) | ![Map Discover](./docs/assets/screenshots/map.png) |
+| 참가 신청을 승인/거절하고 크루들을 정교하게 제어합니다. | 카카오 맵 API를 활용해 주변 모임을 지도로 탐색합니다. |
 
 ---
 
-## 🛠️ 기술 스택 (Tech Stack)
+## 🛠️ 핵심 기술 스택 (Tech Stack)
 
 ### **Backend**
 - `Java 17`, `Spring Boot 3.3.4`
 - `Spring Data JPA`, `QueryDSL`, `PostgreSQL`, `H2`
 - `Spring Security`, `OAuth2 (Kakao/Naver)`, `JWT`
-- `WebSocket`, `STOMP`, `SockJS`
-- `MinIO` (S3 Compatible Storage)
-- `JUnit 5`, `Mockito`, `JaCoCo` (Testing & Coverage)
-- `Lombok`, `Flyway` (Migration)
+- `WebSocket`, `STOMP`
+- `MinIO` (S3 호환 스토리지) / `Local Disk Storage`
+- `JUnit 5`, `Mockito`, `JaCoCo`
 
 ### **Frontend**
 - `JavaScript (ES6+)`, `React 19`
 - `Vite`, `React Router 7`
-- `Vanilla CSS` (Custom Design System)
-- `Lucide React` (Icons)
+- `Vanilla CSS` (Custom Glassmorphism 디자인 시스템)
+- `Lucide React`
 - `StompJS`, `Axios`
 
 ---
@@ -120,35 +122,16 @@ graph TD
 
 ---
 
-## 💡 트러블슈팅 및 기술적 도전
+## 🚀 빠른 로컬 실행 가이드
 
-### **1. 다크 테마(Night Flight) 가독성 최적화**
-- **문제**: 어두운 배경의 모달 에디터 내에서 입력창 배경과 텍스트가 구분되지 않는 이슈.
-- **해결**: `--night-bg` 및 `--night-surface` 토큰을 정의하고, 전용 `input-night` 클래스를 구현하여 고대비 시인성을 확보했습니다.
-
-### **2. 실시간 채팅 데이터 매핑**
-- **문제**: 그룹 대화 중 송신자 정보를 효율적으로 표시하고, DM 파트너를 식별하는 로직의 복잡성.
-- **해결**: `senderEmail` 기반의 캐싱 및 `useChatViewModel` 내 파트너 필터링 로직을 통해 렌더링 부하를 줄이고 로직의 간결함을 유지했습니다.
-
-### **3. 서비스 레이어 테스트 안정성 확보**
-- **문제**: 복잡한 연관 관계(Member-Gathering-Itinerary)로 인한 단위 테스트 시 NPE 발생 및 컴파일 오류 발생.
-- **해결**: `@ExtendWith(MockitoExtension.class)`와 `BDDMockito`를 적극 활용하여 가짜 객체(Mock) 간의 상호작용을 정교하게 모델링하고, JaCoCo 리포트를 분석하여 누락된 예외 케이스를 100% 보강했습니다.
-
-### **4. JPA Auditing 설정 격리와 WebMvcTest 통합 안정성**
-- **문제**: 메인 Application 클래스에 `@EnableJpaAuditing`을 선언할 경우, JPA 메타모델을 띄우지 않는 컨트롤러 단위 슬라이스 테스트(`@WebMvcTest`)들이 구동에 실패하며 20여 개의 테스트가 전체 격파되는 이슈 발생.
-- **해결**: `@EnableJpaAuditing` 설정을 별도의 `JpaConfig` 설정 빈으로 우아하게 분리 지정함으로써, 컨트롤러 모의 테스트와 실질적인 JPA 엔티티 감시 리스너 설정이 독립적이고 무결하게 작동하도록 격리 조치했습니다.
-
----
-
-## 🚀 실행 가이드
-
-### **Backend**
+### **1. Backend**
 ```bash
 cd backend
-./gradlew bootRun
+./gradlew bootRun -Dstorage.type=local
 ```
+*(H2 인메모리 DB 및 로컬 디스크 파일 업로드가 자동으로 활성화됩니다.)*
 
-### **Frontend**
+### **2. Frontend**
 ```bash
 cd frontend
 npm install
