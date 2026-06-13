@@ -162,6 +162,8 @@ public class GatheringMemberService implements GatheringMemberUseCase {
         gatheringRepository.save(gathering);
     }
 
+    @Override
+    @Transactional(readOnly = true)
     public boolean isAuthorizedMember(Long gatheringId, String email) {
         if (email == null || email.isEmpty() || email.equals("anonymousUser")) {
             System.out.println("[Auth] Unauthorized: No email provided or anonymousUser");
