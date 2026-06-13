@@ -19,6 +19,7 @@ public class TripResponse {
     private String bgImageUrl;
     private String status;
     private UserResponse owner;
+    private Long itineraryId;
     private int itineraryCount;
     private int packingProgress;
     private int reviewCount;
@@ -52,7 +53,9 @@ public class TripResponse {
                 .bgImageUrl(trip.getBgImageUrl())
                 .status(calculatedStatus)
                 .owner(UserResponse.from(trip.getOwner()))
-                .itineraryCount(trip.getTripItineraries() != null ? trip.getTripItineraries().size() : 0)
+                .itineraryId(trip.getItinerary() != null ? trip.getItinerary().getId() : null)
+                .itineraryCount(trip.getItinerary() != null && trip.getItinerary().getRoutePoints() != null ?
+                        trip.getItinerary().getRoutePoints().size() : 0)
                 .packingProgress(totalPacking > 0 ? (checkedPacking * 100 / totalPacking) : 0)
                 .reviewCount(trip.getReviews() != null ? trip.getReviews().size() : 0)
                 .build();
