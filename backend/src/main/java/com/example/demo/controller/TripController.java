@@ -44,24 +44,6 @@ public class TripController {
         return ResponseEntity.noContent().build();
     }
 
-    // --- 일정 연결 ---
-
-    @PostMapping("/{tripId}/itineraries/{itineraryId}")
-    public ResponseEntity<Void> linkItinerary(@PathVariable Long tripId, @PathVariable Long itineraryId) {
-        tripService.linkItinerary(tripId, itineraryId);
-        return ResponseEntity.ok().build();
-    }
-
-    @DeleteMapping("/{tripId}/itineraries/{itineraryId}")
-    public ResponseEntity<Void> unlinkItinerary(@PathVariable Long tripId, @PathVariable Long itineraryId) {
-        tripService.unlinkItinerary(tripId, itineraryId);
-        return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/{tripId}/itineraries")
-    public ResponseEntity<List<ItineraryResponse>> getLinkedItineraries(@PathVariable Long tripId) {
-        return ResponseEntity.ok(tripService.getLinkedItineraries(tripId));
-    }
 
     // --- 추천 코스 ---
 

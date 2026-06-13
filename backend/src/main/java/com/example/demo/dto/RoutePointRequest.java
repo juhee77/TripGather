@@ -18,7 +18,9 @@ public class RoutePointRequest {
     private int sequenceOrder;
     private String startTime;
     private String endTime;
-    private boolean isCompleted;
+    private Boolean isCompleted;
+    private Double lat;
+    private Double lng;
 
     public RoutePoint toEntity(Itinerary itinerary) {
         return RoutePoint.builder()
@@ -28,7 +30,9 @@ public class RoutePointRequest {
                 .sequenceOrder(this.sequenceOrder)
                 .startTime(this.startTime)
                 .endTime(this.endTime)
-                .isCompleted(this.isCompleted)
+                .isCompleted(this.isCompleted != null && this.isCompleted)
+                .lat(this.lat)
+                .lng(this.lng)
                 .itinerary(itinerary)
                 .build();
     }

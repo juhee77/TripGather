@@ -15,4 +15,5 @@ public class TripRequest {
     private LocalDate endDate;
     private String bgImageUrl;
     private String status;
+    private Long itineraryId;
 }

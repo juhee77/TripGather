@@ -42,9 +42,9 @@ public class Trip extends BaseEntity {
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<TripItinerary> tripItineraries = new ArrayList<>();
+    @OneToOne(cascade = {CascadeType.MERGE, CascadeType.REMOVE, CascadeType.REFRESH}, orphanRemoval = true)
+    @JoinColumn(name = "itinerary_id")
+    private Itinerary itinerary;
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

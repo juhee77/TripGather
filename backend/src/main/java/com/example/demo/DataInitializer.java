@@ -20,6 +20,7 @@ public class DataInitializer {
             ItineraryRepository itineraryRepo,
             GatheringMemberRepository memberRepo,
             ChatMessageRepository chatRepo,
+            TripRepository tripRepo,
             org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
 
         return args -> {
@@ -54,7 +55,7 @@ public class DataInitializer {
             if (jihyun != null && alex != null) {
                 if (gatheringRepo.count() == 0) {
                     Gathering g1 = gatheringRepo.save(Gathering.builder()
-                            .title("Weekend Trip to Busan! (부산 주말 여행! \uD83C\uDF0A)")
+                            .title("Weekend Trip to Busan! (부산 주말 여행! 🌊)")
                             .host(jihyun)
                             .location("Busan Station (부산역)")
                             .lat(35.1154)
@@ -67,7 +68,7 @@ public class DataInitializer {
                             .build());
 
                     Gathering g2 = gatheringRepo.save(Gathering.builder()
-                            .title("오늘 저녁 한강 러닝 뛸 사람~ \uD83C\uDFC3‍♂️")
+                            .title("오늘 저녁 한강 러닝 뛸 사람~ 🏃‍♂️")
                             .host(alex)
                             .location("Banpo Hangang Park (반포 한강공원)")
                             .lat(37.5122)
@@ -80,7 +81,7 @@ public class DataInitializer {
                             .build());
 
                     Gathering g3 = gatheringRepo.save(Gathering.builder()
-                            .title("강남 맛집 탐방 \uD83C\uDF5C")
+                            .title("강남 맛집 탐방 🍜")
                             .host(alex)
                             .location("Gangnam Station (강남역)")
                             .lat(37.4979)
@@ -130,7 +131,7 @@ public class DataInitializer {
                             .routePoints(new java.util.ArrayList<>(List.of(seoul_day1_p1, seoul_day1_p2, seoul_day1_p3, seoul_day2_p1, seoul_day2_p2, seoul_day3_p1, seoul_day3_p2)))
                             .build();
                     seoulTrip.getRoutePoints().forEach(rp -> rp.setItinerary(seoulTrip));
-                    itineraryRepo.save(seoulTrip);
+                    Itinerary savedSeoulItinerary = itineraryRepo.save(seoulTrip);
 
                     RoutePoint jeju_day1_p1 = RoutePoint.builder().dayNumber(1).dayLabel("Day 1 · 제주 도착").sequenceOrder(1).label("제주국제공항").lat(33.5113).lng(126.4930).build();
                     RoutePoint jeju_day1_p2 = RoutePoint.builder().dayNumber(1).dayLabel("Day 1 · 제주 도착").sequenceOrder(2).label("고기국수 골목 (제주시)").lat(33.4996).lng(126.5312).build();
@@ -153,7 +154,36 @@ public class DataInitializer {
                             .routePoints(new java.util.ArrayList<>(List.of(jeju_day1_p1, jeju_day1_p2, jeju_day2_p1, jeju_day2_p2, jeju_day3_p1, jeju_day3_p2)))
                             .build();
                     jejuTrip.getRoutePoints().forEach(rp -> rp.setItinerary(jejuTrip));
-                    itineraryRepo.save(jejuTrip);
+                    Itinerary savedJejuItinerary = itineraryRepo.save(jejuTrip);
+
+                    // 1:1 관계를 가지는 Trip 생성 및 연동
+                    if (tripRepo.count() == 0) {
+                        Trip t1 = Trip.builder()
+                                .title("주말 서울 여행 🚗")
+                                .destination("서울 중구")
+                                .country("KR")
+                                .startDate(savedSeoulItinerary.getStartDate())
+                                .endDate(savedSeoulItinerary.getEndDate())
+                                .owner(jihyun)
+                                .itinerary(savedSeoulItinerary)
+                                .bgImageUrl(savedSeoulItinerary.getBgImageUrl())
+                                .status(TripStatus.PLANNING)
+                                .build();
+                        tripRepo.save(t1);
+
+                        Trip t2 = Trip.builder()
+                                .title("제주도 2박 3일 먹방 🍊")
+                                .destination("제주 제주시")
+                                .country("KR")
+                                .startDate(savedJejuItinerary.getStartDate())
+                                .endDate(savedJejuItinerary.getEndDate())
+                                .owner(alex)
+                                .itinerary(savedJejuItinerary)
+                                .bgImageUrl(savedJejuItinerary.getBgImageUrl())
+                                .status(TripStatus.PLANNING)
+                                .build();
+                        tripRepo.save(t2);
+                    }
                 }
             }
         };

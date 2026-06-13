@@ -123,15 +123,16 @@ const ItineraryDetailPage = () => {
                 throw new Error("Cloning itinerary failed");
             }
 
-            // 2. 클론된 일정을 담을 새로운 여행(Trip) 생성
+            // 2. 클론된 일정을 담을 새로운 여행(Trip) 생성 (itineraryId를 함께 전달하여 1:1 연결)
             const tripPayload = {
                 title: `${clonedItinerary.title || '새로운 여행'}`,
                 destination: clonedItinerary.location || '목적지 미정',
-                country: clonedItinerary.location || '국가 미정',
+                country: 'KR',
                 startDate: clonedItinerary.startDate || null,
                 endDate: clonedItinerary.endDate || null,
-                bgImageUrl: clonedItinerary.stampImageUrl || null,
-                status: 'PLANNING'
+                bgImageUrl: clonedItinerary.bgImageUrl || null,
+                status: 'PLANNING',
+                itineraryId: clonedItinerary.id
             };
 
             const tripRes = await authFetch('/api/trips', {
@@ -145,16 +146,6 @@ const ItineraryDetailPage = () => {
             }
 
             const newTrip = await tripRes.json();
-
-            // 3. 생성된 여행(Trip)에 클론된 일정(Itinerary) 연결
-            const linkRes = await authFetch(`/api/trips/${newTrip.id}/itineraries/${clonedItinerary.id}`, {
-                method: 'POST'
-            });
-
-            if (!linkRes.ok) {
-                throw new Error("Linking itinerary to trip failed");
-            }
-
             alert('새 여행으로 추가되었습니다. ✈️');
             navigate(`/trip/${newTrip.id}`);
         } catch (e) {
@@ -165,21 +156,18 @@ const ItineraryDetailPage = () => {
         }
     };
 
-    const handleTripChange = async (tripId) => {
+    const handleTripChange = (tripId) => {
         setSelectedTripId(tripId);
-        setExistingItineraryId(null);
-        if (!tripId) return;
-
-        try {
-            const res = await authFetch(`/api/trips/${tripId}/itineraries`);
-            if (res.ok) {
-                const itineraries = await res.json();
-                if (itineraries && itineraries.length > 0) {
-                    setExistingItineraryId(itineraries[0].id);
-                }
-            }
-        } catch (e) {
-            console.error("Failed to check linked itineraries:", e);
+        if (!tripId) {
+            setExistingItineraryId(null);
+            return;
+        }
+        // myTrips 목록에서 해당 여행의 itineraryId를 즉시 찾아 할당
+        const selectedTrip = myTrips.find(t => String(t.id) === String(tripId));
+        if (selectedTrip && selectedTrip.itineraryId) {
+            setExistingItineraryId(selectedTrip.itineraryId);
+        } else {
+            setExistingItineraryId(null);
         }
     };
 
@@ -188,7 +176,7 @@ const ItineraryDetailPage = () => {
         setActionLoading(true);
         try {
             if (existingItineraryId) {
-                // 1. 이미 연결된 일정이 있는 경우 -> 그 일정에 병합(Merge)
+                // 이미 연결된 고유 일정이 있는 경우 -> 그 일정에 병합(Merge)
                 const mergeRes = await authFetch(`/api/my-trips/merge?sourceId=${localItinerary.id}&targetId=${existingItineraryId}&targetDay=${selectedDay}`, {
                     method: 'POST'
                 });
@@ -201,22 +189,7 @@ const ItineraryDetailPage = () => {
                     throw new Error(errText || "Merging itinerary failed");
                 }
             } else {
-                // 2. 연결된 일정이 없는 경우 -> 일정 클론 후 여행에 연결(Link)
-                const clonedItinerary = await JourneyRepository.add(localItinerary.id, currentUser.email);
-                if (!clonedItinerary || !clonedItinerary.id) {
-                    throw new Error("Cloning itinerary failed");
-                }
-
-                const linkRes = await authFetch(`/api/trips/${selectedTripId}/itineraries/${clonedItinerary.id}`, {
-                    method: 'POST'
-                });
-
-                if (linkRes.ok) {
-                    alert('기존 여행에 추가되었습니다! 🗺️');
-                    navigate(`/trip/${selectedTripId}`);
-                } else {
-                    throw new Error("Linking itinerary to existing trip failed");
-                }
+                alert('해당 여행에 고유 일정표가 존재하지 않습니다. 관리자에게 문의하세요.');
             }
         } catch (e) {
             console.error("Add to trip error: ", e);
