@@ -86,9 +86,9 @@ graph TD
 | ![Radio Chat](./docs/assets/screenshots/chat.png) | ![Passport Stamps](./docs/assets/screenshots/passport.png) |
 | STOMP 기반의 무전 대화망으로 크루들과 대화합니다. | 달성한 크루 미션을 디지털 스탬프로 기록합니다. |
 
-| 🛂 9. 나의 터미널 호스트 관리 (`host_dashboard.png`) | 🗺️ 10. 지도 기반 여정 탐색 (`map.png`) |
+| 🛂 9. 나의 터미널 호스트 관리 (`my_gatherings.png`) | 🗺️ 10. 지도 기반 여정 탐색 (`map.png`) |
 | :---: | :---: |
-| ![Host Dashboard](./docs/assets/screenshots/host_dashboard.png) | ![Map Discover](./docs/assets/screenshots/map.png) |
+| ![Host Dashboard](./docs/assets/screenshots/my_gatherings.png) | ![Map Discover](./docs/assets/screenshots/map.png) |
 | 참가 신청을 승인/거절하고 크루들을 정교하게 제어합니다. | 카카오 맵 API를 활용해 주변 모임을 지도로 탐색합니다. |
 
 ---
