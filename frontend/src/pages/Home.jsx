@@ -87,19 +87,8 @@ const Home = () => {
   return (
     <div className="animate-fade" style={{ background: 'var(--bg-lite)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Premium Header with Boarding Pass Aesthetic */}
-      <header className="glass page-header" style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        padding: '28px 20px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        borderRadius: '0 0 var(--radius-xl) var(--radius-xl)',
-        background: 'rgba(255, 255, 255, 0.9)',
-        borderBottom: '1px solid var(--border-color)'
-      }}>
-        <div>
+      <header className="glass home-header">
+        <div className="home-header-title">
           <span className="label-orange">GATHERING TERMINAL</span>
           <h1 className="heading-l" style={{ 
             marginTop: '4px',
@@ -108,16 +97,16 @@ const Home = () => {
             fontSize: 'clamp(1.5rem, 5vw, 2rem)'
           }}>라운지</h1>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="home-header-filters">
           <input 
             type="text" 
             placeholder="모임 검색..." 
             value={searchQuery || ''}
             onChange={(e) => handleSearchQueryChange(e.target.value)}
             style={{ 
-              background: 'white', padding: '12px 18px', borderRadius: '16px', fontSize: '14px',
-              border: '1px solid var(--border-color)', outline: 'none', flex: '1 1 150px',
-              maxWidth: '250px',
+              background: 'white', padding: '12px 14px', borderRadius: '16px', fontSize: '13px',
+              border: '1px solid var(--border-color)', outline: 'none', flex: '1 1 100px',
+              maxWidth: '150px',
               fontWeight: 600,
               color: 'var(--text-primary)'
             }}
@@ -127,19 +116,18 @@ const Home = () => {
             onChange={(e) => handleRegionChange(e.target.value)}
             style={{ 
               background: 'white', 
-              padding: '12px 18px', 
+              padding: '12px 14px', 
               borderRadius: '16px', 
-              fontSize: '14px', 
+              fontSize: '13px', 
               fontWeight: 800,
               border: '1px solid var(--border-color)',
               color: 'var(--text-primary)',
-              appearance: 'none',
               cursor: 'pointer',
               boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
             }}
           >
             {regions.map(r => (
-              <option key={r} value={r}>{r === '전체' ? '📍 전체 지역' : r}</option>
+              <option key={r} value={r}>{r === '전체' ? '📍 전체' : r.substring(0, 4)}</option>
             ))}
           </select>
           <button 
@@ -147,7 +135,7 @@ const Home = () => {
             onClick={() => handleAvailableOnlyChange(!availableOnly)}
             className="icon-circle" 
             style={{ 
-              width: '48px', height: '48px',
+              width: '40px', height: '40px',
               flexShrink: 0,
               background: availableOnly ? 'var(--primary-gradient)' : 'white',
               border: '1px solid var(--border-color)',
@@ -156,14 +144,14 @@ const Home = () => {
               transition: 'all 0.3s'
             }}
           >
-            <Search size={20} />
+            <Search size={18} />
           </button>
           <button 
             title="내가 호스트인 모임만 보기 (작업 예정)"
             onClick={() => setShowOnlyHosted(!showOnlyHosted)}
             className="icon-circle" 
             style={{ 
-              width: '48px', height: '48px',
+              width: '40px', height: '40px',
               flexShrink: 0,
               background: showOnlyHosted ? 'var(--primary-gradient)' : 'white',
               border: '1px solid var(--border-color)',
@@ -171,7 +159,7 @@ const Home = () => {
               boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
             }}
           >
-            <Plus size={22} style={{ transform: showOnlyHosted ? 'rotate(45deg)' : 'none', transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
+            <Plus size={20} style={{ transform: showOnlyHosted ? 'rotate(45deg)' : 'none', transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' }} />
           </button>
         </div>
       </header>
@@ -187,7 +175,7 @@ const Home = () => {
                 const isApproved = g.members?.some(m => m.user.email === currentUser?.email && (m.status === MemberStatus.APPROVED));
                 return (isHost || isApproved);
               })
-              .sort((a, b) => new Date(a.dates) - new Date(b.dates))[0];
+              .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))[0];
 
             if (!myUpcoming) return null;
 
@@ -219,24 +207,40 @@ const Home = () => {
                 </div>
 
                 <div style={{ padding: '24px' }}>
-                  <div className="flex-between">
-                    <div style={{ flex: 1 }}>
+                  <div className="flex-between" style={{ gap: '10px' }}>
+                    <div style={{ flex: '1 1 0%', minWidth: 0 }}>
                       <span className="label-muted">DEPARTURE</span>
-                      <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>SEOUL</div>
+                      <div style={{ 
+                        fontSize: 'clamp(18px, 4vw, 24px)', 
+                        fontWeight: 900, 
+                        color: 'var(--text-primary)', 
+                        marginTop: '4px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>SEOUL</div>
                     </div>
-                    <div style={{ flex: 0.5, textAlign: 'center', position: 'relative' }}>
+                    <div style={{ flex: '0 0 60px', textAlign: 'center', position: 'relative' }}>
                       <div className="ticket-divider" style={{ borderTop: '2px solid #F1F5F9', margin: 0 }}>
                         <div style={{ 
                           position: 'absolute', top: '-11px', left: '50%', transform: 'translateX(-50%)',
-                          background: 'white', padding: '0 10px'
+                          background: 'white', padding: '0 6px'
                         }}>
-                          <MapIcon size={20} color="var(--primary-orange)" />
+                          <MapIcon size={18} color="var(--primary-orange)" />
                         </div>
                       </div>
                     </div>
-                    <div style={{ flex: 1, textAlign: 'right' }}>
+                    <div style={{ flex: '1 1 0%', textAlign: 'right', minWidth: 0 }}>
                       <span className="label-muted">DESTINATION</span>
-                      <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)', marginTop: '4px' }}>
+                      <div style={{ 
+                        fontSize: 'clamp(18px, 4vw, 24px)', 
+                        fontWeight: 900, 
+                        color: 'var(--text-primary)', 
+                        marginTop: '4px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
                         {myUpcoming.location?.split(' ')[0].toUpperCase() || 'TRIP'}
                       </div>
                     </div>
@@ -252,7 +256,7 @@ const Home = () => {
                     <div style={{ textAlign: 'right' }}>
                       <span className="label-muted">BOARDING DATE</span>
                       <p className="info-value" style={{ fontSize: '16px', color: 'var(--primary-orange)' }}>
-                        {new Date(myUpcoming.dates).toLocaleDateString()}
+                        {myUpcoming.startDate ? new Date(myUpcoming.startDate).toLocaleDateString() : ''}
                       </p>
                     </div>
                   </div>
@@ -287,6 +291,7 @@ const Home = () => {
                 fontWeight: 800,
                 fontSize: '15px',
                 whiteSpace: 'nowrap',
+                flexShrink: 0,
                 border: '1px solid var(--border-color)',
                 boxShadow: activeTab === tab ? '0 8px 20px rgba(15, 23, 42, 0.15)' : 'none',
                 transition: 'all 0.3s ease'
@@ -331,7 +336,7 @@ const Home = () => {
                     <FeedCard
                       title={g.title}
                       host={typeof g.host === 'string' ? g.host : g.host?.name}
-                      date={g.dates}
+                      date={g.startDate ? `${g.startDate}${g.endDate ? ' ~ ' + g.endDate : ''}` : ''}
                       location={g.location}
                       joining={`${g.currentJoining}/${g.maxJoining}`}
                       bgImage={g.bgImageUrl}
