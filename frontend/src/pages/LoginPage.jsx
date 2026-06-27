@@ -1,6 +1,9 @@
 import React from 'react';
 import { useAuthViewModel } from '../viewmodels/useAuthViewModel';
 import { API_BASE } from '../api/client';
+import FormInput from '../components/UI/FormInput';
+import PrimaryButton from '../components/UI/PrimaryButton';
+import { User, Mail, Lock } from 'lucide-react';
 import './LoginPage.css';
 
 function LoginPage() {
@@ -46,20 +49,22 @@ function LoginPage() {
         <form onSubmit={handleSubmit} className="auth-form">
           {!isLogin && (
             <div className="input-group">
-              <label>이름</label>
-                <input 
-                  type="text" 
-                  name="name"
-                  placeholder="홍길동"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                />
+              <FormInput 
+                label="이름"
+                icon={User}
+                type="text" 
+                name="name"
+                placeholder="홍길동"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+              />
             </div>
           )}
           <div className="input-group">
-            <label>이메일</label>
-            <input 
+            <FormInput 
+              label="이메일"
+              icon={Mail}
               type="email" 
               name="email"
               placeholder="example@test.com"
@@ -69,8 +74,9 @@ function LoginPage() {
             />
           </div>
           <div className="input-group">
-            <label>비밀번호</label>
-            <input 
+            <FormInput 
+              label="비밀번호"
+              icon={Lock}
               type="password" 
               name="password"
               placeholder="••••••••"
@@ -83,9 +89,15 @@ function LoginPage() {
           {successMessage && <p className="success-msg">{successMessage}</p>}
           {error && <p className="error-msg">{error}</p>}
 
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? '처리 중...' : (isLogin ? '로그인' : '가입하기')}
-          </button>
+          <PrimaryButton 
+            type="submit" 
+            variant="primary"
+            className="submit-btn" 
+            disabled={loading}
+            loading={loading}
+          >
+            {isLogin ? '로그인' : '가입하기'}
+          </PrimaryButton>
         </form>
 
         <div className="sns-login-divider">
@@ -93,14 +105,18 @@ function LoginPage() {
         </div>
         
         <div className="sns-buttons">
-          <button 
+          <PrimaryButton 
+            variant="secondary"
             className="sns-btn kakao" 
             onClick={() => window.location.href = `${API_BASE}/oauth2/authorization/kakao`}
-          >카카오로 시작하기</button>
-          <button 
+            style={{ opacity: 1 }}
+          >카카오로 시작하기</PrimaryButton>
+          <PrimaryButton 
+            variant="secondary"
             className="sns-btn naver" 
             onClick={() => window.location.href = `${API_BASE}/oauth2/authorization/naver`}
-          >네이버로 시작하기</button>
+            style={{ opacity: 1 }}
+          >네이버로 시작하기</PrimaryButton>
         </div>
       </div>
     </div>

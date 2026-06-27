@@ -6,6 +6,9 @@ import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
 import ProfileTab from '../components/ProfileTab';
 import TravelInsightWidget from '../components/TravelInsightWidget';
+import TicketContainer from '../components/UI/TicketContainer';
+import Card from '../components/UI/Card';
+import PrimaryButton from '../components/UI/PrimaryButton';
 import { useUser } from '../contexts/UserContext';
 import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
 import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
@@ -180,75 +183,70 @@ const Home = () => {
             if (!myUpcoming) return null;
 
             return (
-              <div 
+              <TicketContainer
+                glass={false}
                 onClick={() => navigate(`/gathering/${myUpcoming.id}`)}
-                className="ticket-wrapper animate-fade" 
-                style={{ 
-                  borderRadius: '28px',
-                  background: 'var(--surface-solid)',
-                  border: '1px solid var(--border-color)',
-                  padding: 0
-                }}
-              >
-                <div style={{ 
-                  background: 'var(--primary-gradient)', 
-                  padding: '14px 24px', 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center' 
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <MapIcon size={16} color="white" />
-                    <span style={{ color: 'white', fontSize: '11px', fontWeight: 900, letterSpacing: '1.2px' }}>UPCOMING BOARDING</span>
-                  </div>
-                  <div style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '6px' }}>
-                    <span style={{ color: 'white', fontSize: '10px', fontWeight: 900 }}>GATE {myUpcoming.id.toString().substring(0, 2)}</span>
-                  </div>
-                </div>
-
-                <div style={{ padding: '24px' }}>
-                  <div className="flex-between" style={{ gap: '10px' }}>
-                    <div style={{ flex: '1 1 0%', minWidth: 0 }}>
-                      <span className="label-muted">DEPARTURE</span>
-                      <div style={{ 
-                        fontSize: 'clamp(18px, 4vw, 24px)', 
-                        fontWeight: 900, 
-                        color: 'var(--text-primary)', 
-                        marginTop: '4px',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}>SEOUL</div>
+                topSection={
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ 
+                      background: 'var(--primary-gradient)', 
+                      padding: '14px 24px', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center' 
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <MapIcon size={16} color="white" />
+                        <span style={{ color: 'white', fontSize: '11px', fontWeight: 900, letterSpacing: '1.2px' }}>UPCOMING BOARDING</span>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '6px' }}>
+                        <span style={{ color: 'white', fontSize: '10px', fontWeight: 900 }}>GATE {myUpcoming.id.toString().substring(0, 2)}</span>
+                      </div>
                     </div>
-                    <div style={{ flex: '0 0 60px', textAlign: 'center', position: 'relative' }}>
-                      <div className="ticket-divider" style={{ borderTop: '2px solid #F1F5F9', margin: 0 }}>
-                        <div style={{ 
-                          position: 'absolute', top: '-11px', left: '50%', transform: 'translateX(-50%)',
-                          background: 'white', padding: '0 6px'
-                        }}>
-                          <MapIcon size={18} color="var(--primary-orange)" />
+
+                    <div style={{ padding: '24px 24px 0 24px' }}>
+                      <div className="flex-between" style={{ gap: '10px' }}>
+                        <div style={{ flex: '1 1 0%', minWidth: 0 }}>
+                          <span className="label-muted">DEPARTURE</span>
+                          <div style={{ 
+                            fontSize: 'clamp(18px, 4vw, 24px)', 
+                            fontWeight: 900, 
+                            color: 'var(--text-primary)', 
+                            marginTop: '4px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>SEOUL</div>
+                        </div>
+                        <div style={{ flex: '0 0 60px', textAlign: 'center', position: 'relative' }}>
+                          <div style={{ 
+                            position: 'absolute', top: '-11px', left: '50%', transform: 'translateX(-50%)',
+                            background: 'white', padding: '0 6px'
+                          }}>
+                            <MapIcon size={18} color="var(--primary-orange)" />
+                          </div>
+                          <div style={{ borderTop: '2px solid #F1F5F9', marginTop: '2px' }} />
+                        </div>
+                        <div style={{ flex: '1 1 0%', textAlign: 'right', minWidth: 0 }}>
+                          <span className="label-muted">DESTINATION</span>
+                          <div style={{ 
+                            fontSize: 'clamp(18px, 4vw, 24px)', 
+                            fontWeight: 900, 
+                            color: 'var(--text-primary)', 
+                            marginTop: '4px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {myUpcoming.location?.split(' ')[0].toUpperCase() || 'TRIP'}
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div style={{ flex: '1 1 0%', textAlign: 'right', minWidth: 0 }}>
-                      <span className="label-muted">DESTINATION</span>
-                      <div style={{ 
-                        fontSize: 'clamp(18px, 4vw, 24px)', 
-                        fontWeight: 900, 
-                        color: 'var(--text-primary)', 
-                        marginTop: '4px',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}>
-                        {myUpcoming.location?.split(' ')[0].toUpperCase() || 'TRIP'}
-                      </div>
-                    </div>
                   </div>
-
-                  <div className="ticket-divider" style={{ margin: '20px 0' }} />
-
-                  <div className="flex-between">
+                }
+                bottomSection={
+                  <div className="flex-between" style={{ paddingTop: '8px' }}>
                     <div>
                       <span className="label-muted">PASSENGER / FLIGHT</span>
                       <p className="info-value" style={{ fontSize: '16px' }}>{currentUser.name} • {myUpcoming.title}</p>
@@ -260,8 +258,8 @@ const Home = () => {
                       </p>
                     </div>
                   </div>
-                </div>
-              </div>
+                }
+              />
             );
           })()}
           
@@ -280,9 +278,10 @@ const Home = () => {
       }}>
         <nav style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }} className="hide-scrollbar">
           {['라운지', '여행 피드', '내 여행', '내 여권'].map((tab) => (
-            <button
+            <PrimaryButton
               key={tab}
               onClick={() => setActiveTab(tab)}
+              variant={activeTab === tab ? 'primary' : 'secondary'}
               style={{
                 padding: '12px 24px',
                 borderRadius: '16px',
@@ -298,7 +297,7 @@ const Home = () => {
               }}
             >
               {tab}
-            </button>
+            </PrimaryButton>
           ))}
         </nav>
       </div>
@@ -354,14 +353,20 @@ const Home = () => {
                 
                 {/* Empty State */}
                 {gatherings.filter(g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))).length === 0 && (
-                  <div style={{ 
-                    textAlign: 'center', 
-                    padding: '80px 0',
-                    background: 'var(--surface)',
-                    borderRadius: 'var(--radius-lg)',
-                    border: '1px dashed var(--border-color)',
-                    marginTop: '20px'
-                  }}>
+                  <Card 
+                    glass={false}
+                    animate={true}
+                    style={{ 
+                      textAlign: 'center', 
+                      padding: '80px 24px',
+                      border: '1px dashed var(--border-color)',
+                      marginTop: '20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      background: 'var(--surface)'
+                    }}
+                  >
                     <div style={{ 
                       width: '80px', height: '80px', 
                       margin: '0 auto 16px auto', 
@@ -373,7 +378,7 @@ const Home = () => {
                     </div>
                     <h3 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '8px' }}>탑승할 항공편이 없습니다</h3>
                     <p className="text-s" style={{ color: 'var(--text-secondary)' }}>선택하신 지역에 예정된 일정이 없네요.<br/>새로운 여정을 개설해 보는 건 어떨까요?</p>
-                  </div>
+                  </Card>
                 )}
               </>
             )}
@@ -384,16 +389,17 @@ const Home = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 900 }}>나의 여행 허브</h2>
-              <button 
+              <PrimaryButton 
+                variant="primary"
                 onClick={() => navigate('/trip/create')}
                 style={{ 
                   background: 'var(--text-primary)', color: 'white', 
-                  border: 'none', padding: '8px 12px', borderRadius: '12px',
+                  padding: '8px 12px', borderRadius: '12px',
                   fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px',
-                  cursor: 'pointer'
+                  boxShadow: 'none'
                 }}>
                 <Plus size={16} /> 새 여행
-              </button>
+              </PrimaryButton>
             </div>
 
             {trips.map((trip, idx) => (
@@ -405,11 +411,15 @@ const Home = () => {
             ))}
 
             {trips.length === 0 && (
-              <div className="glass" style={{
-                textAlign: 'center', padding: '60px 24px', borderRadius: 'var(--radius-lg)',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
-                background: 'white', border: '1px solid var(--border-color)'
-              }}>
+              <Card 
+                glass={true} 
+                animate={true}
+                style={{
+                  textAlign: 'center', padding: '60px 24px', borderRadius: 'var(--radius-lg)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+                  background: 'white', border: '1px solid var(--border-color)'
+                }}
+              >
                 <div style={{ fontSize: '48px' }}>✈️</div>
                 <p style={{ fontWeight: 700, color: 'var(--text-primary)', textAlign: 'center' }}>
                   아직 계획된 여행이 없습니다.<br />
@@ -417,8 +427,8 @@ const Home = () => {
                     새로운 여행을 만들고 일정을 채워보세요!
                   </span>
                 </p>
-                <button className="primary-btn" onClick={() => navigate('/trip/create')}>새 여행 만들기</button>
-              </div>
+                <PrimaryButton variant="primary" onClick={() => navigate('/trip/create')}>새 여행 만들기</PrimaryButton>
+              </Card>
             )}
           </div>
         )}
@@ -454,13 +464,14 @@ const Home = () => {
           gap: '16px',
           padding: '10px'
         }}>
-          <button
+          <PrimaryButton
             onClick={() => {
               if (activeTab === '라운지') navigate('/create');
               else if (activeTab === '여행 피드') navigate('/itinerary/create');
               else navigate('/itinerary/create');
             }}
-            className="primary-btn fab-button"
+            variant="primary"
+            className="fab-button"
             style={{
               width: '64px',
               height: '64px', 
@@ -471,7 +482,7 @@ const Home = () => {
             }}
           >
             <Plus size={32} strokeWidth={3} />
-          </button>
+          </PrimaryButton>
         </div>
       )}
 

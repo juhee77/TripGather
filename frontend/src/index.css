@@ -195,6 +195,48 @@ button:active {
   border: 1px solid var(--border-color);
 }
 
+.glass-btn {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: 14px 28px;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  font-size: 15px;
+  box-shadow: var(--glass-shadow);
+}
+
+.night-btn {
+  background: var(--bg-dark);
+  color: white;
+  padding: 14px 28px;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  font-size: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.night-btn:hover {
+  background: #1e293b;
+}
+
+.outline-btn {
+  background: transparent;
+  color: var(--text-primary);
+  padding: 14px 28px;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  font-size: 15px;
+  border: 2px solid var(--border-color);
+}
+
+.outline-btn:hover {
+  border-color: var(--text-primary);
+  background: var(--bg-lite);
+}
+
 .icon-circle {
   width: 44px;
   height: 44px;

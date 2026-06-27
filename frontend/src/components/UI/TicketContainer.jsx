@@ -7,10 +7,10 @@ import React from 'react';
  * @param {React.Node} bottomSection - 절취선 아래쪽 콘텐츠 (세부 정보, 버튼 등)
  * @param {string} className - 추가 스타일 클래스
  */
-const TicketContainer = ({ topSection, bottomSection, className = '', onClick }) => {
+const TicketContainer = ({ topSection, bottomSection, className = '', onClick, glass = false }) => {
   return (
     <div 
-      className={`ticket-wrapper animate-fade ${className}`} 
+      className={`ticket-wrapper animate-fade ${glass ? 'glass' : 'surface-solid'} ${className}`} 
       onClick={onClick}
       style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
