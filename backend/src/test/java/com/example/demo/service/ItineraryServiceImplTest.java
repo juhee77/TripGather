@@ -25,6 +25,12 @@ class ItineraryServiceImplTest {
     @Mock
     private ItineraryRepository itineraryRepository;
 
+    @Mock
+    private com.example.demo.repository.UserRepository userRepository;
+
+    @Mock
+    private PointService pointService;
+
     @InjectMocks
     private ItineraryServiceImpl itineraryService;
 

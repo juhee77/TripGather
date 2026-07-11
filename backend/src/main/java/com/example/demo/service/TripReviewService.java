@@ -22,6 +22,7 @@ public class TripReviewService {
     private final TripReviewRepository tripReviewRepository;
     private final TripRepository tripRepository;
     private final SecurityService securityService;
+    private final PointService pointService;
 
     @Transactional
     public TripReviewResponse createReview(Long tripId, String content, int rating, String category, String imageUrls) {
@@ -30,7 +31,13 @@ public class TripReviewService {
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다."));
         TripReview review = TripReview.of(trip, author, content, rating, category);
         review.setImageUrls(imageUrls);
-        return TripReviewResponse.from(tripReviewRepository.save(review));
+        
+        TripReviewResponse response = TripReviewResponse.from(tripReviewRepository.save(review));
+        
+        // 후기 작성 성공 시 100포인트 적립
+        pointService.addPoints(author.getId(), 100, 0, "여행 후기 작성");
+        
+        return response;
     }
 
     @Transactional(readOnly = true)

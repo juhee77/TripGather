@@ -16,6 +16,8 @@ import java.util.List;
 public class ItineraryServiceImpl implements ItineraryUseCase {
 
     private final ItineraryRepository itineraryRepository;
+    private final com.example.demo.repository.UserRepository userRepository;
+    private final PointService pointService;
 
     @Transactional(readOnly = true)
     public List<Itinerary> getAllItineraries() {
@@ -55,6 +57,13 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     @Transactional
     public Itinerary cloneItinerary(Long originalId, String ownerEmail) {
         Itinerary original = getById(originalId);
+        
+        // 여정 복제 저작 인센티브 지급 (+50 PTS)
+        if (original.getAuthorEmail() != null && !original.getOwnerEmail().equals(ownerEmail)) {
+            userRepository.findByEmail(original.getAuthorEmail()).ifPresent(authorUser -> {
+                pointService.addPoints(authorUser.getId(), 50, 0, "'" + original.getTitle() + "' 여정 복제 저작 인센티브");
+            });
+        }
         
         Itinerary clone = Itinerary.builder()
                 .title(original.getTitle() + " (Copy)")
@@ -104,6 +113,10 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     @Transactional
     public Itinerary updateItinerary(Long id, Itinerary update) {
         Itinerary itinerary = getById(id);
+        
+        // 여정 완수 감지 (이전에 stampImageUrl이 없었으나, 새로 들어온 경우)
+        boolean completedNow = (itinerary.getStampImageUrl() == null && update.getStampImageUrl() != null);
+        
         itinerary.setTitle(update.getTitle());
         itinerary.setDescription(update.getDescription());
         itinerary.setStampImageUrl(update.getStampImageUrl());
@@ -131,7 +144,24 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
             itinerary.setOwnerEmail(update.getOwnerEmail());
         }
         
-        return itineraryRepository.save(itinerary);
+        Itinerary saved = itineraryRepository.save(itinerary);
+        
+        // 여정 완수 시 포인트 및 스탬프 적립 (+200 PTS & +1 STAMP)
+        if (completedNow && itinerary.getOwnerEmail() != null) {
+            com.example.demo.domain.User owner = userRepository.findByEmail(itinerary.getOwnerEmail())
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "일정 소유자를 찾을 수 없습니다."));
+            
+            pointService.addPoints(
+                    owner.getId(), 
+                    200, 
+                    1, 
+                    itinerary.getTitle() != null ? itinerary.getTitle() : "여정 완수", 
+                    itinerary.getId(), 
+                    update.getStampImageUrl()
+            );
+        }
+        
+        return saved;
     }
 
     @Transactional
