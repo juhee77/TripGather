@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, Edit3, Plane, Check } from 'lucide-react';
+import { Map as KakaoMap, MapMarker, Polyline } from 'react-kakao-maps-sdk';
 import { useUser } from '../contexts/UserContext';
 import { authFetch } from '../api/client';
 import ModalHeader from '../components/UI/ModalHeader';
@@ -320,6 +321,68 @@ const ItineraryDetailPage = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* Kakao Map for Route Path Visualization */}
+                    {localItinerary.routePoints && localItinerary.routePoints.some(p => p.lat && p.lng) && (
+                        <div style={{ marginBottom: '32px', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+                            <div style={{ padding: '12px 16px', background: 'white', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '13px', fontWeight: 900, color: 'var(--text-primary)' }}>여행 동선 지도 🗺️</span>
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>총 {localItinerary.routePoints.filter(p => p.lat && p.lng).length}개 경유지</span>
+                            </div>
+                            <div style={{ width: '100%', height: '300px' }}>
+                                <KakaoMap
+                                    center={
+                                        (() => {
+                                            const valid = localItinerary.routePoints.filter(p => p.lat && p.lng);
+                                            return valid.length > 0 ? { lat: valid[0].lat, lng: valid[0].lng } : { lat: 37.5665, lng: 126.9780 };
+                                        })()
+                                    }
+                                    style={{ width: '100%', height: '100%' }}
+                                    level={6}
+                                >
+                                    {/* Markers for each route point */}
+                                    {localItinerary.routePoints
+                                        .filter(p => p.lat && p.lng)
+                                        .map((point, idx) => (
+                                            <MapMarker
+                                                key={point.id || idx}
+                                                position={{ lat: point.lat, lng: point.lng }}
+                                            >
+                                                <div style={{
+                                                    padding: '4px 8px',
+                                                    color: 'var(--text-primary)',
+                                                    fontSize: '11px',
+                                                    fontWeight: 900,
+                                                    background: 'white',
+                                                    whiteSpace: 'nowrap',
+                                                    borderRadius: '6px',
+                                                    border: '1px solid var(--border-color)'
+                                                }}>
+                                                    {point.dayNumber}일차 - {point.label}
+                                                </div>
+                                            </MapMarker>
+                                        ))
+                                    }
+
+                                    {/* Polyline path connecting the route points */}
+                                    <Polyline
+                                        path={localItinerary.routePoints
+                                            .filter(p => p.lat && p.lng)
+                                            .sort((a, b) => {
+                                                if (a.dayNumber !== b.dayNumber) return a.dayNumber - b.dayNumber;
+                                                return a.sequenceOrder - b.sequenceOrder;
+                                            })
+                                            .map(p => ({ lat: p.lat, lng: p.lng }))
+                                        }
+                                        strokeWeight={5}
+                                        strokeColor={"#FF6B35"}
+                                        strokeOpacity={0.8}
+                                        strokeStyle={"solid"}
+                                    />
+                                </KakaoMap>
+                            </div>
+                        </div>
+                    )}
 
                     {groupedByDay.map((day, dIdx) => (
                         <div key={dIdx} style={{ marginBottom: '40px' }}>
