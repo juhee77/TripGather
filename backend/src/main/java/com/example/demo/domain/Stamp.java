@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+@org.hibernate.annotations.SQLRestriction("deleted = false")
 public class Stamp extends BaseEntity {
 
     @Id
