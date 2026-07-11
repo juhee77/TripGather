@@ -28,6 +28,9 @@ class PointServiceTest {
     @Mock
     private PointTransactionRepository pointTransactionRepository;
 
+    @Mock
+    private com.example.demo.repository.StampRepository stampRepository;
+
     @InjectMocks
     private PointService pointService;
 

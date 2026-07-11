@@ -5,16 +5,29 @@ import { LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useUser } from '../contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
+import { authFetch } from '../api/client';
 
 const ProfileTab = () => {
   const navigate = useNavigate();
   const { user, refetch } = useUser();
   const { logout } = useAuth();
-  const stamps = []; // TODO: replace with trip-based stamps in future
-  const loading = false;
+  const [stamps, setStamps] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     refetch().catch(err => console.error("Failed to refetch user in ProfileTab:", err));
+
+    setLoading(true);
+    authFetch('/api/stamps/me')
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch stamps");
+        return res.json();
+      })
+      .then(data => {
+        setStamps(data);
+      })
+      .catch(err => console.error("Error loading stamps:", err))
+      .finally(() => setLoading(false));
 
     const handleFocus = () => {
       refetch().catch(err => console.error("Failed to refetch user on focus in ProfileTab:", err));
