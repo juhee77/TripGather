@@ -26,6 +26,7 @@ public class GatheringMemberService implements GatheringMemberUseCase {
     private final GatheringMemberRepository gatheringMemberRepository;
     private final SecurityService securityService;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -55,6 +56,20 @@ public class GatheringMemberService implements GatheringMemberUseCase {
                         .build();
                 gathering.getMembers().add(member);
                 gatheringMemberRepository.save(member);
+                
+                // 알림 전송
+                if (gathering.getHost() != null && gathering.getHost().getEmail() != null) {
+                    java.util.Map<String, Object> data = new java.util.HashMap<>();
+                    data.put("gatheringId", gathering.getId());
+                    data.put("gatheringTitle", gathering.getTitle() != null ? gathering.getTitle() : "제목 없음");
+                    data.put("applicantName", user.getName() != null ? user.getName() : (user.getEmail() != null ? user.getEmail() : "알 수 없음"));
+                    
+                    notificationService.send(
+                            gathering.getHost().getEmail(),
+                            "gathering-requested",
+                            data
+                    );
+                }
             } else {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 정원이 초과되었습니다.");
             }
@@ -83,6 +98,19 @@ public class GatheringMemberService implements GatheringMemberUseCase {
         if (approvedCount >= gathering.getMaxJoining()) {
             gathering.setStatus(GatheringStatus.CLOSED);
         }
+
+        // 알림 전송
+        if (member.getUser() != null && member.getUser().getEmail() != null) {
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("gatheringId", gathering.getId());
+            data.put("gatheringTitle", gathering.getTitle() != null ? gathering.getTitle() : "제목 없음");
+            
+            notificationService.send(
+                    member.getUser().getEmail(),
+                    "gathering-approved",
+                    data
+            );
+        }
     }
 
     @Transactional
@@ -96,6 +124,19 @@ public class GatheringMemberService implements GatheringMemberUseCase {
         }
 
         member.setStatus(MemberStatus.REJECTED);
+
+        // 알림 전송
+        if (member.getUser() != null && member.getUser().getEmail() != null) {
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("gatheringId", gatheringId);
+            data.put("gatheringTitle", member.getGathering().getTitle() != null ? member.getGathering().getTitle() : "제목 없음");
+            
+            notificationService.send(
+                    member.getUser().getEmail(),
+                    "gathering-rejected",
+                    data
+            );
+        }
     }
 
     @Transactional

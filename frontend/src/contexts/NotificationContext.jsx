@@ -29,6 +29,42 @@ export const NotificationProvider = ({ children }) => {
             setNotifications(prev => [data, ...prev]);
         });
 
+        eventSource.addEventListener('gathering-requested', (event) => {
+            const data = JSON.parse(event.data);
+            console.log("Gathering request received:", data);
+            setUnreadCount(prev => prev + 1);
+            setNotifications(prev => [{
+                id: Date.now(),
+                type: 'gathering-requested',
+                message: `[참가 신청] '${data.gatheringTitle}' 모임에 ${data.applicantName}님이 참가 신청을 했습니다.`,
+                ...data
+            }, ...prev]);
+        });
+
+        eventSource.addEventListener('gathering-approved', (event) => {
+            const data = JSON.parse(event.data);
+            console.log("Gathering approval received:", data);
+            setUnreadCount(prev => prev + 1);
+            setNotifications(prev => [{
+                id: Date.now(),
+                type: 'gathering-approved',
+                message: `[승인 완료] '${data.gatheringTitle}' 모임 참여가 승인되었습니다! 🎉`,
+                ...data
+            }, ...prev]);
+        });
+
+        eventSource.addEventListener('gathering-rejected', (event) => {
+            const data = JSON.parse(event.data);
+            console.log("Gathering rejection received:", data);
+            setUnreadCount(prev => prev + 1);
+            setNotifications(prev => [{
+                id: Date.now(),
+                type: 'gathering-rejected',
+                message: `[참가 거절] '${data.gatheringTitle}' 모임 참여가 거절되었습니다.`,
+                ...data
+            }, ...prev]);
+        });
+
         eventSource.onerror = (err) => {
             console.error("SSE Error:", err);
             eventSource.close();

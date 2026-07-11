@@ -40,6 +40,8 @@ class GatheringMemberServiceTest {
     private SecurityService securityService;
     @Mock
     private UserRepository userRepository;
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private GatheringMemberService gatheringMemberService;
