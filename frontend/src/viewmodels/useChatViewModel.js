@@ -9,15 +9,25 @@ export const useChatViewModel = (gathering, currentUser) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [stompClient, setStompClient] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState('CONNECTING'); // 'CONNECTING', 'CONNECTED', 'DISCONNECTED'
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const scrollRef = useRef(null);
   const clientRef = useRef(null);
+  const isInitialLoad = useRef(true);
 
   const fetchHistory = useCallback(async () => {
     if (!gathering?.id) return;
     try {
       const history = await ChatRepository.getChatHistory(gathering.id);
       setMessages(history);
+      // 최초 히스토리 로드 후 스크롤을 맨 아래로 보내기 위한 처리
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+        isInitialLoad.current = false;
+      }, 50);
     } catch (err) {
       console.error("History fetch error:", err);
     }
@@ -26,6 +36,7 @@ export const useChatViewModel = (gathering, currentUser) => {
   // 1. 과거 내역 로드 전용 Effect
   useEffect(() => {
     if (gathering?.id && currentUser) {
+      isInitialLoad.current = true;
       fetchHistory();
     }
   }, [gathering?.id, currentUser?.email, fetchHistory]);
@@ -46,6 +57,7 @@ export const useChatViewModel = (gathering, currentUser) => {
     }
 
     console.log(`[Chat] Connecting to WebSocket for gathering:${gId}, user:${uEmail}`);
+    setConnectionStatus('CONNECTING');
     connectionRef.current = { gatheringId: gId, userEmail: uEmail };
 
     const token = localStorage.getItem('token');
@@ -59,11 +71,31 @@ export const useChatViewModel = (gathering, currentUser) => {
       heartbeatOutgoing: 4000,
       onConnect: () => {
         console.log('[Chat] WebSocket Connected - Subscribing to', gId);
+        setConnectionStatus('CONNECTED');
         client.subscribe(`/topic/chat/${gId}`, (message) => {
           try {
             const newMessage = JSON.parse(message.body);
             setMessages(prev => {
               if (prev.some(m => m.id === newMessage.id && m.id !== undefined)) return prev;
+              
+              // 새 메시지가 들어왔을 때 스크롤 위치 감지
+              if (scrollRef.current) {
+                const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+                // 하단에서 150px 이내에 있는 경우 "가까운 하단"으로 판정
+                const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+                
+                if (isNearBottom) {
+                  // 자동으로 스크롤 내리기
+                  setTimeout(() => {
+                    if (scrollRef.current) {
+                      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                    }
+                  }, 50);
+                } else {
+                  // 사용자가 위를 보고 있으면 아래로 스크롤 버튼을 활성화
+                  setShowScrollButton(true);
+                }
+              }
               return [...prev, newMessage];
             });
           } catch (e) {
@@ -71,11 +103,17 @@ export const useChatViewModel = (gathering, currentUser) => {
           }
         });
       },
+      onDisconnect: () => {
+        console.log('[Chat] WebSocket Disconnected');
+        setConnectionStatus('DISCONNECTED');
+      },
       onStompError: (frame) => {
         console.error('[Chat] STOMP error', frame.headers['message']);
+        setConnectionStatus('DISCONNECTED');
       },
       onWebSocketClose: () => {
         console.log('[Chat] WebSocket connection closed');
+        setConnectionStatus('DISCONNECTED');
       }
     });
 
@@ -94,11 +132,25 @@ export const useChatViewModel = (gathering, currentUser) => {
     };
   }, [gathering?.id, currentUser?.email]);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  // 스크롤 이벤트 감지 핸들러
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    // 사용자가 직접 거의 맨 아래까지 내렸다면 새 메시지 버튼 숨김
+    if (scrollHeight - scrollTop - clientHeight < 50) {
+      setShowScrollButton(false);
     }
-  }, [messages]);
+  }, []);
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+      setShowScrollButton(false);
+    }
+  };
 
   const handleSend = (e) => {
     if (e) e.preventDefault();
@@ -116,6 +168,10 @@ export const useChatViewModel = (gathering, currentUser) => {
     });
 
     setInput('');
+    // 내가 보낸 메시지인 경우 즉시 스크롤 아래로 내리기
+    setTimeout(() => {
+      scrollToBottom();
+    }, 50);
   };
 
   const formatTime = (dateStr) => {
@@ -142,6 +198,11 @@ export const useChatViewModel = (gathering, currentUser) => {
     scrollRef,
     handleSend,
     formatTime,
-    isHost
+    isHost,
+    connectionStatus,
+    showScrollButton,
+    handleScroll,
+    scrollToBottom
   };
 };
+

@@ -1,6 +1,6 @@
 import React from 'react';
 import { MemberStatus } from '../constants/enums';
-import { ArrowLeft, Users, MoreHorizontal, Shield, Send } from 'lucide-react';
+import { ArrowLeft, Users, MoreHorizontal, Shield, Send, ArrowDown } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { useChatViewModel } from '../viewmodels/useChatViewModel';
 
@@ -15,7 +15,11 @@ const ChatRoom = ({ gathering, onBack, onStartDM, inline = false }) => {
         scrollRef,
         handleSend,
         formatTime,
-        isHost: checkHost
+        isHost: checkHost,
+        connectionStatus,
+        showScrollButton,
+        handleScroll,
+        scrollToBottom
     } = useChatViewModel(gathering, currentUser);
 
     const isActualHost = currentUser && (
@@ -46,6 +50,35 @@ const ChatRoom = ({ gathering, onBack, onStartDM, inline = false }) => {
             overflow: 'hidden',
             borderRadius: inline ? '20px' : 0
         }}>
+            {/* Connection Status Banner */}
+            {connectionStatus !== 'CONNECTED' && (
+                <div style={{
+                    background: connectionStatus === 'CONNECTING' ? 'rgba(59, 130, 246, 0.95)' : 'rgba(239, 68, 68, 0.95)',
+                    color: 'white',
+                    textAlign: 'center',
+                    padding: '10px 16px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    backdropFilter: 'blur(10px)',
+                    zIndex: 220,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}>
+                    <span style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: 'white',
+                        display: 'inline-block',
+                        animation: 'pingPulse 1.5s infinite'
+                    }}></span>
+                    {connectionStatus === 'CONNECTING' ? '주파수 맞추는 중 (연결 시도)...' : '무전 신호가 불안정합니다 (재연결 중)'}
+                </div>
+            )}
+
             {/* Unified Room Header - Hidden in inline mode to avoid duplication */}
             {!inline && (
                 <header className="glass-premium" style={{ 
@@ -61,9 +94,9 @@ const ChatRoom = ({ gathering, onBack, onStartDM, inline = false }) => {
                     <div style={{ flex: 1 }}>
                         <h3 style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '16px', margin: 0 }}>{gathering.title}</h3>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary-orange)' }}></span>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: connectionStatus === 'CONNECTED' ? '#4ADE80' : 'var(--primary-orange)' }}></span>
                             <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                                AGENT GROUP 채팅
+                                {connectionStatus === 'CONNECTED' ? '무전망 연결됨' : '무전 대기 중'}
                             </span>
                         </div>
                     </div>
@@ -106,8 +139,9 @@ const ChatRoom = ({ gathering, onBack, onStartDM, inline = false }) => {
                 {/* Chat Area */}
                 <div 
                     ref={scrollRef}
+                    onScroll={handleScroll}
                     className="hide-scrollbar"
-                    style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}
+                    style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative' }}
                 >
                     {messages.map((m, idx) => {
                         const isMe = m.senderEmail === currentUser.email;
@@ -154,6 +188,35 @@ const ChatRoom = ({ gathering, onBack, onStartDM, inline = false }) => {
                         );
                     })}
                 </div>
+
+                {/* Floating Scroll to Bottom Button */}
+                {showScrollButton && (
+                    <button 
+                        onClick={scrollToBottom}
+                        style={{
+                            position: 'absolute',
+                            bottom: '20px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            background: 'var(--primary-gradient)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '30px',
+                            padding: '10px 18px',
+                            fontSize: '12px',
+                            fontWeight: 800,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 8px 24px rgba(255, 92, 0, 0.3)',
+                            cursor: 'pointer',
+                            zIndex: 10,
+                            animation: 'bounceFloat 2s infinite'
+                        }}
+                    >
+                        <ArrowDown size={14} /> 새로운 무전 메시지
+                    </button>
+                )}
 
                 {/* Participant Drawer */}
                 <aside style={{
@@ -263,6 +326,15 @@ const ChatRoom = ({ gathering, onBack, onStartDM, inline = false }) => {
                 @keyframes bubbleUp {
                     from { transform: translateY(10px); opacity: 0; }
                     to { transform: translateY(0); opacity: 1; }
+                }
+                @keyframes pingPulse {
+                    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+                    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 255, 255, 0); }
+                    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+                }
+                @keyframes bounceFloat {
+                    0%, 100% { transform: translate(-50%, 0); }
+                    50% { transform: translate(-50%, -6px); }
                 }
             `}</style>
         </div>
