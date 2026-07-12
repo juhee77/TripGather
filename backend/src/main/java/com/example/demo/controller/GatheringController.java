@@ -4,6 +4,8 @@ import com.example.demo.domain.Gathering;
 import com.example.demo.dto.GatheringResponse;
 import com.example.demo.usecase.GatheringUseCase;
 import com.example.demo.usecase.GatheringMemberUseCase;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.StampRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,13 +20,17 @@ public class GatheringController {
 
     private final GatheringUseCase gatheringService;
     private final GatheringMemberUseCase gatheringMemberService;
+    private final UserRepository userRepository;
+    private final StampRepository stampRepository;
+
 
     @GetMapping
     public ResponseEntity<List<GatheringResponse>> getAllGatherings(@RequestParam(required = false) String location, java.security.Principal principal) {
         return ResponseEntity.ok(gatheringService.getAllGatherings(location).stream()
                 .map(g -> {
                     boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
-                    return GatheringResponse.from(g, isLiked);
+                    boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);
+                    return GatheringResponse.from(g, isLiked, hasCheckedIn);
                 })
                 .collect(Collectors.toList()));
     }
@@ -33,7 +39,8 @@ public class GatheringController {
     public ResponseEntity<GatheringResponse> getGathering(@PathVariable Long id, java.security.Principal principal) {
         Gathering gathering = gatheringService.getGathering(id);
         boolean isLiked = principal != null && gatheringService.isLikedByUser(id, principal.getName());
-        return ResponseEntity.ok(GatheringResponse.from(gathering, isLiked));
+        boolean hasCheckedIn = checkUserHasCheckedIn(id, principal);
+        return ResponseEntity.ok(GatheringResponse.from(gathering, isLiked, hasCheckedIn));
     }
 
     @GetMapping("/search")
@@ -46,7 +53,8 @@ public class GatheringController {
         return ResponseEntity.ok(gatheringService.searchGatherings(query, category, location, availableOnly).stream()
                 .map(g -> {
                     boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
-                    return GatheringResponse.from(g, isLiked);
+                    boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);
+                    return GatheringResponse.from(g, isLiked, hasCheckedIn);
                 })
                 .collect(Collectors.toList()));
     }
@@ -72,7 +80,8 @@ public class GatheringController {
         return ResponseEntity.ok(gatheringService.getHostedGatherings().stream()
                 .map(g -> {
                     boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
-                    return GatheringResponse.from(g, isLiked);
+                    boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);
+                    return GatheringResponse.from(g, isLiked, hasCheckedIn);
                 })
                 .collect(Collectors.toList()));
     }
@@ -82,7 +91,8 @@ public class GatheringController {
         return ResponseEntity.ok(gatheringMemberService.getJoinedGatherings().stream()
                 .map(g -> {
                     boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
-                    return GatheringResponse.from(g, isLiked);
+                    boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);
+                    return GatheringResponse.from(g, isLiked, hasCheckedIn);
                 })
                 .collect(Collectors.toList()));
     }
@@ -132,5 +142,18 @@ public class GatheringController {
     public ResponseEntity<Boolean> isAuthorizedMember(@PathVariable Long id, java.security.Principal principal) {
         if (principal == null) return ResponseEntity.ok(false);
         return ResponseEntity.ok(gatheringMemberService.isAuthorizedMember(id, principal.getName()));
+    }
+
+    @PostMapping("/{id}/checkin")
+    public ResponseEntity<Void> checkinStandbyGathering(@PathVariable Long id) {
+        gatheringMemberService.checkinStandbyGathering(id);
+        return ResponseEntity.ok().build();
+    }
+
+    private boolean checkUserHasCheckedIn(Long gatheringId, java.security.Principal principal) {
+        if (principal == null) return false;
+        return userRepository.findByEmail(principal.getName())
+                .map(u -> stampRepository.existsByUserIdAndGatheringId(u.getId(), gatheringId))
+                .orElse(false);
     }
 }

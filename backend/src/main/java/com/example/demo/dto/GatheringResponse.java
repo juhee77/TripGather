@@ -38,12 +38,17 @@ public class GatheringResponse {
     private boolean isCommentPublic;
     private LocalDateTime createdAt;
     private ItineraryResponse linkedItinerary;
+    private boolean hasCheckedIn;
 
     public static GatheringResponse from(Gathering gathering) {
-        return from(gathering, false);
+        return from(gathering, false, false);
     }
 
     public static GatheringResponse from(Gathering gathering, boolean isLiked) {
+        return from(gathering, isLiked, false);
+    }
+
+    public static GatheringResponse from(Gathering gathering, boolean isLiked, boolean hasCheckedIn) {
         if (gathering == null) return null;
         return GatheringResponse.builder()
                 .id(gathering.getId())
@@ -69,6 +74,8 @@ public class GatheringResponse {
                 .isCommentPublic(gathering.isCommentPublic())
                 .createdAt(gathering.getCreatedAt())
                 .linkedItinerary(ItineraryResponse.from(gathering.getLinkedItinerary()))
+                .hasCheckedIn(hasCheckedIn)
                 .build();
     }
+
 }

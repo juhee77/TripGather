@@ -12,6 +12,7 @@ import com.example.demo.repository.GatheringRepository;
 import com.example.demo.security.SecurityService;
 import com.example.demo.usecase.GatheringMemberUseCase;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.StampRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,9 @@ public class GatheringMemberService implements GatheringMemberUseCase {
     private final SecurityService securityService;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final StampRepository stampRepository;
+    private final PointService pointService;
+
 
     @Override
     @Transactional(readOnly = true)
@@ -252,5 +256,38 @@ public class GatheringMemberService implements GatheringMemberUseCase {
     private Gathering getGatheringById(Long id) {
         return gatheringRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND, "Invalid gathering ID"));
+    }
+
+    @Override
+    @Transactional
+    public void checkinStandbyGathering(Long gatheringId) {
+        User user = securityService.getCurrentUser();
+        Gathering gathering = getGatheringById(gatheringId);
+        
+        if (gathering.getLinkedItinerary() != null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "일정이 연결된 모임은 여정 완료로 처리해야 합니다.");
+        }
+        
+        boolean isAuthorized = gathering.getHost().getId().equals(user.getId()) ||
+                gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(gatheringId, user.getEmail(), MemberStatus.APPROVED);
+                
+        if (!isAuthorized) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "모임에 승인된 멤버만 체크인할 수 있습니다.");
+        }
+        
+        boolean alreadyCheckedIn = stampRepository.existsByUserIdAndGatheringId(user.getId(), gatheringId);
+        if (alreadyCheckedIn) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이미 체크인을 완료하여 보상을 받았습니다.");
+        }
+        
+        // 보상 지급 (+50 PTS, 1 Stamp)
+        pointService.addPoints(
+            user.getId(), 
+            50, 
+            1, 
+            "[" + gathering.getTitle() + "] 스탠바이 체크인", 
+            gatheringId, 
+            "/src/assets/stamp-placeholder.png"
+        );
     }
 }

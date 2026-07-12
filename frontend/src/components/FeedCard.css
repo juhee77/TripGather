@@ -179,3 +179,32 @@
   background: var(--primary-orange);
   transform: translateX(4px);
 }
+
+/* Standby Baggage Tag Styles */
+.feed-ticket.standby-tag {
+  border-left: 6px solid #fab005; /* 수하물 태그 고유의 황색 마킹 느낌 */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feed-ticket.standby-tag:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 16px 32px rgba(250, 176, 5, 0.15);
+}
+
+.standby-tag-header .status-pill {
+  background: #fff9db !important;
+  color: #f08c00 !important;
+  border: 1px solid #ffe066 !important;
+}
+
+.standby-info-wrapper .ticket-details-grid {
+  background: #fffdf5;
+  border: 1px dashed #fab005;
+}
+
+.standby-tag-header .label-orange {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+

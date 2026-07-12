@@ -60,6 +60,25 @@ const GatheringDetailPage = () => {
   const myStatus = gathering?.members?.find(m => m.user.email === currentUser?.email)?.status;
   const isMember = isHost || myStatus === MemberStatus.APPROVED;
 
+  const handleCheckin = async () => {
+    try {
+      const res = await authFetch(`/api/gatherings/${gathering.id}/checkin`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        alert("현장 체크인이 완료되었습니다! 50포인트와 여권 마일리지가 적립되었습니다. ✈️");
+        loadGathering();
+      } else {
+        const errText = await res.text();
+        alert(`체크인 실패: ${errText || "모임 조건이 충족되지 않았습니다."}`);
+      }
+    } catch (err) {
+      console.error("Error checkin", err);
+      alert(`네트워크 오류가 발생했습니다: ${err.message}`);
+    }
+  };
+
+
   const fetchComments = async () => {
     try {
       const res = await authFetch(`/api/gatherings/${gathering.id}/comments`);
@@ -396,14 +415,32 @@ const GatheringDetailPage = () => {
                 <>
                   {gathering.bgImageUrl && (
                     <div style={{
-                      height: '180px',
-                      borderRadius: '20px',
-                      backgroundImage: `url(${gathering.bgImageUrl})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      marginBottom: '24px',
-                      boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                       height: '180px',
+                       borderRadius: '20px',
+                       backgroundImage: `url(${gathering.bgImageUrl})`,
+                       backgroundSize: 'cover',
+                       backgroundPosition: 'center',
+                       marginBottom: '24px',
+                       boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
                     }} />
+                  )}
+
+                  {!gathering.linkedItinerary && (
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: '#FFF9DB',
+                      color: '#F08C00',
+                      padding: '8px 16px',
+                      borderRadius: '12px',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      border: '1px solid #FFE066',
+                      marginBottom: '16px'
+                    }}>
+                      <span>🎫</span> 스탠바이 번개 모임 (일정 없음)
+                    </div>
                   )}
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px', background: 'var(--bg-color)', borderRadius: '20px' }}>
@@ -411,7 +448,7 @@ const GatheringDetailPage = () => {
                       <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
                         <Calendar size={18} color="var(--primary-orange)" />
                       </div>
-                      <span>{gathering.dates}</span>
+                      <span>{gathering.dates || (gathering.startDate ? `${gathering.startDate}${gathering.endDate ? ' ~ ' + gathering.endDate : ''}` : '미지정')}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 600 }}>
                       <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
@@ -468,6 +505,36 @@ const GatheringDetailPage = () => {
                         myStatus === MemberStatus.REJECTED ? '거절된 모임입니다' :
                           gathering.currentJoining >= gathering.maxJoining ? '마감되었습니다' : '참여 신청하기'}
                   </button>
+
+                  {isMember && !gathering.linkedItinerary && (
+                    <div style={{ marginTop: '16px' }}>
+                      {gathering.hasCheckedIn ? (
+                        <div style={{
+                          width: '100%', padding: '18px', background: '#E2E8F0', color: '#64748B',
+                          borderRadius: '20px', fontSize: '17px', fontWeight: 800, textAlign: 'center',
+                          border: '1px solid #CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                        }}>
+                          <span>✅</span> 체크인 완료됨 (+50 PTS)
+                        </div>
+                      ) : (
+                        <button
+                          onClick={handleCheckin}
+                          style={{
+                            width: '100%', padding: '18px', background: '#fab005', color: 'white',
+                            border: 'none', borderRadius: '20px', fontSize: '17px', fontWeight: 800,
+                            cursor: 'pointer', boxShadow: '0 8px 20px rgba(250, 176, 5, 0.25)',
+                            transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                          }}
+                        >
+                          <span>🎫</span> 현장 체크인하기 (+50 PTS)
+                        </button>
+                      )}
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '8px', fontWeight: 500 }}>
+                        * 모임 종료 혹은 당일 체크인 시 마일리지 마킹 및 50포인트가 즉시 지급됩니다.
+                      </p>
+                    </div>
+                  )}
+
                 </>
               )}
             </div>

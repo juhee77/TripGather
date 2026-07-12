@@ -347,7 +347,9 @@ const Home = () => {
                       }
                       likedByCurrentUser={g.likedByCurrentUser}
                       onLike={() => likeGathering(g.id)}
+                      isStandby={!g.linkedItinerary}
                     />
+
                   </div>
                 ))}
                 
