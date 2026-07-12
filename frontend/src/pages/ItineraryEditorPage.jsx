@@ -14,6 +14,9 @@ const ItineraryEditorPage = () => {
     const { user: currentUser } = useUser();
     const isEdit = !!id;
     const tripId = new URLSearchParams(location.search).get('tripId');
+    
+    const DRAFT_KEY = 'tripgather_itinerary_draft';
+
     const [formData, setFormData] = useState({
         title: '',
         region: '',
@@ -27,6 +30,33 @@ const ItineraryEditorPage = () => {
     const [saving, setSaving] = useState(false);
     const [stampPreview, setStampPreview] = useState(null);
     const stampInputRef = React.useRef(null);
+
+    // 마운트 시 임시 저장 데이터 확인 및 복구
+    useEffect(() => {
+        if (!isEdit) {
+            const draft = localStorage.getItem(DRAFT_KEY);
+            if (draft) {
+                try {
+                    const parsed = JSON.parse(draft);
+                    if (window.confirm("이전에 작성하던 여행 일정 임시 저장본이 있습니다. 불러오시겠습니까?")) {
+                        setFormData(parsed);
+                        if (parsed.stampImageUrl) setStampPreview(parsed.stampImageUrl);
+                    } else {
+                        localStorage.removeItem(DRAFT_KEY);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse draft", e);
+                }
+            }
+        }
+    }, [isEdit]);
+
+    // 폼 데이터 변경 시 로컬 스토리지에 자동 임시 저장
+    useEffect(() => {
+        if (!isEdit && (formData.title || formData.description || formData.region || formData.routePoints.length > 0)) {
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+        }
+    }, [formData, isEdit]);
 
     useEffect(() => {
         if (id) {
@@ -108,8 +138,28 @@ const ItineraryEditorPage = () => {
 
     const removePoint = (index) => {
         setFormData(prev => {
-            const newPoints = prev.routePoints.filter((_, i) => i !== index);
-            return { ...prev, routePoints: newPoints };
+            const filteredPoints = prev.routePoints.filter((_, i) => i !== index);
+            
+            // Day별 sequenceOrder 재조정 및 정밀화
+            const dayGroups = {};
+            filteredPoints.forEach(point => {
+                const day = point.dayNumber || 1;
+                if (!dayGroups[day]) dayGroups[day] = [];
+                dayGroups[day].push(point);
+            });
+
+            const updatedPoints = [];
+            Object.keys(dayGroups)
+                .map(Number)
+                .sort((a, b) => a - b)
+                .forEach(day => {
+                    dayGroups[day].forEach((point, idx) => {
+                        point.sequenceOrder = idx + 1;
+                        updatedPoints.push(point);
+                    });
+                });
+
+            return { ...prev, routePoints: updatedPoints };
         });
     };
 
@@ -124,6 +174,51 @@ const ItineraryEditorPage = () => {
     const addDay = () => {
         const maxDay = formData.routePoints.reduce((max, p) => Math.max(max, p.dayNumber || 1), 0);
         addPoint(maxDay + 1);
+    };
+
+    const handleDragStart = (e, index) => {
+        e.dataTransfer.setData('text/plain', index.toString());
+        e.currentTarget.style.opacity = '0.4';
+    };
+
+    const handleDragEnd = (e) => {
+        e.currentTarget.style.opacity = '1';
+    };
+
+    const handleDrop = (e, toIndex, targetDayNum) => {
+        e.preventDefault();
+        const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+        if (isNaN(fromIndex) || fromIndex === toIndex) return;
+
+        const newPoints = [...formData.routePoints];
+        const [movedItem] = newPoints.splice(fromIndex, 1);
+        
+        // 날짜가 다를 경우 dayNumber와 dayLabel 동기화
+        movedItem.dayNumber = targetDayNum;
+        movedItem.dayLabel = `Day ${targetDayNum}`;
+
+        newPoints.splice(toIndex, 0, movedItem);
+
+        // Day별 sequenceOrder 재조정
+        const dayGroups = {};
+        newPoints.forEach(point => {
+            const day = point.dayNumber || 1;
+            if (!dayGroups[day]) dayGroups[day] = [];
+            dayGroups[day].push(point);
+        });
+
+        const updatedPoints = [];
+        Object.keys(dayGroups)
+            .map(Number)
+            .sort((a, b) => a - b)
+            .forEach(day => {
+                dayGroups[day].forEach((point, index) => {
+                    point.sequenceOrder = index + 1;
+                    updatedPoints.push(point);
+                });
+            });
+
+        setFormData(prev => ({ ...prev, routePoints: updatedPoints }));
     };
 
     const handleSubmit = async (e) => {
@@ -154,6 +249,7 @@ const ItineraryEditorPage = () => {
             });
             if (response.ok) {
                 const savedData = await response.json();
+                localStorage.removeItem(DRAFT_KEY); // 성공 후 임시 저장 삭제
                 
                 // 여행(Trip)에서 진입하여 생성한 경우, 자동 연결(Link) 처리
                 if (!isEdit && tripId) {
@@ -364,27 +460,10 @@ const ItineraryEditorPage = () => {
                                                 <div 
                                                     style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}
                                                     draggable
-                                                    onDragStart={(e) => {
-                                                        e.dataTransfer.setData('text/plain', globalIndex);
-                                                        e.currentTarget.style.opacity = '0.4';
-                                                    }}
-                                                    onDragEnd={(e) => {
-                                                        e.currentTarget.style.opacity = '1';
-                                                    }}
+                                                    onDragStart={(e) => handleDragStart(e, globalIndex)}
+                                                    onDragEnd={handleDragEnd}
                                                     onDragOver={(e) => e.preventDefault()}
-                                                    onDrop={(e) => {
-                                                        e.preventDefault();
-                                                        const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                                                        const toIndex = globalIndex;
-                                                        if (fromIndex === toIndex) return;
-                                                        
-                                                        const newPoints = [...formData.routePoints];
-                                                        const [movedItem] = newPoints.splice(fromIndex, 1);
-                                                        newPoints.splice(toIndex, 0, movedItem);
-                                                        
-                                                        const updatedPoints = newPoints.map((p, i) => ({ ...p, sequenceOrder: i + 1 }));
-                                                        setFormData(prev => ({ ...prev, routePoints: updatedPoints }));
-                                                    }}
+                                                    onDrop={(e) => handleDrop(e, globalIndex, dayNum)}
                                                 >
                                                     <div style={{ position: 'relative', cursor: 'grab' }}>
                                                         <MapPin size={16} color="var(--primary-orange)" style={{ position: 'absolute', top: '13px', left: '14px' }} />
