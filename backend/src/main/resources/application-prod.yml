@@ -1,0 +1,68 @@
+# TripGather Production Profile Configuration (application-prod.yml)
+#
+# 실서비스 배포 환경에서 적용되는 전용 설정 파일입니다.
+# DB 연결 정보, S3(MinIO 호환) 자격증명 등은 보안상 환경 변수를 통해 주입받습니다.
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://tripgather-db-prod.cr4x4.ap-northeast-2.rds.amazonaws.com:5432/tripgather}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate # 프로덕션에서는 안전을 위해 DB 스키마 자동 변경을 비활성화하고 검증만 수행
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        default_batch_fetch_size: 100 # N+1 쿼리 최적화를 위한 배치 설정
+
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+          naver:
+            client-id: ${NAVER_CLIENT_ID}
+            client-secret: ${NAVER_CLIENT_SECRET}
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# JWT 프로덕션 비밀키 설정
+jwt:
+  secret: ${JWT_SECRET}
+
+# 도메인 설정 (실서버 도메인으로 매핑)
+app:
+  frontend-url: ${FRONTEND_URL:https://tripgather.com}
+  backend-url: ${BACKEND_URL:https://api.tripgather.com}
+
+# 파일 저장소 설정 (AWS S3 연동을 위해 MinIO 호환 API 설정 바인딩)
+storage:
+  type: minio
+
+minio:
+  endpoint: ${S3_ENDPOINT:https://s3.ap-northeast-2.amazonaws.com}
+  access-key: ${AWS_ACCESS_KEY_ID}
+  secret-key: ${AWS_SECRET_ACCESS_KEY}
+  bucket: ${S3_BUCKET_NAME:tripgather-prod-storage}
