@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bookmark, Award, Clock } from 'lucide-react';
+import { Bookmark, Award, Clock, Share2 } from 'lucide-react';
 import './StampBook.css';
 
 const StampItem = ({ stamp }) => {
@@ -11,21 +11,47 @@ const StampItem = ({ stamp }) => {
     return date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
+  const handleShare = async (e) => {
+    e.stopPropagation(); // 카드 뒤집히는 것 방지
+    const shareData = {
+      title: 'TripGather 디지털 스탬프',
+      text: `우리 동네 여정 플랫폼 TripGather에서 [${stamp.missionTitle}] 스탬프를 획득했습니다! 🗺️✨`,
+      url: window.location.origin
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error('Error sharing stamp:', err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+        alert('스탬프 정보가 클립보드에 복사되었습니다! SNS에 인증해보세요.');
+      } catch (err) {
+        console.error('Failed to copy to clipboard:', err);
+      }
+    }
+  };
+
   return (
     <div className="stamp-item-wrapper" onClick={() => setIsFlipped(!isFlipped)}>
       <div className={`stamp-card-3d ${isFlipped ? 'flipped' : ''}`}>
         
         {/* Front: The Official Stamp */}
-        <div className="stamp-side stamp-front-light">
+        <div className="stamp-side stamp-front-light" style={{ position: 'relative' }}>
           <div className="stamp-inner-border">
             {stamp.stampImageUrl ? (
               <img src={stamp.stampImageUrl} alt="stamp" className="stamp-graphic" />
             ) : (
               <div className="stamp-seal-default">
-                < Award size={32} />
+                <Award size={32} />
                 <span className="stamp-text-bold">VISITED</span>
               </div>
             )}
+            {/* Stamp Ink Seal Animation Effect */}
+            <div className="stamp-ink-seal" />
             <div className="stamp-location-label">{stamp.missionTitle}</div>
           </div>
         </div>
@@ -43,7 +69,12 @@ const StampItem = ({ stamp }) => {
               <span>{formatDate(stamp.completedAt)}</span>
             </div>
           </div>
-          <div className="mission-clear-badge">MISSION CLEAR</div>
+          <div>
+            <div className="mission-clear-badge" style={{ marginBottom: '6px' }}>MISSION CLEAR</div>
+            <button className="stamp-share-btn" onClick={handleShare}>
+              <Share2 size={12} /> SNS 공유
+            </button>
+          </div>
         </div>
 
       </div>

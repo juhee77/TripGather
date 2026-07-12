@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Pencil, X, MapPin, LogOut } from 'lucide-react';
 import { authFetch } from '../api/client';
 import { useNavigate } from 'react-router-dom';
+import StampBook from '../components/StampBook';
 
 const MyPage = () => {
   const navigate = useNavigate();
@@ -17,6 +18,8 @@ const MyPage = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [saving, setSaving] = useState(false);
   const fileInputRef = React.useRef(null);
+  const [stamps, setStamps] = useState([]);
+  const [stampsLoading, setStampsLoading] = useState(true);
 
   useEffect(() => {
     refetch().catch(err => console.error("Failed to refetch user in MyPage:", err));
@@ -28,6 +31,25 @@ const MyPage = () => {
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [refetch]);
+
+  useEffect(() => {
+    if (user) {
+      setStampsLoading(true);
+      authFetch('/api/stamps/me')
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to fetch stamps");
+          return res.json();
+        })
+        .then(data => {
+          setStamps(data);
+          setStampsLoading(false);
+        })
+        .catch(err => {
+          console.error("Failed to fetch stamps:", err);
+          setStampsLoading(false);
+        });
+    }
+  }, [user]);
   
 
 
@@ -204,17 +226,7 @@ const MyPage = () => {
           </div>
 
           {/* STAMP PAGE (Lower Section) */}
-          <div style={{ padding: '30px 24px', background: 'white' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#333', letterSpacing: '1px' }}>VISAS / STAMPS 🔖</h3>
-              <span style={{ fontSize: '11px', color: 'var(--text-sub)', fontWeight: 600 }}>PAGE 01 OF 01</span>
-            </div>
-
-            <div style={{ textAlign: 'center', padding: '60px 20px', border: '2px dashed #eee', borderRadius: '16px' }}>
-                <MapPin size={32} color="#eee" style={{ marginBottom: '12px' }} />
-                <p style={{ color: '#bbb', fontSize: '14px' }}>아직 스탬프가 없습니다.<br/>여행을 떠나 스탬프를 모아보세요!</p>
-              </div>
-          </div>
+          <StampBook stamps={stamps} loading={stampsLoading} />
         </div>
       </div>
 
