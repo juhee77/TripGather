@@ -60,23 +60,78 @@ const GatheringDetailPage = () => {
   const myStatus = gathering?.members?.find(m => m.user.email === currentUser?.email)?.status;
   const isMember = isHost || myStatus === MemberStatus.APPROVED;
 
-  const handleCheckin = async () => {
-    try {
-      const res = await authFetch(`/api/gatherings/${gathering.id}/checkin`, {
-        method: "POST"
-      });
-      if (res.ok) {
-        alert("현장 체크인이 완료되었습니다! 50포인트와 여권 마일리지가 적립되었습니다. ✈️");
-        loadGathering();
-      } else {
-        const errText = await res.text();
-        alert(`체크인 실패: ${errText || "모임 조건이 충족되지 않았습니다."}`);
+  const getHaversineDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371e3; // meters
+    const phi1 = lat1 * Math.PI / 180;
+    const phi2 = lat2 * Math.PI / 180;
+    const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+    const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+              Math.cos(phi1) * Math.cos(phi2) *
+              Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // meters
+  };
+
+  const handleCheckin = () => {
+    const hasLocationCoords = gathering.lat !== null && gathering.lng !== null;
+
+    const requestCheckinApi = async (userLat = null, userLng = null, force = false) => {
+      try {
+        let queryParams = [];
+        if (userLat !== null) queryParams.push(`lat=${userLat}`);
+        if (userLng !== null) queryParams.push(`lng=${userLng}`);
+        if (force) queryParams.push(`force=true`);
+        const queryStr = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+
+        const res = await authFetch(`/api/gatherings/${gathering.id}/checkin${queryStr}`, {
+          method: "POST"
+        });
+        if (res.ok) {
+          alert("현장 체크인이 완료되었습니다! 50포인트와 여권 마일리지가 적립되었습니다. ✈️");
+          loadGathering();
+        } else {
+          const errText = await res.text();
+          alert(`체크인 실패: ${errText || "모임 조건이 충족되지 않았습니다."}`);
+        }
+      } catch (err) {
+        console.error("Error checkin", err);
+        alert(`네트워크 오류가 발생했습니다: ${err.message}`);
       }
-    } catch (err) {
-      console.error("Error checkin", err);
-      alert(`네트워크 오류가 발생했습니다: ${err.message}`);
+    };
+
+    if (navigator.geolocation && hasLocationCoords) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+          const distance = getHaversineDistance(userLat, userLng, gathering.lat, gathering.lng);
+
+          if (distance <= 100.0) {
+            await requestCheckinApi(userLat, userLng, false);
+          } else {
+            const msg = `만남 장소와 거리가 너무 멉니다.\n(현재 오차 거리: ${Math.round(distance)}m)\n\n약속 장소 반경 100m 이내에 있어야 체크인이 가능합니다.\n\n데모/테스트 목적으로 강제 체크인을 진행하시겠습니까?`;
+            if (window.confirm(msg)) {
+              await requestCheckinApi(userLat, userLng, true);
+            }
+          }
+        },
+        async (error) => {
+          console.warn("GPS 획득 실패", error);
+          const msg = "GPS 신호를 획득하지 못했거나 위치 권한이 거부되었습니다.\n\n데모/테스트 목적으로 위치 검증 없이 강제 체크인을 진행하시겠습니까?";
+          if (window.confirm(msg)) {
+            await requestCheckinApi(null, null, true);
+          }
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    } else {
+      requestCheckinApi(null, null, true);
     }
   };
+
 
 
   const fetchComments = async () => {

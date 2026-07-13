@@ -260,7 +260,7 @@ public class GatheringMemberService implements GatheringMemberUseCase {
 
     @Override
     @Transactional
-    public void checkinStandbyGathering(Long gatheringId) {
+    public void checkinStandbyGathering(Long gatheringId, Double userLat, Double userLng, boolean force) {
         User user = securityService.getCurrentUser();
         Gathering gathering = getGatheringById(gatheringId);
         
@@ -279,6 +279,14 @@ public class GatheringMemberService implements GatheringMemberUseCase {
         if (alreadyCheckedIn) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이미 체크인을 완료하여 보상을 받았습니다.");
         }
+
+        // 위치 기반 100m 거리 검증 (데모 강제 우회 설정이 꺼져있을 때만 검사)
+        if (!force && userLat != null && userLng != null && gathering.getLat() != null && gathering.getLng() != null) {
+            double distance = calculateDistance(userLat, userLng, gathering.getLat(), gathering.getLng());
+            if (distance > 100.0) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "만남 장소와 거리가 너무 멉니다 (현재 오차 거리: " + (int) distance + "m). 약속 장소 반경 100m 이내에 있어야 체크인이 가능합니다.");
+            }
+        }
         
         // 보상 지급 (+50 PTS, 1 Stamp)
         pointService.addPoints(
@@ -290,4 +298,21 @@ public class GatheringMemberService implements GatheringMemberUseCase {
             "/src/assets/stamp-placeholder.png"
         );
     }
+
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        final double R = 6371e3; // 지구 반경 (미터)
+        double phi1 = Math.toRadians(lat1);
+        double phi2 = Math.toRadians(lat2);
+        double deltaPhi = Math.toRadians(lat2 - lat1);
+        double deltaLambda = Math.toRadians(lon2 - lon1);
+
+        double a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                   Math.cos(phi1) * Math.cos(phi2) *
+                   Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // 두 위경도 사이의 거리 (미터)
+    }
+
 }
+

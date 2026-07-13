@@ -145,10 +145,15 @@ public class GatheringController {
     }
 
     @PostMapping("/{id}/checkin")
-    public ResponseEntity<Void> checkinStandbyGathering(@PathVariable Long id) {
-        gatheringMemberService.checkinStandbyGathering(id);
+    public ResponseEntity<Void> checkinStandbyGathering(
+            @PathVariable Long id,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false, defaultValue = "false") boolean force) {
+        gatheringMemberService.checkinStandbyGathering(id, lat, lng, force);
         return ResponseEntity.ok().build();
     }
+
 
     private boolean checkUserHasCheckedIn(Long gatheringId, java.security.Principal principal) {
         if (principal == null) return false;

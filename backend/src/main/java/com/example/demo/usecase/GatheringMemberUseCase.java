@@ -11,6 +11,7 @@ public interface GatheringMemberUseCase {
     void inviteMember(Long gatheringId, Long userId);
     boolean isAuthorizedMember(Long gatheringId, String email);
     List<Gathering> getJoinedGatherings();
-    void checkinStandbyGathering(Long gatheringId);
+    void checkinStandbyGathering(Long gatheringId, Double userLat, Double userLng, boolean force);
 }
+
 
