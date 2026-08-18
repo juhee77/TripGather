@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.Itinerary;
+import com.example.demo.domain.User;
 import com.example.demo.exception.CustomException;
 import com.example.demo.repository.ItineraryRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -135,5 +136,36 @@ class ItineraryServiceImplTest {
         assertThat(result.getRoutePoints()).hasSize(2);
         assertThat(result.getRoutePoints().get(1).getLabel()).isEqualTo("Source P");
         assertThat(result.getRoutePoints().get(1).getSequenceOrder()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("경로 지점 체크인 완료 및 포인트 보상 지급 검증")
+    void toggleRoutePointCompletion_Success() {
+        // given
+        Long itineraryId = 1L;
+        Long pointId = 10L;
+        String email = "test@example.com";
+        User user = User.builder().id(100L).email(email).build();
+
+        com.example.demo.domain.RoutePoint point = com.example.demo.domain.RoutePoint.builder()
+                .id(pointId)
+                .label("Haeundae Beach")
+                .isCompleted(false)
+                .build();
+
+        Itinerary itinerary = Itinerary.builder()
+                .id(itineraryId)
+                .routePoints(new ArrayList<>(java.util.List.of(point)))
+                .build();
+
+        given(itineraryRepository.findById(itineraryId)).willReturn(Optional.of(itinerary));
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+
+        // when
+        com.example.demo.domain.RoutePoint result = itineraryService.toggleRoutePointCompletion(itineraryId, pointId, email);
+
+        // then
+        assertThat(result.isCompleted()).isTrue();
+        verify(pointService).addPoints(100L, 20, 0, "'Haeundae Beach' 체크인 완료");
     }
 }

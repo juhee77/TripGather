@@ -1,0 +1,119 @@
+.user-badges-container {
+  padding: 1.5rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.badges-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.badges-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.icon-badge-header {
+  color: #f59e0b;
+}
+
+.badge-count-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #fef3c7;
+  color: #d97706;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.badge-card {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.9rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease-in-out;
+}
+
+.badge-card.unlocked {
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+  border-color: #fde68a;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.12);
+}
+
+.badge-card.locked {
+  background: #f8fafc;
+  opacity: 0.65;
+  filter: grayscale(80%);
+}
+
+.badge-icon-wrapper {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  background: #f1f5f9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.badge-card.unlocked .badge-icon-wrapper {
+  background: #fef3c7;
+}
+
+.lock-overlay-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: #64748b;
+  color: white;
+  padding: 2px;
+  border-radius: 50%;
+}
+
+.badge-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.badge-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.badge-desc {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 0.2rem 0 0 0;
+  line-height: 1.2;
+}
+
+.badges-loading {
+  padding: 1rem;
+  text-align: center;
+  color: #94a3b8;
+}

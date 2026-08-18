@@ -41,9 +41,9 @@ public class GatheringServiceImpl implements GatheringUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Gathering> searchGatherings(String query, String category, String location, Boolean availableOnly) {
+    public List<Gathering> searchGatherings(String query, String category, String location, Boolean availableOnly, String sortBy) {
         String filterLocation = (location != null && !location.trim().isEmpty() && !location.equals("전체")) ? location.trim() : null;
-        return gatheringRepository.searchGatherings(query, category, filterLocation, availableOnly);
+        return gatheringRepository.searchGatherings(query, category, filterLocation, availableOnly, sortBy);
     }
 
     @Override

@@ -43,4 +43,13 @@ public class ItineraryController {
         itineraryService.deleteItinerary(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}/points/{pointId}/toggle")
+    public ResponseEntity<com.example.demo.domain.RoutePoint> toggleRoutePoint(
+            @PathVariable Long id,
+            @PathVariable Long pointId,
+            java.security.Principal principal) {
+        String email = principal != null ? principal.getName() : null;
+        return ResponseEntity.ok(itineraryService.toggleRoutePointCompletion(id, pointId, email));
+    }
 }

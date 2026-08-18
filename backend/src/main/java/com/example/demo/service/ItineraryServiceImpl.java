@@ -208,4 +208,26 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
 
         return itineraryRepository.save(target);
     }
+
+    @Override
+    @Transactional
+    public com.example.demo.domain.RoutePoint toggleRoutePointCompletion(Long itineraryId, Long pointId, String userEmail) {
+        Itinerary itinerary = getById(itineraryId);
+        com.example.demo.domain.RoutePoint point = itinerary.getRoutePoints().stream()
+                .filter(p -> p.getId().equals(pointId))
+                .findFirst()
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "경로 포인트를 찾을 수 없습니다."));
+
+        boolean nowCompleted = !point.isCompleted();
+        point.setCompleted(nowCompleted);
+
+        if (nowCompleted && userEmail != null) {
+            userRepository.findByEmail(userEmail).ifPresent(user -> {
+                pointService.addPoints(user.getId(), 20, 0, "'" + (point.getLabel() != null ? point.getLabel() : "경로 지점") + "' 체크인 완료");
+            });
+        }
+
+        itineraryRepository.save(itinerary);
+        return point;
+    }
 }

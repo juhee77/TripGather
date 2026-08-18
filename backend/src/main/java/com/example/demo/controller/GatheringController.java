@@ -49,8 +49,9 @@ public class GatheringController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) Boolean availableOnly,
+            @RequestParam(required = false, defaultValue = "LATEST") String sortBy,
             java.security.Principal principal) {
-        return ResponseEntity.ok(gatheringService.searchGatherings(query, category, location, availableOnly).stream()
+        return ResponseEntity.ok(gatheringService.searchGatherings(query, category, location, availableOnly, sortBy).stream()
                 .map(g -> {
                     boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
                     boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);

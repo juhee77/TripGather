@@ -45,4 +45,12 @@ public class RoutePoint {
     @Column(name = "is_completed")
     @Builder.Default
     private Boolean isCompleted = false;
+
+    public boolean isCompleted() {
+        return Boolean.TRUE.equals(this.isCompleted);
+    }
+
+    public void setCompleted(boolean completed) {
+        this.isCompleted = completed;
+    }
 }

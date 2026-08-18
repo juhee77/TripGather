@@ -80,4 +80,19 @@ public class PackingService {
     public void deleteItem(Long itemId) {
         packingItemRepository.deleteById(itemId);
     }
+
+    @Transactional(readOnly = true)
+    public com.example.demo.dto.PackingProgressResponse getPackingProgress(Long tripId) {
+        List<PackingItem> items = packingItemRepository.findByTripId(tripId);
+        int totalCount = items.size();
+        int checkedCount = (int) items.stream().filter(PackingItem::isChecked).count();
+        double percentage = totalCount > 0 ? (double) checkedCount / totalCount * 100.0 : 0.0;
+
+        return com.example.demo.dto.PackingProgressResponse.builder()
+                .tripId(tripId)
+                .totalCount(totalCount)
+                .checkedCount(checkedCount)
+                .progressPercentage(Math.round(percentage * 10.0) / 10.0)
+                .build();
+    }
 }

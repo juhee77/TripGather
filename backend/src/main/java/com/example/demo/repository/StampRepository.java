@@ -10,5 +10,6 @@ import java.util.List;
 public interface StampRepository extends JpaRepository<Stamp, Long> {
     List<Stamp> findByUserEmailOrderByCompletedAtDesc(String email);
     boolean existsByUserIdAndGatheringId(Long userId, Long gatheringId);
+    long countByUserId(Long userId);
 }
 

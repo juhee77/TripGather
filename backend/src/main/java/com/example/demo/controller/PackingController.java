@@ -43,4 +43,9 @@ public class PackingController {
         packingService.deleteItem(itemId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/progress")
+    public ResponseEntity<com.example.demo.dto.PackingProgressResponse> getProgress(@PathVariable Long tripId) {
+        return ResponseEntity.ok(packingService.getPackingProgress(tripId));
+    }
 }

@@ -46,6 +46,9 @@ class GatheringControllerTest {
     @MockBean
     private com.example.demo.security.oauth.OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
+    @MockBean
+    private com.example.demo.repository.StampRepository stampRepository;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -71,7 +74,7 @@ class GatheringControllerTest {
     void searchGatherings_Success() throws Exception {
         // given
         Gathering g1 = Gathering.builder().id(1L).title("Search Result").build();
-        given(gatheringService.searchGatherings(any(), any(), any(), any())).willReturn(List.of(g1));
+        given(gatheringService.searchGatherings(any(), any(), any(), any(), any())).willReturn(List.of(g1));
 
         // when & then
         mockMvc.perform(get("/api/gatherings/search")

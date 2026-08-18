@@ -39,4 +39,9 @@ public class TripReviewController {
         tripReviewService.deleteReview(reviewId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/summary")
+    public ResponseEntity<com.example.demo.dto.TripReviewSummaryResponse> getReviewSummary(@PathVariable Long tripId) {
+        return ResponseEntity.ok(tripReviewService.getReviewSummary(tripId));
+    }
 }

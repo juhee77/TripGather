@@ -161,7 +161,7 @@ class GatheringServiceImplTest {
     void searchGatherings_WithAllFilters() {
         // given
         Gathering gathering = Gathering.builder().id(10L).title("Search Result").build();
-        given(gatheringRepository.searchGatherings("쿼리", "카테고리", "인천", true)).willReturn(List.of(gathering));
+        given(gatheringRepository.searchGatherings("쿼리", "카테고리", "인천", true, "LATEST")).willReturn(List.of(gathering));
 
         // when
         List<Gathering> result = gatheringService.searchGatherings("쿼리", "카테고리", "인천", true);
@@ -175,7 +175,7 @@ class GatheringServiceImplTest {
     void searchGatherings_WithNullLocation() {
         // given
         Gathering gathering = Gathering.builder().id(10L).title("Search Result").build();
-        given(gatheringRepository.searchGatherings("쿼리", "카테고리", null, true)).willReturn(List.of(gathering));
+        given(gatheringRepository.searchGatherings("쿼리", "카테고리", null, true, "LATEST")).willReturn(List.of(gathering));
 
         // when
         List<Gathering> result = gatheringService.searchGatherings("쿼리", "카테고리", null, true);

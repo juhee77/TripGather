@@ -60,4 +60,17 @@ public class TripReviewService {
         }
         tripReviewRepository.delete(review);
     }
+
+    @Transactional(readOnly = true)
+    public com.example.demo.dto.TripReviewSummaryResponse getReviewSummary(Long tripId) {
+        List<TripReview> reviews = tripReviewRepository.findByTripIdOrderByCreatedAtDesc(tripId);
+        int totalReviews = reviews.size();
+        double avgRating = reviews.stream().mapToInt(TripReview::getRating).average().orElse(0.0);
+
+        return com.example.demo.dto.TripReviewSummaryResponse.builder()
+                .tripId(tripId)
+                .totalReviews(totalReviews)
+                .averageRating(Math.round(avgRating * 10.0) / 10.0)
+                .build();
+    }
 }

@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface PackingItemRepository extends JpaRepository<PackingItem, Long> {
     List<PackingItem> findByTripIdOrderByCategoryAscNameAsc(Long tripId);
+    List<PackingItem> findByTripId(Long tripId);
     void deleteAllByTripId(Long tripId);
 }
