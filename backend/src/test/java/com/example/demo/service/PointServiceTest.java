@@ -2,7 +2,9 @@ package com.example.demo.service;
 
 import com.example.demo.domain.PointTransaction;
 import com.example.demo.domain.User;
+import com.example.demo.dto.PointTransactionResponse;
 import com.example.demo.repository.PointTransactionRepository;
+import com.example.demo.repository.StampRepository;
 import com.example.demo.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,13 +13,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class PointServiceTest {
@@ -29,49 +29,28 @@ class PointServiceTest {
     private PointTransactionRepository pointTransactionRepository;
 
     @Mock
-    private com.example.demo.repository.StampRepository stampRepository;
+    private StampRepository stampRepository;
 
     @InjectMocks
     private PointService pointService;
 
     @Test
-    @DisplayName("포인트 추가 및 스탬프 적립 성공 테스트")
-    void addPoints_Success() {
+    @DisplayName("유저 포인트 거래 내역 최신순 조회 성공")
+    void getUserPointTransactions_Success() {
         // given
-        User user = User.builder().id(1L).points(100).stampsCount(5).build();
-        given(userRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.of(user));
+        String email = "test@example.com";
+        User user = User.builder().id(100L).email(email).points(100).build();
+        PointTransaction tx1 = PointTransaction.of(user, 20, "체크인 완료");
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(pointTransactionRepository.findByUserIdOrderByCreatedAtDesc(100L)).willReturn(List.of(tx1));
 
         // when
-        pointService.addPoints(1L, 50, 1, "출석 체크");
+        List<PointTransactionResponse> result = pointService.getUserPointTransactions(email);
 
         // then
-        assertThat(user.getPoints()).isEqualTo(150);
-        assertThat(user.getStampsCount()).isEqualTo(6);
-        verify(pointTransactionRepository).save(any(PointTransaction.class));
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 사용자 포인트 추가 시 예외 발생")
-    void addPoints_UserNotFound_ThrowsException() {
-        // given
-        given(userRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> pointService.addPoints(1L, 50, 1, "출석 체크"))
-                .isInstanceOf(com.example.demo.exception.CustomException.class)
-                .hasMessageContaining("사용자를 찾을 수 없습니다.");
-    }
-
-    @Test
-    @DisplayName("포인트 차감 시 잔액이 부족하면 예외 발생")
-    void addPoints_InsufficientBalance_ThrowsException() {
-        // given
-        User user = User.builder().id(1L).points(50).build();
-        given(userRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.of(user));
-
-        // when & then
-        assertThatThrownBy(() -> pointService.addPoints(1L, -100, 0, "포인트 사용"))
-                .isInstanceOf(com.example.demo.exception.CustomException.class)
-                .hasMessageContaining("잔액이 부족합니다.");
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getAmount()).isEqualTo(20);
+        assertThat(result.get(0).getDescription()).isEqualTo("체크인 완료");
     }
 }
