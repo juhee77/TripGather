@@ -15,6 +15,12 @@ class GatheringRepository {
     return response.json();
   }
 
+  async fetchPopular() {
+    const response = await fetch(apiUrl('/api/gatherings/popular'));
+    if (!response.ok) throw new Error('Failed to fetch popular gatherings');
+    return response.json();
+  }
+
   async search(filters = {}) {
     const params = new URLSearchParams();
     if (filters.location && filters.location !== '전체') params.append('location', filters.location);
