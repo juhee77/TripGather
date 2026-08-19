@@ -1,0 +1,115 @@
+.point-card-container {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 1.4rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  margin-top: 1.2rem;
+}
+
+.point-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.point-card-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+}
+
+.icon-gold {
+  color: #f59e0b;
+}
+
+.point-count-badge {
+  background: #fffbeb;
+  color: #d97706;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+}
+
+.point-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.point-history-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.8rem;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
+}
+
+.point-type-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.point-type-icon.earn {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.point-type-icon.use {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.point-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.point-desc {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.point-date {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 0.1rem;
+}
+
+.point-amount {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.point-amount.earn {
+  color: #059669;
+}
+
+.point-amount.use {
+  color: #dc2626;
+}
+
+.empty-history, .point-loading {
+  text-align: center;
+  color: #94a3b8;
+  padding: 1rem 0;
+  font-size: 0.88rem;
+}

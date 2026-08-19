@@ -6,6 +6,7 @@ import { authFetch } from '../api/client';
 import { useNavigate } from 'react-router-dom';
 import StampBook from '../components/StampBook';
 import UserBadges from '../components/UserBadges';
+import PointHistoryCard from '../components/PointHistoryCard';
 
 const MyPage = () => {
   const navigate = useNavigate();
@@ -233,6 +234,11 @@ const MyPage = () => {
         {/* USER BADGES & ACHIEVEMENTS */}
         <div style={{ marginTop: '24px' }}>
           <UserBadges />
+        </div>
+
+        {/* POINT TRANSACTION HISTORY */}
+        <div style={{ marginTop: '24px' }}>
+          <PointHistoryCard />
         </div>
       </div>
 
