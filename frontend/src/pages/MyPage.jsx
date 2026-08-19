@@ -5,6 +5,7 @@ import { Pencil, X, MapPin, LogOut } from 'lucide-react';
 import { authFetch } from '../api/client';
 import { useNavigate } from 'react-router-dom';
 import StampBook from '../components/StampBook';
+import UserBadges from '../components/UserBadges';
 
 const MyPage = () => {
   const navigate = useNavigate();
@@ -227,6 +228,11 @@ const MyPage = () => {
 
           {/* STAMP PAGE (Lower Section) */}
           <StampBook stamps={stamps} loading={stampsLoading} />
+        </div>
+
+        {/* USER BADGES & ACHIEVEMENTS */}
+        <div style={{ marginTop: '24px' }}>
+          <UserBadges />
         </div>
       </div>
 
