@@ -185,6 +185,21 @@ class GatheringServiceImplTest {
     }
 
     @Test
+    @DisplayName("인기 모임 TOP 5 조회 성공")
+    void getPopularGatherings_Success() {
+        // given
+        Gathering g1 = Gathering.builder().id(1L).title("Popular 1").likeCount(10).build();
+        given(gatheringRepository.findTop5ByDeletedFalseOrderByLikeCountDescCreatedAtDesc()).willReturn(List.of(g1));
+
+        // when
+        List<Gathering> result = gatheringService.getPopularGatherings();
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("Popular 1");
+    }
+
+    @Test
     @DisplayName("모임 생성 시 연동된 일정이 있는 경우 매핑 처리")
     void createGathering_WithLinkedItinerary() {
         // given

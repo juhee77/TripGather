@@ -41,6 +41,12 @@ public class GatheringServiceImpl implements GatheringUseCase {
 
     @Override
     @Transactional(readOnly = true)
+    public List<Gathering> getPopularGatherings() {
+        return gatheringRepository.findTop5ByDeletedFalseOrderByLikeCountDescCreatedAtDesc();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<Gathering> searchGatherings(String query, String category, String location, Boolean availableOnly, String sortBy) {
         String filterLocation = (location != null && !location.trim().isEmpty() && !location.equals("전체")) ? location.trim() : null;
         return gatheringRepository.searchGatherings(query, category, filterLocation, availableOnly, sortBy);

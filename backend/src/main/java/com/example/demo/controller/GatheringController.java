@@ -35,6 +35,17 @@ public class GatheringController {
                 .collect(Collectors.toList()));
     }
 
+    @GetMapping("/popular")
+    public ResponseEntity<List<GatheringResponse>> getPopularGatherings(java.security.Principal principal) {
+        return ResponseEntity.ok(gatheringService.getPopularGatherings().stream()
+                .map(g -> {
+                    boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
+                    boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);
+                    return GatheringResponse.from(g, isLiked, hasCheckedIn);
+                })
+                .collect(Collectors.toList()));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<GatheringResponse> getGathering(@PathVariable Long id, java.security.Principal principal) {
         Gathering gathering = gatheringService.getGathering(id);
