@@ -21,6 +21,12 @@ class GatheringRepository {
     return response.json();
   }
 
+  async fetchUserLiked() {
+    const response = await authFetch('/api/gatherings/me/liked');
+    if (!response.ok) throw new Error('Failed to fetch user liked gatherings');
+    return response.json();
+  }
+
   async search(filters = {}) {
     const params = new URLSearchParams();
     if (filters.location && filters.location !== '전체') params.append('location', filters.location);
