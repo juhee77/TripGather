@@ -200,6 +200,22 @@ class GatheringServiceImplTest {
     }
 
     @Test
+    @DisplayName("내가 찜한(좋아요) 모임 목록 조회 성공")
+    void getUserLikedGatherings_Success() {
+        // given
+        String email = "test@example.com";
+        Gathering g1 = Gathering.builder().id(100L).title("Liked Gathering").build();
+        given(gatheringRepository.findLikedGatheringsByEmail(email)).willReturn(List.of(g1));
+
+        // when
+        List<Gathering> result = gatheringService.getUserLikedGatherings(email);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("Liked Gathering");
+    }
+
+    @Test
     @DisplayName("모임 생성 시 연동된 일정이 있는 경우 매핑 처리")
     void createGathering_WithLinkedItinerary() {
         // given

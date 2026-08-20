@@ -6,6 +6,7 @@ import java.util.List;
 public interface GatheringUseCase {
     List<Gathering> getAllGatherings(String location);
     List<Gathering> getPopularGatherings();
+    List<Gathering> getUserLikedGatherings(String email);
     default List<Gathering> searchGatherings(String query, String category, String location, Boolean availableOnly) {
         return searchGatherings(query, category, location, availableOnly, "LATEST");
     }
