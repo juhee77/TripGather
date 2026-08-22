@@ -22,10 +22,25 @@ export const useUserViewModel = () => {
     }
   };
 
+  const withdrawAccount = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await UserRepository.withdrawAccount();
+      if (setUser) setUser(null);
+    } catch (err) {
+      setError(err.message || 'Failed to withdraw account');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     user,
     loading,
     error,
-    updateProfile
+    updateProfile,
+    withdrawAccount
   };
 };

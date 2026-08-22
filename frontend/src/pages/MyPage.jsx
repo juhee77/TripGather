@@ -224,6 +224,23 @@ const MyPage = () => {
               >
                 <LogOut size={14} /> EXIT
               </button>
+              <button 
+                onClick={async () => {
+                  if (window.confirm("정말로 TripGather 계정을 탈퇴하시겠습니까?\n모든 데이터가 비활성화 및 익명화됩니다.")) {
+                    try {
+                      const { withdrawAccount } = await import('../api/user');
+                      await withdrawAccount();
+                      alert("회원 탈퇴가 완료되었습니다.");
+                      logout();
+                    } catch (e) {
+                      alert("탈퇴 처리 중 오류가 발생했습니다.");
+                    }
+                  }
+                }}
+                style={{ padding: '8px 16px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: 'var(--radius-full)', border: 'none', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#ef4444' }}
+              >
+                WITHDRAW
+              </button>
             </div>
           </div>
 
