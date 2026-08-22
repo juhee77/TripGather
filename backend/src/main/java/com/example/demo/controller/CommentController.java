@@ -22,6 +22,7 @@ public class CommentController {
     private final CommentRepository commentRepository;
     private final com.example.demo.usecase.GatheringUseCase gatheringService;
     private final com.example.demo.usecase.GatheringMemberUseCase gatheringMemberService;
+    private final com.example.demo.service.ProfanityFilterService profanityFilterService;
 
     @GetMapping
     public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long gatheringId, Principal principal) {
@@ -44,6 +45,8 @@ public class CommentController {
     public ResponseEntity<CommentResponse> addComment(@PathVariable Long gatheringId, @RequestBody com.example.demo.dto.CommentRequest request, Principal principal) {
         if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
         
+        profanityFilterService.validateText(request.getContent());
+
         com.example.demo.domain.Gathering gathering = gatheringService.getGathering(gatheringId);
         
         // Check privacy: if not public, only members can comment

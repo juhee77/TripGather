@@ -45,6 +45,8 @@ class CommentControllerTest {
     private com.example.demo.usecase.GatheringUseCase gatheringService;
     @Mock
     private com.example.demo.usecase.GatheringMemberUseCase gatheringMemberService;
+    @Mock
+    private com.example.demo.service.ProfanityFilterService profanityFilterService;
 
     @InjectMocks
     private CommentController commentController;
