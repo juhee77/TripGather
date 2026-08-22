@@ -23,9 +23,11 @@ public class TripReviewService {
     private final TripRepository tripRepository;
     private final SecurityService securityService;
     private final PointService pointService;
+    private final ProfanityFilterService profanityFilterService;
 
     @Transactional
     public TripReviewResponse createReview(Long tripId, String content, int rating, String category, String imageUrls) {
+        profanityFilterService.validateText(content);
         User author = securityService.getCurrentUser();
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다."));

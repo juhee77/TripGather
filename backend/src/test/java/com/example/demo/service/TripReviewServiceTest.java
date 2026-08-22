@@ -23,6 +23,14 @@ class TripReviewServiceTest {
 
     @Mock
     private TripReviewRepository tripReviewRepository;
+    @Mock
+    private com.example.demo.repository.TripRepository tripRepository;
+    @Mock
+    private com.example.demo.security.SecurityService securityService;
+    @Mock
+    private PointService pointService;
+    @Mock
+    private ProfanityFilterService profanityFilterService;
 
     @InjectMocks
     private TripReviewService tripReviewService;
@@ -47,5 +55,19 @@ class TripReviewServiceTest {
         assertThat(summary).isNotNull();
         assertThat(summary.getTotalReviews()).isEqualTo(2);
         assertThat(summary.getAverageRating()).isEqualTo(4.5);
+    }
+
+    @Test
+    @DisplayName("비속어 포함 여행 후기 작성 시 예외 발생")
+    void createReview_ProfanityContent_ThrowsException() {
+        // given
+        String profanityContent = "진짜 개새끼 최악의 숙소";
+        org.mockito.BDDMockito.willThrow(new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText(profanityContent);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.createReview(1L, profanityContent, 1, "숙소", null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
     }
 }
