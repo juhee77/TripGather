@@ -9,4 +9,5 @@ public interface UserUseCase {
     List<User> getAllUsers();
     User updateProfile(Long id, User update);
     User createUser(User user);
+    void deactivateUser(Long id);
 }

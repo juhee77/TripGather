@@ -190,4 +190,19 @@ class UserServiceImplTest {
         
         SecurityContextHolder.clearContext();
     }
+
+    @Test
+    @DisplayName("유저 탈퇴/비활성화 처리 성공")
+    void deactivateUser_Success() {
+        // given
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+
+        // when
+        userService.deactivateUser(1L);
+
+        // then
+        assertThat(testUser.getBio()).isEqualTo("탈퇴한 회원입니다.");
+        assertThat(testUser.getProfileImageUrl()).isEqualTo("/default-profile.png");
+        verify(userRepository).save(testUser);
+    }
 }

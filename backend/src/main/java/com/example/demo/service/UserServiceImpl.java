@@ -63,4 +63,13 @@ public class UserServiceImpl implements UserUseCase {
     public User createUser(User user) {
         return userRepository.save(user);
     }
+
+    @Override
+    @Transactional
+    public void deactivateUser(Long id) {
+        User user = getById(id);
+        user.setBio("탈퇴한 회원입니다.");
+        user.setProfileImageUrl("/default-profile.png");
+        userRepository.save(user);
+    }
 }
