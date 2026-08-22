@@ -106,6 +106,30 @@ class GatheringMemberServiceTest {
     }
 
     @Test
+    @DisplayName("정원이 가득 찬 상태에서 멤버 승인 시 예외 발생")
+    void approveMember_WhenCapacityFull_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest1 = User.builder().id(2L).email("guest1@test.com").build();
+        User guest2 = User.builder().id(3L).email("guest2@test.com").build();
+
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(1).members(new ArrayList<>()).build();
+        GatheringMember member1 = GatheringMember.builder().gathering(gathering).user(guest1).status(MemberStatus.APPROVED).build();
+        GatheringMember member2 = GatheringMember.builder().gathering(gathering).user(guest2).status(MemberStatus.PENDING).build();
+        gathering.getMembers().add(member1);
+        gathering.getMembers().add(member2);
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 3L)).willReturn(Optional.of(member2));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.approveMember(10L, 3L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
     @DisplayName("가입 신청 목록 조회 성공")
     void getJoinedGatherings_Success() {
         // given

@@ -92,14 +92,19 @@ public class GatheringMemberService implements GatheringMemberUseCase {
             throw new CustomException(ErrorCode.SELF_ACTION_NOT_ALLOWED, "호스트 본인을 승인/거절할 수 없습니다.");
         }
 
-        member.setStatus(MemberStatus.APPROVED);
-        
         Gathering gathering = member.getGathering();
         int approvedCount = (int) gathering.getMembers().stream()
                 .filter(m -> m.getStatus() == MemberStatus.APPROVED).count();
-        gathering.setCurrentJoining(approvedCount);
 
         if (approvedCount >= gathering.getMaxJoining()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 정원이 이미 가득 차서 승인할 수 없습니다.");
+        }
+
+        member.setStatus(MemberStatus.APPROVED);
+        int newApprovedCount = approvedCount + 1;
+        gathering.setCurrentJoining(newApprovedCount);
+
+        if (newApprovedCount >= gathering.getMaxJoining()) {
             gathering.setStatus(GatheringStatus.CLOSED);
         }
 
