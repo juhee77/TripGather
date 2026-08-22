@@ -49,4 +49,15 @@ public class UserController {
     public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @RequestBody com.example.demo.dto.UserRequest request) {
         return ResponseEntity.ok(UserResponse.from(userService.updateProfile(id, request.toEntity())));
     }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withdrawMyProfile() {
+        try {
+            User currentUser = userService.getCurrentUser();
+            userService.deactivateUser(currentUser.getId());
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(401).build();
+        }
+    }
 }

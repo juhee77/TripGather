@@ -107,4 +107,18 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("New Name"));
     }
+
+    @Test
+    @WithMockUser
+    @DisplayName("회원 탈퇴 요청 성공")
+    void withdrawMyProfile_Success() throws Exception {
+        // given
+        User user = User.builder().id(1L).email("test@example.com").build();
+        given(userService.getCurrentUser()).willReturn(user);
+
+        // when & then
+        mockMvc.perform(delete("/api/users/me")
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+    }
 }
