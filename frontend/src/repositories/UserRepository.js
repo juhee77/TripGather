@@ -22,6 +22,11 @@ const UserRepository = {
   updateProfile: async (id, updateData) => {
     const response = await axios.patch(`${API_BASE_URL}/${id}`, updateData);
     return response.data;
+  },
+
+  withdrawAccount: async () => {
+    const response = await axios.delete(`${API_BASE_URL}/me`);
+    return response.data;
   }
 };
 
