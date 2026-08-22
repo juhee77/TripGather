@@ -38,8 +38,10 @@ public class GatheringRepositoryCustomImpl implements GatheringRepositoryCustom 
         }
 
         com.querydsl.core.types.OrderSpecifier<?> orderSpecifier = gathering.createdAt.desc();
-        if ("LIKES".equalsIgnoreCase(sortBy)) {
+        if ("LIKES".equalsIgnoreCase(sortBy) || "POPULAR".equalsIgnoreCase(sortBy)) {
             orderSpecifier = gathering.likeCount.desc();
+        } else if ("MEMBERS".equalsIgnoreCase(sortBy)) {
+            orderSpecifier = gathering.currentJoining.desc();
         }
 
         return queryFactory.selectFrom(gathering)
