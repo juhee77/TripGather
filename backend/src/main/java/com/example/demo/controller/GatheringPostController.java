@@ -30,6 +30,7 @@ public class GatheringPostController {
     private final com.example.demo.usecase.GatheringUseCase gatheringService;
     private final com.example.demo.usecase.GatheringMemberUseCase gatheringMemberService;
     private final UserRepository userRepository;
+    private final com.example.demo.service.ProfanityFilterService profanityFilterService;
 
     @GetMapping("/{gatheringId}/posts")
     public ResponseEntity<List<PostResponse>> getPosts(@PathVariable Long gatheringId, Principal principal) {
@@ -60,6 +61,9 @@ public class GatheringPostController {
             Principal principal) {
         
         if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+        
+        profanityFilterService.validateText(request.getContent());
+
         if (!gatheringMemberService.isAuthorizedMember(gatheringId, principal.getName())) {
             throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "승인된 크루원만 접근 가능합니다.");
         }
@@ -111,7 +115,7 @@ public class GatheringPostController {
                     .content(post.getContent())
                     .imageUrl(post.getImageUrl())
                     .isPublic(post.isPublic())
-                    .createdAt(post.getCreatedAt().toString())
+                    .createdAt(post.getCreatedAt() != null ? post.getCreatedAt().toString() : "")
                     .build();
         }
     }
