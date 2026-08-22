@@ -29,6 +29,9 @@ class DirectMessageServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ProfanityFilterService profanityFilterService;
+
     @InjectMocks
     private DirectMessageServiceImpl dmService;
 
@@ -136,5 +139,18 @@ class DirectMessageServiceImplTest {
 
         // then
         assertThat(partners).hasSize(2).contains(partner1, partner2);
+    }
+
+    @Test
+    @DisplayName("DM 메시지 내 비속어 포함 시 예외 발생")
+    void sendDM_ProfanityContent_ThrowsException() {
+        // given
+        String content = "씨발 안녕";
+        org.mockito.BDDMockito.willThrow(new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText(content);
+
+        // when & then
+        assertThatThrownBy(() -> dmService.sendDM("sender@example.com", "receiver@example.com", content))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
     }
 }

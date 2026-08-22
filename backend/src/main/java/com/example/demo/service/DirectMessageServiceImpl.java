@@ -20,10 +20,12 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
 
     private final DirectMessageRepository dmRepository;
     private final UserRepository userRepository;
+    private final ProfanityFilterService profanityFilterService;
 
     @Override
     @Transactional
     public DMResponse sendDM(String senderEmail, String receiverEmail, String content) {
+        profanityFilterService.validateText(content);
         User sender = userRepository.findByEmail(senderEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         User receiver = userRepository.findByEmail(receiverEmail)
