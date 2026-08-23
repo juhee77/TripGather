@@ -19,10 +19,12 @@ public class PointController {
     private final PointService pointService;
 
     @GetMapping("/transactions")
-    public ResponseEntity<List<PointTransactionResponse>> getUserPointTransactions(Principal principal) {
+    public ResponseEntity<List<PointTransactionResponse>> getUserPointTransactions(
+            Principal principal,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String type) {
         if (principal == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(pointService.getUserPointTransactions(principal.getName()));
+        return ResponseEntity.ok(pointService.getUserPointTransactions(principal.getName(), type));
     }
 }

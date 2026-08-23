@@ -20,6 +20,7 @@ public class PackingService {
 
     private final PackingItemRepository packingItemRepository;
     private final TripRepository tripRepository;
+    private final ProfanityFilterService profanityFilterService;
 
     private static final Map<String, List<String[]>> DEFAULT_ITEMS = Map.of(
             "필수", List.of(
@@ -62,9 +63,14 @@ public class PackingService {
 
     @Transactional
     public PackingItemResponse addItem(Long tripId, String name, String category) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "준비물 항목명을 입력해주세요.");
+        }
+        profanityFilterService.validateText(name);
+
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다."));
-        PackingItem item = PackingItem.of(trip, name, category != null ? category : "기타");
+        PackingItem item = PackingItem.of(trip, name.trim(), category != null ? category.trim() : "기타");
         return PackingItemResponse.from(packingItemRepository.save(item));
     }
 

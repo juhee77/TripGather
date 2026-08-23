@@ -17,6 +17,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class TripReviewServiceTest {
@@ -69,5 +70,38 @@ class TripReviewServiceTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                 tripReviewService.createReview(1L, profanityContent, 1, "숙소", null))
                 .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 평점(0점 또는 6점)으로 여행 후기 작성 시 예외 발생")
+    void createReview_InvalidRating_ThrowsException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.createReview(1L, "좋은 여행", 6, "관광지", null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("평점은 1점부터 5점 사이여야 합니다.");
+    }
+
+    @Test
+    @DisplayName("카테고리 '전체' 지정 시 전체 리뷰 목록 반환")
+    void getReviews_CategoryAll_ReturnsAllReviews() {
+        // given
+        Long tripId = 1L;
+        given(tripReviewRepository.findByTripIdOrderByCreatedAtDesc(tripId)).willReturn(java.util.List.of());
+
+        // when
+        java.util.List<com.example.demo.dto.TripReviewResponse> reviews = tripReviewService.getReviews(tripId, "전체");
+
+        // then
+        assertThat(reviews).isEmpty();
+        verify(tripReviewRepository).findByTripIdOrderByCreatedAtDesc(tripId);
+    }
+
+    @Test
+    @DisplayName("공백 내용으로 여행 후기 작성 시 예외 발생")
+    void createReview_EmptyContent_ThrowsException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.createReview(1L, "   ", 5, "숙소", null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("리뷰 내용을 입력해주세요.");
     }
 }

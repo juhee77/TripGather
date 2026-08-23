@@ -25,6 +25,13 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
     @Override
     @Transactional
     public DMResponse sendDM(String senderEmail, String receiverEmail, String content) {
+        if (senderEmail != null && senderEmail.equals(receiverEmail)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신에게는 메시지를 발송할 수 없습니다.");
+        }
+        if (content == null || content.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "메시지 내용을 입력해주세요.");
+        }
+
         profanityFilterService.validateText(content);
         User sender = userRepository.findByEmail(senderEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));

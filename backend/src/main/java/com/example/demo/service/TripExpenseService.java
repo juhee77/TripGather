@@ -28,9 +28,17 @@ public class TripExpenseService {
     private final TripExpenseRepository tripExpenseRepository;
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
+    private final ProfanityFilterService profanityFilterService;
 
     @Transactional
     public TripExpenseResponse addExpense(String userEmail, TripExpenseRequest request) {
+        if (request.getTitle() != null) {
+            profanityFilterService.validateText(request.getTitle());
+        }
+        if (request.getMemo() != null) {
+            profanityFilterService.validateText(request.getMemo());
+        }
+
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userEmail));
 
@@ -51,22 +59,24 @@ public class TripExpenseService {
         return TripExpenseResponse.from(saved);
     }
 
+    @Transactional
+    public void deleteExpense(Long expenseId, String userEmail) {
+        TripExpense expense = tripExpenseRepository.findById(expenseId)
+                .orElseThrow(() -> new com.example.demo.exception.CustomException(
+                        com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "지출 내역을 찾을 수 없습니다: " + expenseId));
+
+        if (!expense.getPayer().getEmail().equals(userEmail)) {
+            throw new com.example.demo.exception.CustomException(
+                    com.example.demo.exception.ErrorCode.FORBIDDEN_ACTION, "지출 등록자만 삭제할 수 있습니다.");
+        }
+
+        tripExpenseRepository.delete(expense);
+    }
+
     public List<TripExpenseResponse> getExpensesByTrip(Long tripId) {
         return tripExpenseRepository.findByTripIdOrderByExpenseDateDesc(tripId).stream()
                 .map(TripExpenseResponse::from)
                 .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public void deleteExpense(Long expenseId, String userEmail) {
-        TripExpense expense = tripExpenseRepository.findById(expenseId)
-                .orElseThrow(() -> new IllegalArgumentException("지출 내역을 찾을 수 없습니다: " + expenseId));
-
-        if (!expense.getPayer().getEmail().equals(userEmail)) {
-            throw new IllegalArgumentException("지출 등록자만 삭제할 수 있습니다.");
-        }
-
-        tripExpenseRepository.delete(expense);
     }
 
     public TripSettlementResponse calculateSettlement(Long tripId, int memberCount) {
@@ -80,7 +90,7 @@ public class TripExpenseService {
                 .map(TripExpense::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal perPersonAmount = totalAmount.divide(BigDecimal.valueOf(memberCount), 2, RoundingMode.HALF_UP);
+        BigDecimal perPersonAmount = expenses.isEmpty() ? BigDecimal.ZERO : totalAmount.divide(BigDecimal.valueOf(memberCount), 2, RoundingMode.HALF_UP);
 
         Map<User, BigDecimal> paidMap = new HashMap<>();
         for (TripExpense expense : expenses) {

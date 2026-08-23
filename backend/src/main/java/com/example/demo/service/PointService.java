@@ -53,10 +53,24 @@ public class PointService {
 
     @Transactional(readOnly = true)
     public java.util.List<com.example.demo.dto.PointTransactionResponse> getUserPointTransactions(String userEmail) {
+        return getUserPointTransactions(userEmail, null);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<com.example.demo.dto.PointTransactionResponse> getUserPointTransactions(String userEmail, String type) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
-        return pointTransactionRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).stream()
+        java.util.List<PointTransaction> transactions;
+        if ("EARN".equalsIgnoreCase(type)) {
+            transactions = pointTransactionRepository.findByUserIdAndTransactionTypeOrderByCreatedAtDesc(user.getId(), "EARN");
+        } else if ("USE".equalsIgnoreCase(type)) {
+            transactions = pointTransactionRepository.findByUserIdAndTransactionTypeOrderByCreatedAtDesc(user.getId(), "USE");
+        } else {
+            transactions = pointTransactionRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        }
+
+        return transactions.stream()
                 .map(com.example.demo.dto.PointTransactionResponse::from)
                 .collect(java.util.stream.Collectors.toList());
     }

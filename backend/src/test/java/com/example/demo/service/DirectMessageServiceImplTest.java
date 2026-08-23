@@ -153,4 +153,20 @@ class DirectMessageServiceImplTest {
         assertThatThrownBy(() -> dmService.sendDM("sender@example.com", "receiver@example.com", content))
                 .isInstanceOf(com.example.demo.exception.CustomException.class);
     }
+
+    @Test
+    @DisplayName("자기 자신에게 DM 전송 시 예외 발생")
+    void sendDM_SelfDM_ThrowsException() {
+        assertThatThrownBy(() -> dmService.sendDM("same@example.com", "same@example.com", "hello me"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("자기 자신에게는 메시지를 발송할 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("공백 내용으로 DM 전송 시 예외 발생")
+    void sendDM_EmptyContent_ThrowsException() {
+        assertThatThrownBy(() -> dmService.sendDM("sender@example.com", "receiver@example.com", "   "))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("메시지 내용을 입력해주세요.");
+    }
 }

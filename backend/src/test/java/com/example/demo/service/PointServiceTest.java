@@ -53,4 +53,25 @@ class PointServiceTest {
         assertThat(result.get(0).getAmount()).isEqualTo(20);
         assertThat(result.get(0).getDescription()).isEqualTo("체크인 완료");
     }
+
+    @Test
+    @DisplayName("유저 포인트 거래 내역 유형(EARN/USE) 동적 필터링 조회 성공")
+    void getUserPointTransactions_WithTypeFilter_Success() {
+        // given
+        String email = "test@example.com";
+        User user = User.builder().id(100L).email(email).points(100).build();
+        PointTransaction txEarn = PointTransaction.of(user, 50, "스탠바이 체크인");
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(pointTransactionRepository.findByUserIdAndTransactionTypeOrderByCreatedAtDesc(100L, "EARN"))
+                .willReturn(List.of(txEarn));
+
+        // when
+        List<PointTransactionResponse> result = pointService.getUserPointTransactions(email, "EARN");
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getAmount()).isEqualTo(50);
+        assertThat(result.get(0).getTransactionType()).isEqualTo("EARN");
+    }
 }

@@ -37,6 +37,9 @@ class TripExpenseServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ProfanityFilterService profanityFilterService;
+
     @InjectMocks
     private TripExpenseService tripExpenseService;
 
@@ -98,5 +101,76 @@ class TripExpenseServiceTest {
         assertThat(response.getTotalAmount()).isEqualByComparingTo(new BigDecimal("90000"));
         assertThat(response.getPerPersonAmount()).isEqualByComparingTo(new BigDecimal("30000"));
         assertThat(response.getPayerSummaries()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("지출 내역이 비어 있을 때 정산 결과 0원 반환")
+    void calculateSettlement_EmptyExpenses_ReturnsZeroSettlement() {
+        // given
+        Long tripId = 10L;
+        given(tripExpenseRepository.findByTripIdOrderByExpenseDateDesc(tripId)).willReturn(List.of());
+
+        // when
+        TripSettlementResponse response = tripExpenseService.calculateSettlement(tripId, 2);
+
+        // then
+        assertThat(response.getTotalAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(response.getPerPersonAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(response.getPayerSummaries()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("지출 내역 등록 시 항목명에 비속어 포함 시 예외 발생")
+    void addExpense_ProfanityTitle_ThrowsException() {
+        // given
+        String email = "test@example.com";
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .tripId(10L)
+                .title("개새끼 식당 식사")
+                .amount(new BigDecimal("50000"))
+                .build();
+
+        org.mockito.BDDMockito.willThrow(new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText("개새끼 식당 식사");
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense(email, request))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("지출 내역 삭제 성공 - 작성자 본인")
+    void deleteExpense_Success() {
+        // given
+        Long expenseId = 100L;
+        String email = "owner@test.com";
+        User user = User.builder().id(1L).email(email).build();
+        TripExpense expense = TripExpense.builder().id(expenseId).payer(user).build();
+
+        given(tripExpenseRepository.findById(expenseId)).willReturn(Optional.of(expense));
+
+        // when
+        tripExpenseService.deleteExpense(expenseId, email);
+
+        // then
+        verify(tripExpenseRepository).delete(expense);
+    }
+
+    @Test
+    @DisplayName("지출 내역 삭제 실패 - 타인 작성 지출 삭제 시 예외 발생")
+    void deleteExpense_AccessDenied_ThrowsException() {
+        // given
+        Long expenseId = 100L;
+        String ownerEmail = "owner@test.com";
+        String attackerEmail = "attacker@test.com";
+        User user = User.builder().id(1L).email(ownerEmail).build();
+        TripExpense expense = TripExpense.builder().id(expenseId).payer(user).build();
+
+        given(tripExpenseRepository.findById(expenseId)).willReturn(Optional.of(expense));
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripExpenseService.deleteExpense(expenseId, attackerEmail))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
     }
 }
