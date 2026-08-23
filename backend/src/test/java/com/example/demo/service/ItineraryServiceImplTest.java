@@ -32,6 +32,9 @@ class ItineraryServiceImplTest {
     @Mock
     private PointService pointService;
 
+    @Mock
+    private ProfanityFilterService profanityFilterService;
+
     @InjectMocks
     private ItineraryServiceImpl itineraryService;
 
@@ -54,6 +57,35 @@ class ItineraryServiceImplTest {
     }
 
     @Test
+    @DisplayName("공개 여정 목록 조회 - 소프트 삭제되지 않은 항목만 반환")
+    void getPublicItineraries_Success() {
+        // given
+        Itinerary i1 = Itinerary.builder().id(1L).publicStatus(true).build();
+        given(itineraryRepository.findByPublicStatusTrueAndDeletedFalseOrderByCreatedAtDesc()).willReturn(java.util.List.of(i1));
+
+        // when
+        java.util.List<Itinerary> list = itineraryService.getPublicItineraries();
+
+        // then
+        assertThat(list).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("유저 소유 여정 목록 조회 - 소프트 삭제되지 않은 항목만 반환")
+    void getUserJourneys_Success() {
+        // given
+        String email = "owner@test.com";
+        Itinerary i1 = Itinerary.builder().id(2L).ownerEmail(email).build();
+        given(itineraryRepository.findByOwnerEmailAndDeletedFalseOrderByCreatedAtDesc(email)).willReturn(java.util.List.of(i1));
+
+        // when
+        java.util.List<Itinerary> list = itineraryService.getUserJourneys(email);
+
+        // then
+        assertThat(list).hasSize(1);
+    }
+
+    @Test
     @DisplayName("일정 복제 성공")
     void cloneItinerary_Success() {
         // given
@@ -62,6 +94,7 @@ class ItineraryServiceImplTest {
         Itinerary original = Itinerary.builder()
                 .id(originalId)
                 .title("Original")
+                .ownerEmail("originalOwner@ex.com")
                 .routePoints(new ArrayList<>(java.util.List.of(rp)))
                 .build();
 
@@ -76,6 +109,41 @@ class ItineraryServiceImplTest {
         assertThat(cloned.getOwnerEmail()).isEqualTo("newOwner@ex.com");
         assertThat(cloned.getTitle()).contains("(Copy)");
         assertThat(cloned.getRoutePoints()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("소프트 삭제된 원본 여정 복제 시 예외 발생")
+    void cloneItinerary_DeletedOriginal_ThrowsException() {
+        // given
+        Long originalId = 1L;
+        Itinerary original = Itinerary.builder().id(originalId).title("Deleted Trip").build();
+        original.setDeleted(true);
+
+        given(itineraryRepository.findById(originalId)).willReturn(Optional.of(original));
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.cloneItinerary(originalId, "newOwner@ex.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("본인의 여정 복제 시도 시 예외 발생")
+    void cloneItinerary_OwnItinerary_ThrowsException() {
+        // given
+        Long originalId = 1L;
+        String ownerEmail = "me@ex.com";
+        Itinerary original = Itinerary.builder()
+                .id(originalId)
+                .title("Original")
+                .ownerEmail(ownerEmail)
+                .build();
+
+        given(itineraryRepository.findById(originalId)).willReturn(Optional.of(original));
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.cloneItinerary(originalId, ownerEmail))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("본인의 여정은 복제할 수 없습니다.");
     }
 
     @Test
@@ -167,5 +235,47 @@ class ItineraryServiceImplTest {
         // then
         assertThat(result.isCompleted()).isTrue();
         verify(pointService).addPoints(100L, 20, 0, "'Haeundae Beach' 체크인 완료");
+    }
+
+    @Test
+    @DisplayName("여정 생성 시 제목에 비속어 포함 시 예외 발생")
+    void createItinerary_ProfanityTitle_ThrowsException() {
+        // given
+        Itinerary itinerary = Itinerary.builder().title("개새끼 부산 여행").build();
+        org.mockito.BDDMockito.willThrow(new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText("개새끼 부산 여행");
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("경로 포인트 체크인 시 라벨에 비속어 포함 시 예외 발생")
+    void toggleRoutePointCompletion_ProfanityLabel_ThrowsException() {
+        // given
+        Long itineraryId = 1L;
+        Long pointId = 10L;
+        String profanityLabel = "씨발해변";
+
+        com.example.demo.domain.RoutePoint point = com.example.demo.domain.RoutePoint.builder()
+                .id(pointId)
+                .label(profanityLabel)
+                .isCompleted(false)
+                .build();
+
+        Itinerary itinerary = Itinerary.builder()
+                .id(itineraryId)
+                .routePoints(new ArrayList<>(java.util.List.of(point)))
+                .build();
+
+        given(itineraryRepository.findById(itineraryId)).willReturn(Optional.of(itinerary));
+        org.mockito.BDDMockito.willThrow(new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText(profanityLabel);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                itineraryService.toggleRoutePointCompletion(itineraryId, pointId, "user@test.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
     }
 }

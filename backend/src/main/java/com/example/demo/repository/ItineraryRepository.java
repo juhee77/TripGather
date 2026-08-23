@@ -8,9 +8,9 @@ import java.util.List;
 
 @Repository
 public interface ItineraryRepository extends JpaRepository<Itinerary, Long> {
-    List<Itinerary> findAllByOrderByCreatedAtDesc();
-    List<Itinerary> findByPublicStatusTrueOrderByCreatedAtDesc();
-    List<Itinerary> findByOwnerEmailOrderByCreatedAtDesc(String ownerEmail);
+    List<Itinerary> findByDeletedFalseOrderByCreatedAtDesc();
+    List<Itinerary> findByPublicStatusTrueAndDeletedFalseOrderByCreatedAtDesc();
+    List<Itinerary> findByOwnerEmailAndDeletedFalseOrderByCreatedAtDesc(String ownerEmail);
 
     @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
     @org.springframework.data.jpa.repository.Query("UPDATE Itinerary i SET i.deleted = true WHERE i.id = :id")

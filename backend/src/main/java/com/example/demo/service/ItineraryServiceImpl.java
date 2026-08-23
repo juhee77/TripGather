@@ -18,21 +18,22 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     private final ItineraryRepository itineraryRepository;
     private final com.example.demo.repository.UserRepository userRepository;
     private final PointService pointService;
+    private final ProfanityFilterService profanityFilterService;
 
     @Transactional(readOnly = true)
     public List<Itinerary> getAllItineraries() {
-        return itineraryRepository.findAllByOrderByCreatedAtDesc();
+        return itineraryRepository.findByDeletedFalseOrderByCreatedAtDesc();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Itinerary> getPublicItineraries() {
-        return itineraryRepository.findByPublicStatusTrueOrderByCreatedAtDesc();
+        return itineraryRepository.findByPublicStatusTrueAndDeletedFalseOrderByCreatedAtDesc();
     }
 
     @Transactional(readOnly = true)
     public List<Itinerary> getUserJourneys(String email) {
-        return itineraryRepository.findByOwnerEmailOrderByCreatedAtDesc(email);
+        return itineraryRepository.findByOwnerEmailAndDeletedFalseOrderByCreatedAtDesc(email);
     }
 
     @Transactional(readOnly = true)
@@ -43,6 +44,9 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
 
     @Transactional
     public Itinerary createItinerary(Itinerary itinerary) {
+        if (itinerary.getTitle() != null) profanityFilterService.validateText(itinerary.getTitle());
+        if (itinerary.getDescription() != null) profanityFilterService.validateText(itinerary.getDescription());
+        
         if (itinerary.getRoutePoints() != null) {
             itinerary.getRoutePoints().forEach(rp -> rp.setItinerary(itinerary));
         }
@@ -57,7 +61,14 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     @Transactional
     public Itinerary cloneItinerary(Long originalId, String ownerEmail) {
         Itinerary original = getById(originalId);
+        if (original.isDeleted()) {
+            throw new CustomException(ErrorCode.ITINERARY_NOT_FOUND, "삭제되었거나 존재하지 않는 여정입니다.");
+        }
         
+        if (original.getOwnerEmail() != null && original.getOwnerEmail().equals(ownerEmail)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "본인의 여정은 복제할 수 없습니다.");
+        }
+
         // 여정 복제 저작 인센티브 지급 (+50 PTS)
         if (original.getAuthorEmail() != null && !original.getOwnerEmail().equals(ownerEmail)) {
             userRepository.findByEmail(original.getAuthorEmail()).ifPresent(authorUser -> {
@@ -219,6 +230,9 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "경로 포인트를 찾을 수 없습니다."));
 
         boolean nowCompleted = !point.isCompleted();
+        if (nowCompleted && point.getLabel() != null) {
+            profanityFilterService.validateText(point.getLabel());
+        }
         point.setCompleted(nowCompleted);
 
         if (nowCompleted && userEmail != null) {
