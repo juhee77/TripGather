@@ -16,6 +16,7 @@ import com.example.demo.exception.ErrorCode;
 public class UserServiceImpl implements UserUseCase {
 
     private final UserRepository userRepository;
+    private final ProfanityFilterService profanityFilterService;
 
     @Transactional(readOnly = true)
     public User getById(Long id) {
@@ -48,9 +49,14 @@ public class UserServiceImpl implements UserUseCase {
     public User updateProfile(Long id, User update) {
         User user = getById(id);
         if (update.getName() != null) {
-            user.setName(update.getName());
+            if (update.getName().trim().isEmpty()) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "닉네임은 공백일 수 없습니다.");
+            }
+            profanityFilterService.validateText(update.getName());
+            user.setName(update.getName().trim());
         }
         if (update.getBio() != null) {
+            profanityFilterService.validateText(update.getBio());
             user.setBio(update.getBio());
         }
         if (update.getProfileImageUrl() != null) {
@@ -68,6 +74,7 @@ public class UserServiceImpl implements UserUseCase {
     @Transactional
     public void deactivateUser(Long id) {
         User user = getById(id);
+        user.setName("탈퇴한 회원");
         user.setBio("탈퇴한 회원입니다.");
         user.setProfileImageUrl("/default-profile.png");
         userRepository.save(user);

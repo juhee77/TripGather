@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 import com.example.demo.exception.CustomException;
+import com.example.demo.exception.ErrorCode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -27,6 +28,9 @@ class UserServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ProfanityFilterService profanityFilterService;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -201,8 +205,36 @@ class UserServiceImplTest {
         userService.deactivateUser(1L);
 
         // then
+        assertThat(testUser.getName()).isEqualTo("탈퇴한 회원");
         assertThat(testUser.getBio()).isEqualTo("탈퇴한 회원입니다.");
         assertThat(testUser.getProfileImageUrl()).isEqualTo("/default-profile.png");
         verify(userRepository).save(testUser);
+    }
+
+    @Test
+    @DisplayName("프로필 수정 시 비속어 닉네임 사용 시 예외 발생")
+    void updateProfile_ProfanityName_ThrowsException() {
+        // given
+        User updateInfo = User.builder().name("개새끼").build();
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+        org.mockito.BDDMockito.willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText("개새끼");
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateProfile(1L, updateInfo))
+                .isInstanceOf(CustomException.class);
+    }
+
+    @Test
+    @DisplayName("프로필 수정 시 공백 닉네임 사용 시 예외 발생")
+    void updateProfile_EmptyName_ThrowsException() {
+        // given
+        User updateInfo = User.builder().name("   ").build();
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateProfile(1L, updateInfo))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("닉네임은 공백일 수 없습니다.");
     }
 }

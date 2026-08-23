@@ -36,11 +36,26 @@ export const useUserViewModel = () => {
     }
   };
 
+  const fetchMyProfile = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const myProfile = await UserRepository.getMe();
+      if (setUser) setUser(prev => ({ ...prev, ...myProfile }));
+      return myProfile;
+    } catch (err) {
+      setError(err.message || 'Failed to fetch user profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     user,
     loading,
     error,
     updateProfile,
-    withdrawAccount
+    withdrawAccount,
+    fetchMyProfile
   };
 };
