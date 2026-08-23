@@ -31,6 +31,7 @@ public class GatheringServiceImpl implements GatheringUseCase {
     private final GatheringLikeRepository gatheringLikeRepository;
     private final ItineraryRepository itineraryRepository;
     private final SecurityService securityService;
+    private final ProfanityFilterService profanityFilterService;
 
     @Override
     @Transactional(readOnly = true)
@@ -61,6 +62,19 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Override
     @Transactional
     public Gathering createGathering(Gathering gathering) {
+        if (gathering.getMaxJoining() < 2) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 인원은 최소 2명 이상이어야 합니다.");
+        }
+
+        if (gathering.getStartDate() != null && gathering.getEndDate() != null) {
+            if (gathering.getEndDate().isBefore(gathering.getStartDate())) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
+            }
+        }
+
+        if (gathering.getTitle() != null) profanityFilterService.validateText(gathering.getTitle());
+        if (gathering.getLocation() != null) profanityFilterService.validateText(gathering.getLocation());
+
         User host = securityService.getCurrentUser();
         gathering.setHost(host);
         
@@ -84,6 +98,14 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Transactional
     public Gathering updateGathering(Long id, Gathering updateData) {
         validateHost(id);
+        if (updateData.getStartDate() != null && updateData.getEndDate() != null) {
+            if (updateData.getEndDate().isBefore(updateData.getStartDate())) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
+            }
+        }
+        if (updateData.getTitle() != null) profanityFilterService.validateText(updateData.getTitle());
+        if (updateData.getLocation() != null) profanityFilterService.validateText(updateData.getLocation());
+
         Gathering gathering = getGathering(id);
         gathering.setTitle(updateData.getTitle());
         gathering.setLocation(updateData.getLocation());

@@ -20,17 +20,18 @@ public class GatheringRepositoryCustomImpl implements GatheringRepositoryCustom 
         QGathering gathering = QGathering.gathering;
         BooleanBuilder builder = new BooleanBuilder();
 
-        if (query != null && !query.isEmpty()) {
-            builder.and(gathering.title.containsIgnoreCase(query)
-                    .or(gathering.location.containsIgnoreCase(query)));
+        if (query != null && !query.trim().isEmpty()) {
+            String trimmedQuery = query.trim();
+            builder.and(gathering.title.containsIgnoreCase(trimmedQuery)
+                    .or(gathering.location.containsIgnoreCase(trimmedQuery)));
         }
 
-        if (category != null && !category.isEmpty()) {
-            builder.and(gathering.category.eq(category));
+        if (category != null && !category.trim().isEmpty()) {
+            builder.and(gathering.category.eq(category.trim()));
         }
 
-        if (location != null && !location.isEmpty()) {
-            builder.and(gathering.location.containsIgnoreCase(location));
+        if (location != null && !location.trim().isEmpty()) {
+            builder.and(gathering.location.containsIgnoreCase(location.trim()));
         }
 
         if (Boolean.TRUE.equals(availableOnly)) {

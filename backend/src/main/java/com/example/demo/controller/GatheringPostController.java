@@ -61,6 +61,10 @@ public class GatheringPostController {
             Principal principal) {
         
         if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "게시글 내용을 입력해주세요.");
+        }
         
         profanityFilterService.validateText(request.getContent());
 
@@ -82,6 +86,25 @@ public class GatheringPostController {
 
         GatheringPost saved = postRepository.save(post);
         return ResponseEntity.ok(PostResponse.from(saved));
+    }
+
+    @DeleteMapping("/{gatheringId}/posts/{postId}")
+    public ResponseEntity<Void> deletePost(
+            @PathVariable Long gatheringId,
+            @PathVariable Long postId,
+            Principal principal) {
+        
+        if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+
+        GatheringPost post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "게시글을 찾을 수 없습니다."));
+
+        if (!post.getAuthor().getEmail().equals(principal.getName())) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "본인의 게시글만 삭제할 수 있습니다.");
+        }
+
+        postRepository.delete(post);
+        return ResponseEntity.noContent().build();
     }
 
     @Data

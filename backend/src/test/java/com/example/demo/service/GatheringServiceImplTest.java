@@ -44,6 +44,8 @@ class GatheringServiceImplTest {
     private ItineraryRepository itineraryRepository;
     @Mock
     private SecurityService securityService;
+    @Mock
+    private ProfanityFilterService profanityFilterService;
 
     @InjectMocks
     private GatheringServiceImpl gatheringService;
@@ -53,7 +55,7 @@ class GatheringServiceImplTest {
     void createGathering_Success() {
         // given
         User host = User.builder().id(1L).email("host@test.com").build();
-        Gathering gathering = Gathering.builder().title("New Gathering").members(new ArrayList<>()).build();
+        Gathering gathering = Gathering.builder().title("New Gathering").maxJoining(5).members(new ArrayList<>()).build();
         
         given(securityService.getCurrentUser()).willReturn(host);
         given(gatheringRepository.save(any())).willReturn(gathering);
@@ -236,7 +238,7 @@ class GatheringServiceImplTest {
         // given
         User host = User.builder().id(1L).email("host@test.com").build();
         Itinerary itinerary = Itinerary.builder().id(5L).title("Trip Plan").build();
-        Gathering gathering = Gathering.builder().title("New Gathering").linkedItinerary(itinerary).members(new ArrayList<>()).build();
+        Gathering gathering = Gathering.builder().title("New Gathering").maxJoining(5).linkedItinerary(itinerary).members(new ArrayList<>()).build();
 
         given(securityService.getCurrentUser()).willReturn(host);
         given(gatheringRepository.save(any())).willReturn(gathering);
@@ -477,5 +479,63 @@ class GatheringServiceImplTest {
 
         // when & then
         assertThat(gatheringService.isLikedByUser(10L, "user@test.com")).isFalse();
+    }
+
+    @Test
+    @DisplayName("모임 생성 시 제목에 비속어 포함 시 예외 발생")
+    void createGathering_ProfanityTitle_ThrowsException() {
+        // given
+        Gathering gathering = Gathering.builder().title("개새끼 모임").maxJoining(5).build();
+        org.mockito.BDDMockito.willThrow(new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText("개새끼 모임");
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.createGathering(gathering))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("모임 생성 시 정원(maxJoining)이 2명 미만일 때 예외 발생")
+    void createGathering_MaxJoiningLessThanTwo_ThrowsException() {
+        // given
+        Gathering gathering = Gathering.builder().title("솔로 모임").maxJoining(1).build();
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.createGathering(gathering))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("모임 인원은 최소 2명 이상이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("모임 검색 - 키워드 공백 정문화 후 레포지토리 호출")
+    void searchGatherings_Success() {
+        // given
+        String query = "  제주  ";
+        given(gatheringRepository.searchGatherings("  제주  ", null, null, null, null))
+                .willReturn(java.util.List.of());
+
+        // when
+        java.util.List<Gathering> result = gatheringService.searchGatherings(query, null, null, null, null);
+
+        // then
+        assertThat(result).isEmpty();
+        verify(gatheringRepository).searchGatherings("  제주  ", null, null, null, null);
+    }
+
+    @Test
+    @DisplayName("모임 생성 시 종료일이 시작일보다 빠를 경우 예외 발생")
+    void createGathering_InvalidDateRange_ThrowsException() {
+        // given
+        Gathering gathering = Gathering.builder()
+                .title("일자역전 모임")
+                .maxJoining(5)
+                .startDate(java.time.LocalDate.of(2026, 8, 25))
+                .endDate(java.time.LocalDate.of(2026, 8, 20))
+                .build();
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.createGathering(gathering))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("종료일은 시작일보다 빠를 수 없습니다.");
     }
 }

@@ -94,4 +94,58 @@ class GatheringPostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("즐거운 여행 이야기"));
     }
+
+    @Test
+    @DisplayName("본인 모임 게시글 삭제 성공")
+    void deletePost_Success() throws Exception {
+        // given
+        GatheringPost post = GatheringPost.builder()
+                .id(100L)
+                .author(user)
+                .gathering(gathering)
+                .content("삭제할 이야기")
+                .build();
+
+        given(postRepository.findById(100L)).willReturn(Optional.of(post));
+
+        // when & then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/gatherings/10/posts/100")
+                .principal(principal))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("다른 사람이 작성한 모임 게시글 삭제 시 403 Forbidden 거부")
+    void deletePost_NotAuthor_Forbidden() throws Exception {
+        // given
+        User other = User.builder().id(2L).email("other@example.com").name("Other").build();
+        GatheringPost post = GatheringPost.builder()
+                .id(100L)
+                .author(other)
+                .gathering(gathering)
+                .content("타인의 이야기")
+                .build();
+
+        given(postRepository.findById(100L)).willReturn(Optional.of(post));
+
+        // when & then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/gatherings/10/posts/100")
+                .principal(principal))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("모임 게시글 작성 시 공백 내용 제출 시 400 Bad Request 발생")
+    void createPost_EmptyContent_BadRequest() throws Exception {
+        // given
+        GatheringPostController.PostRequest request = new GatheringPostController.PostRequest();
+        request.setContent("   ");
+
+        // when & then
+        mockMvc.perform(post("/api/gatherings/10/posts")
+                .principal(principal)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
 }

@@ -151,4 +151,40 @@ class CommentControllerTest {
                 .content("{\"content\": \"Stranger Comment\"}"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("본인 댓글 삭제 성공")
+    void deleteComment_Success() throws Exception {
+        // given
+        Comment comment = Comment.builder().id(10L).content("Hello").author("user@example.com").build();
+        given(commentRepository.findById(10L)).willReturn(Optional.of(comment));
+
+        // when & then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/gatherings/1/comments/10")
+                .principal(principal))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("다른 사람의 댓글 삭제 시도 시 금지 403 반환")
+    void deleteComment_NotAuthor_Forbidden() throws Exception {
+        // given
+        Comment comment = Comment.builder().id(10L).content("Hello").author("other@example.com").build();
+        given(commentRepository.findById(10L)).willReturn(Optional.of(comment));
+
+        // when & then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/gatherings/1/comments/10")
+                .principal(principal))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("댓글 작성 시 공백 내용 제출 시 400 Bad Request 발생")
+    void addComment_EmptyContent_BadRequest() throws Exception {
+        mockMvc.perform(post("/api/gatherings/1/comments")
+                .principal(principal)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\": \"   \"}"))
+                .andExpect(status().isBadRequest());
+    }
 }
