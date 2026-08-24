@@ -40,6 +40,18 @@ public class TripReviewController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/{reviewId}")
+    public ResponseEntity<TripReviewResponse> updateReview(
+            @PathVariable Long tripId,
+            @PathVariable Long reviewId,
+            @RequestBody Map<String, Object> body) {
+        String content = (String) body.get("content");
+        int rating = body.get("rating") != null ? ((Number) body.get("rating")).intValue() : 5;
+        String category = (String) body.getOrDefault("category", "관광지");
+        String imageUrls = (String) body.get("imageUrls");
+        return ResponseEntity.ok(tripReviewService.updateReview(reviewId, content, rating, category, imageUrls));
+    }
+
     @GetMapping("/summary")
     public ResponseEntity<com.example.demo.dto.TripReviewSummaryResponse> getReviewSummary(@PathVariable Long tripId) {
         return ResponseEntity.ok(tripReviewService.getReviewSummary(tripId));

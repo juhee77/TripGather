@@ -54,6 +54,9 @@ public class TripReviewService {
 
     @Transactional(readOnly = true)
     public List<TripReviewResponse> getReviews(Long tripId, String category) {
+        if (!tripRepository.existsById(tripId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다.");
+        }
         String filterCategory = (category != null && !category.isBlank() && !"전체".equals(category.trim())) ? category.trim() : null;
         if (filterCategory != null) {
             return tripReviewRepository.findByTripIdAndCategoryOrderByCreatedAtDesc(tripId, filterCategory)
@@ -74,8 +77,40 @@ public class TripReviewService {
         tripReviewRepository.delete(review);
     }
 
+    @Transactional
+    public TripReviewResponse updateReview(Long reviewId, String content, int rating, String category, String imageUrls) {
+        TripReview review = tripReviewRepository.findById(reviewId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰를 찾을 수 없습니다."));
+
+        String email = securityService.getCurrentUserEmail();
+        if (!review.getAuthor().getEmail().equals(email)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION);
+        }
+
+        if (content == null || content.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 내용을 입력해주세요.");
+        }
+        if (rating < 1 || rating > 5) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "평점은 1점부터 5점 사이여야 합니다.");
+        }
+        if (imageUrls != null && !imageUrls.isBlank() && imageUrls.split(",").length > 5) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 사진은 최대 5장까지 첨부할 수 있습니다.");
+        }
+
+        profanityFilterService.validateText(content);
+        review.setContent(content.trim());
+        review.setRating(rating);
+        if (category != null) review.setCategory(category.trim());
+        review.setImageUrls(imageUrls);
+
+        return TripReviewResponse.from(tripReviewRepository.save(review));
+    }
+
     @Transactional(readOnly = true)
     public com.example.demo.dto.TripReviewSummaryResponse getReviewSummary(Long tripId) {
+        if (!tripRepository.existsById(tripId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다.");
+        }
         List<TripReview> reviews = tripReviewRepository.findByTripIdOrderByCreatedAtDesc(tripId);
         int totalReviews = reviews.size();
         double avgRating = reviews.stream().mapToInt(TripReview::getRating).average().orElse(0.0);

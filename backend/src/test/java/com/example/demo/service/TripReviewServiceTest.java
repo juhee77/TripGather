@@ -41,6 +41,7 @@ class TripReviewServiceTest {
     void getReviewSummary_Success() {
         // given
         Long tripId = 1L;
+        given(tripRepository.existsById(tripId)).willReturn(true);
         Trip trip = Trip.builder().id(tripId).title("Busan").build();
         User author = User.builder().id(10L).name("Reviewer").build();
 
@@ -86,6 +87,7 @@ class TripReviewServiceTest {
     void getReviews_CategoryAll_ReturnsAllReviews() {
         // given
         Long tripId = 1L;
+        given(tripRepository.existsById(tripId)).willReturn(true);
         given(tripReviewRepository.findByTripIdOrderByCreatedAtDesc(tripId)).willReturn(java.util.List.of());
 
         // when
@@ -97,11 +99,54 @@ class TripReviewServiceTest {
     }
 
     @Test
+    @DisplayName("존재하지 않는 여행 ID로 리뷰 조회 시 예외 발생")
+    void getReviews_TripNotFound_ThrowsException() {
+        // given
+        Long tripId = 99L;
+        given(tripRepository.existsById(tripId)).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripReviewService.getReviews(tripId, "전체"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다.");
+    }
+
+    @Test
     @DisplayName("공백 내용으로 여행 후기 작성 시 예외 발생")
     void createReview_EmptyContent_ThrowsException() {
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                 tripReviewService.createReview(1L, "   ", 5, "숙소", null))
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("리뷰 내용을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("공백 내용으로 여행 후기 수정 시 예외 발생")
+    void updateReview_EmptyContent_ThrowsException() {
+        // given
+        Long reviewId = 10L;
+        User author = User.builder().id(1L).email("author@test.com").build();
+        TripReview review = TripReview.builder().id(reviewId).author(author).build();
+        given(tripReviewRepository.findById(reviewId)).willReturn(java.util.Optional.of(review));
+        given(securityService.getCurrentUserEmail()).willReturn("author@test.com");
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.updateReview(reviewId, "   ", 5, "숙소", null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("리뷰 내용을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 여행 ID로 리뷰 요약 조회 시 예외 발생")
+    void getReviewSummary_TripNotFound_ThrowsException() {
+        // given
+        Long tripId = 99L;
+        given(tripRepository.existsById(tripId)).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripReviewService.getReviewSummary(tripId))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다.");
     }
 }
