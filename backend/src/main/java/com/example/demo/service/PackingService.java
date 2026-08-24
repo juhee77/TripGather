@@ -68,6 +68,10 @@ public class PackingService {
         }
         profanityFilterService.validateText(name);
 
+        if (category != null && !category.trim().isEmpty()) {
+            profanityFilterService.validateText(category);
+        }
+
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다."));
         PackingItem item = PackingItem.of(trip, name.trim(), category != null ? category.trim() : "기타");
@@ -84,11 +88,16 @@ public class PackingService {
 
     @Transactional
     public void deleteItem(Long itemId) {
-        packingItemRepository.deleteById(itemId);
+        PackingItem item = packingItemRepository.findById(itemId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "준비물을 찾을 수 없습니다."));
+        packingItemRepository.delete(item);
     }
 
     @Transactional(readOnly = true)
     public com.example.demo.dto.PackingProgressResponse getPackingProgress(Long tripId) {
+        if (!tripRepository.existsById(tripId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다.");
+        }
         List<PackingItem> items = packingItemRepository.findByTripId(tripId);
         int totalCount = items.size();
         int checkedCount = (int) items.stream().filter(PackingItem::isChecked).count();

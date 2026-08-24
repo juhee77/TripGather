@@ -45,6 +45,7 @@ class PackingServiceTest {
         PackingItem item2 = PackingItem.of(trip, "Charger", "Tech");
         item2.setChecked(false);
 
+        given(tripRepository.existsById(tripId)).willReturn(true);
         given(packingItemRepository.findByTripId(tripId)).willReturn(List.of(item1, item2));
 
         // when
@@ -77,5 +78,73 @@ class PackingServiceTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.addItem(1L, "   ", "기타"))
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("준비물 항목명을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("준비물 추가 시 카테고리에 비속어 포함 시 예외 발생")
+    void addItem_ProfanityCategory_ThrowsException() {
+        // given
+        org.mockito.Mockito.doAnswer(invocation -> {
+            String arg = invocation.getArgument(0);
+            if ("씨발카테고리".equals(arg)) {
+                throw new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다.");
+            }
+            return null;
+        }).when(profanityFilterService).validateText(org.mockito.ArgumentMatchers.anyString());
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.addItem(1L, "Passport", "씨발카테고리"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 준비물 삭제 시 예외 발생")
+    void deleteItem_NotFound_ThrowsException() {
+        // given
+        given(packingItemRepository.findById(99L)).willReturn(java.util.Optional.empty());
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.deleteItem(99L))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("준비물을 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("준비물 삭제 성공")
+    void deleteItem_Success() {
+        // given
+        PackingItem item = PackingItem.builder().id(10L).name("Towel").build();
+        given(packingItemRepository.findById(10L)).willReturn(java.util.Optional.of(item));
+
+        // when
+        packingService.deleteItem(10L);
+
+        // then
+        org.mockito.Mockito.verify(packingItemRepository).delete(item);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 여행 ID로 준비물 진행도 조회 시 예외 발생")
+    void getPackingProgress_TripNotFound_ThrowsException() {
+        // given
+        Long tripId = 99L;
+        given(tripRepository.existsById(tripId)).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.getPackingProgress(tripId))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 준비물 체크 토글 시 예외 발생")
+    void toggleCheck_NotFound_ThrowsException() {
+        // given
+        given(packingItemRepository.findById(99L)).willReturn(java.util.Optional.empty());
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.toggleCheck(99L))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("준비물을 찾을 수 없습니다.");
     }
 }
