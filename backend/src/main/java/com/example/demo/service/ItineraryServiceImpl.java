@@ -48,13 +48,28 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         if (itinerary.getDescription() != null) profanityFilterService.validateText(itinerary.getDescription());
         
         if (itinerary.getRoutePoints() != null) {
-            itinerary.getRoutePoints().forEach(rp -> rp.setItinerary(itinerary));
+            itinerary.getRoutePoints().forEach(rp -> validateRoutePoint(rp, itinerary));
         }
         // Initially, the author is the owner
         if (itinerary.getOwnerEmail() == null) {
             itinerary.setOwnerEmail(itinerary.getAuthorEmail());
         }
         return itineraryRepository.save(itinerary);
+    }
+
+    private void validateRoutePoint(com.example.demo.domain.RoutePoint rp, Itinerary itinerary) {
+        if (rp.getLabel() == null || rp.getLabel().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "경로 포인트 장소명을 입력해주세요.");
+        }
+        if (rp.getDayNumber() <= 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "일차 번호는 1 이상이어야 합니다.");
+        }
+        if (rp.getSequenceOrder() < 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "경로 순서는 0 이상이어야 합니다.");
+        }
+        profanityFilterService.validateText(rp.getLabel());
+        rp.setLabel(rp.getLabel().trim());
+        rp.setItinerary(itinerary);
     }
 
     @Override
@@ -103,6 +118,9 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
                         .isCompleted(false)
                         .itinerary(clone)
                         .build();
+                if (clone.getRoutePoints() == null) {
+                    clone.setRoutePoints(new java.util.ArrayList<>());
+                }
                 clone.getRoutePoints().add(clonedPoint);
             });
         }
@@ -128,8 +146,17 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         // 여정 완수 감지 (이전에 stampImageUrl이 없었으나, 새로 들어온 경우)
         boolean completedNow = (itinerary.getStampImageUrl() == null && update.getStampImageUrl() != null);
         
-        itinerary.setTitle(update.getTitle());
-        itinerary.setDescription(update.getDescription());
+        if (update.getTitle() != null) {
+            if (update.getTitle().trim().isEmpty()) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 제목을 입력해주세요.");
+            }
+            profanityFilterService.validateText(update.getTitle());
+            itinerary.setTitle(update.getTitle().trim());
+        }
+        if (update.getDescription() != null) {
+            profanityFilterService.validateText(update.getDescription());
+            itinerary.setDescription(update.getDescription());
+        }
         itinerary.setStampImageUrl(update.getStampImageUrl());
         itinerary.setStartDate(update.getStartDate());
         itinerary.setEndDate(update.getEndDate());
@@ -139,7 +166,7 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         if (update.getRoutePoints() != null) {
             itinerary.getRoutePoints().clear();
             update.getRoutePoints().forEach(rp -> {
-                rp.setItinerary(itinerary);
+                validateRoutePoint(rp, itinerary);
                 itinerary.getRoutePoints().add(rp);
             });
         }

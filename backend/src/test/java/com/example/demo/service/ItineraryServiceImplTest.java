@@ -43,7 +43,7 @@ class ItineraryServiceImplTest {
     void createItinerary_WithRoutePoints() {
         // given
         Itinerary itinerary = Itinerary.builder().title("With Points").build();
-        com.example.demo.domain.RoutePoint rp = com.example.demo.domain.RoutePoint.builder().label("P1").build();
+        com.example.demo.domain.RoutePoint rp = com.example.demo.domain.RoutePoint.builder().label("P1").dayNumber(1).build();
         itinerary.setRoutePoints(new ArrayList<>(java.util.List.of(rp)));
         
         given(itineraryRepository.save(any(Itinerary.class))).willAnswer(i -> i.getArgument(0));
@@ -277,5 +277,107 @@ class ItineraryServiceImplTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                 itineraryService.toggleRoutePointCompletion(itineraryId, pointId, "user@test.com"))
                 .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("여정 생성 시 경로 포인트 장소명이 공백인 경우 예외 발생")
+    void createItinerary_EmptyRoutePointLabel_ThrowsException() {
+        // given
+        com.example.demo.domain.RoutePoint point = com.example.demo.domain.RoutePoint.builder()
+                .label("   ")
+                .dayNumber(1)
+                .build();
+
+        Itinerary itinerary = Itinerary.builder()
+                .title("Valid Title")
+                .routePoints(new ArrayList<>(java.util.List.of(point)))
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("경로 포인트 장소명을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("여정 수정 시 경로 포인트 장소명이 공백인 경우 예외 발생")
+    void updateItinerary_EmptyRoutePointLabel_ThrowsException() {
+        // given
+        Itinerary existing = Itinerary.builder().id(1L).title("Old Title").routePoints(new ArrayList<>()).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        com.example.demo.domain.RoutePoint invalidPoint = com.example.demo.domain.RoutePoint.builder()
+                .label("   ")
+                .dayNumber(1)
+                .build();
+
+        Itinerary updateInfo = Itinerary.builder()
+                .title("New Title")
+                .routePoints(new ArrayList<>(java.util.List.of(invalidPoint)))
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.updateItinerary(1L, updateInfo))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("경로 포인트 장소명을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("여정 수정 시 제목이 공백인 경우 예외 발생")
+    void updateItinerary_EmptyTitle_ThrowsException() {
+        // given
+        Itinerary existing = Itinerary.builder().id(1L).title("Old Title").routePoints(new ArrayList<>()).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        Itinerary updateInfo = Itinerary.builder()
+                .title("   ")
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.updateItinerary(1L, updateInfo))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여정 제목을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("여정 생성 시 경로 순서가 0 미만 음수인 경우 예외 발생")
+    void createItinerary_NegativeSequenceOrder_ThrowsException() {
+        // given
+        com.example.demo.domain.RoutePoint point = com.example.demo.domain.RoutePoint.builder()
+                .label("Valid Location")
+                .dayNumber(1)
+                .sequenceOrder(-1)
+                .build();
+
+        Itinerary itinerary = Itinerary.builder()
+                .title("Valid Title")
+                .routePoints(new ArrayList<>(java.util.List.of(point)))
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("경로 순서는 0 이상이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여정 생성 시 일차 번호가 0 이하인 경우 예외 발생")
+    void createItinerary_ZeroDayNumber_ThrowsException() {
+        // given
+        com.example.demo.domain.RoutePoint point = com.example.demo.domain.RoutePoint.builder()
+                .label("Valid Location")
+                .dayNumber(0)
+                .sequenceOrder(0)
+                .build();
+
+        Itinerary itinerary = Itinerary.builder()
+                .title("Valid Title")
+                .routePoints(new ArrayList<>(java.util.List.of(point)))
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("일차 번호는 1 이상이어야 합니다.");
     }
 }
