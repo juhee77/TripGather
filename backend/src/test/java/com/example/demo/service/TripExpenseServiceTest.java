@@ -86,6 +86,7 @@ class TripExpenseServiceTest {
     void calculateSettlement_Success() {
         // given
         Long tripId = 10L;
+        given(tripRepository.existsById(tripId)).willReturn(true);
         User user1 = User.builder().id(1L).name("User 1").build();
         User user2 = User.builder().id(2L).name("User 2").build();
 
@@ -108,6 +109,7 @@ class TripExpenseServiceTest {
     void calculateSettlement_EmptyExpenses_ReturnsZeroSettlement() {
         // given
         Long tripId = 10L;
+        given(tripRepository.existsById(tripId)).willReturn(true);
         given(tripExpenseRepository.findByTripIdOrderByExpenseDateDesc(tripId)).willReturn(List.of());
 
         // when
@@ -117,6 +119,19 @@ class TripExpenseServiceTest {
         assertThat(response.getTotalAmount()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(response.getPerPersonAmount()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(response.getPayerSummaries()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 여행 ID로 정산 계산 시 예외 발생")
+    void calculateSettlement_TripNotFound_ThrowsException() {
+        // given
+        Long tripId = 99L;
+        given(tripRepository.existsById(tripId)).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.calculateSettlement(tripId, 2))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다");
     }
 
     @Test
@@ -172,5 +187,69 @@ class TripExpenseServiceTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                 tripExpenseService.deleteExpense(expenseId, attackerEmail))
                 .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("지출 내역 등록 시 0원 이하 금액 제출 시 예외 발생")
+    void addExpense_ZeroAmount_ThrowsException() {
+        // given
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .tripId(1L)
+                .amount(java.math.BigDecimal.ZERO)
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense("user@test.com", request))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("지출 금액은 0원보다 커야 합니다.");
+    }
+
+    @Test
+    @DisplayName("지출 내역 수정 시 0원 이하 금액 제출 시 예외 발생")
+    void updateExpense_ZeroAmount_ThrowsException() {
+        // given
+        Long expenseId = 10L;
+        String email = "owner@test.com";
+        User user = User.builder().id(1L).email(email).build();
+        TripExpense expense = TripExpense.builder().id(expenseId).payer(user).build();
+
+        given(tripExpenseRepository.findById(expenseId)).willReturn(Optional.of(expense));
+
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .amount(java.math.BigDecimal.ZERO)
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.updateExpense(expenseId, email, request))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("지출 금액은 0원보다 커야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여행별 지출 목록 조회 성공")
+    void getExpensesByTrip_Success() {
+        // given
+        Long tripId = 10L;
+        given(tripRepository.existsById(tripId)).willReturn(true);
+        given(tripExpenseRepository.findByTripIdOrderByExpenseDateDesc(tripId)).willReturn(List.of());
+
+        // when
+        List<TripExpenseResponse> result = tripExpenseService.getExpensesByTrip(tripId);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 여행 ID로 지출 목록 조회 시 예외 발생")
+    void getExpensesByTrip_TripNotFound_ThrowsException() {
+        // given
+        Long tripId = 99L;
+        given(tripRepository.existsById(tripId)).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.getExpensesByTrip(tripId))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다");
     }
 }
