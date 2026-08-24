@@ -52,30 +52,29 @@ public class GatheringMemberService implements GatheringMemberUseCase {
                 .anyMatch(m -> m.getUser().getId().equals(user.getId()));
 
         if (!alreadyApplied) {
-            if (gathering.getMembers().size() < gathering.getMaxJoining()) {
-                GatheringMember member = GatheringMember.builder()
-                        .gathering(gathering)
-                        .user(user)
-                        .status(MemberStatus.PENDING)
-                        .build();
-                gathering.getMembers().add(member);
-                gatheringMemberRepository.save(member);
-                
-                // 알림 전송
-                if (gathering.getHost() != null && gathering.getHost().getEmail() != null) {
-                    java.util.Map<String, Object> data = new java.util.HashMap<>();
-                    data.put("gatheringId", gathering.getId());
-                    data.put("gatheringTitle", gathering.getTitle() != null ? gathering.getTitle() : "제목 없음");
-                    data.put("applicantName", user.getName() != null ? user.getName() : (user.getEmail() != null ? user.getEmail() : "알 수 없음"));
-                    
-                    notificationService.send(
-                            gathering.getHost().getEmail(),
-                            "gathering-requested",
-                            data
-                    );
-                }
-            } else {
+            if (gathering.getMembers().size() >= gathering.getMaxJoining()) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 정원이 초과되었습니다.");
+            }
+            GatheringMember member = GatheringMember.builder()
+                    .gathering(gathering)
+                    .user(user)
+                    .status(MemberStatus.PENDING)
+                    .build();
+            gathering.getMembers().add(member);
+            gatheringMemberRepository.save(member);
+                
+            // 알림 전송
+            if (gathering.getHost() != null && gathering.getHost().getEmail() != null) {
+                java.util.Map<String, Object> data = new java.util.HashMap<>();
+                data.put("gatheringId", gathering.getId());
+                data.put("gatheringTitle", gathering.getTitle() != null ? gathering.getTitle() : "제목 없음");
+                data.put("applicantName", user.getName() != null ? user.getName() : (user.getEmail() != null ? user.getEmail() : "알 수 없음"));
+                
+                notificationService.send(
+                        gathering.getHost().getEmail(),
+                        "gathering-requested",
+                        data
+                );
             }
         }
         return gatheringRepository.save(gathering);
@@ -90,6 +89,10 @@ public class GatheringMemberService implements GatheringMemberUseCase {
                 
         if (member.getGathering().getHost().getId().equals(userId)) {
             throw new CustomException(ErrorCode.SELF_ACTION_NOT_ALLOWED, "호스트 본인을 승인/거절할 수 없습니다.");
+        }
+
+        if (member.getStatus() == MemberStatus.APPROVED) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이미 승인된 모임 멤버입니다.");
         }
 
         Gathering gathering = member.getGathering();
@@ -130,6 +133,10 @@ public class GatheringMemberService implements GatheringMemberUseCase {
                 
         if (member.getGathering().getHost().getId().equals(userId)) {
             throw new CustomException(ErrorCode.SELF_ACTION_NOT_ALLOWED, "호스트 본인을 승인/거절할 수 없습니다.");
+        }
+
+        if (member.getStatus() == MemberStatus.REJECTED) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이미 거절된 신청입니다.");
         }
 
         member.setStatus(MemberStatus.REJECTED);

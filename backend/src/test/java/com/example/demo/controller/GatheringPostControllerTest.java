@@ -148,4 +148,22 @@ class GatheringPostControllerTest {
                 .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("모임 게시글 작성 시 비속어 포함 시 400 Bad Request 발생")
+    void createPost_ProfanityContent_BadRequest() throws Exception {
+        // given
+        GatheringPostController.PostRequest request = new GatheringPostController.PostRequest();
+        request.setContent("씨발 게시글");
+
+        org.mockito.BDDMockito.willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText("씨발 게시글");
+
+        // when & then
+        mockMvc.perform(post("/api/gatherings/10/posts")
+                .principal(principal)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
 }
