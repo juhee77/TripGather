@@ -380,4 +380,31 @@ class ItineraryServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("일차 번호는 1 이상이어야 합니다.");
     }
+
+    @Test
+    @DisplayName("존재하지 않는 여정 삭제 시 예외 발생")
+    void deleteItinerary_NotFound_ThrowsException() {
+        // given
+        Long itineraryId = 99L;
+        given(itineraryRepository.existsById(itineraryId)).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.deleteItinerary(itineraryId))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여정을 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("여정 삭제 성공")
+    void deleteItinerary_Success() {
+        // given
+        Long itineraryId = 1L;
+        given(itineraryRepository.existsById(itineraryId)).willReturn(true);
+
+        // when
+        itineraryService.deleteItinerary(itineraryId);
+
+        // then
+        verify(itineraryRepository).softDeleteById(itineraryId);
+    }
 }

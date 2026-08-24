@@ -204,6 +204,9 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
 
     @Transactional
     public void deleteItinerary(Long id) {
+        if (!itineraryRepository.existsById(id)) {
+            throw new CustomException(ErrorCode.ITINERARY_NOT_FOUND, "여정을 찾을 수 없습니다.");
+        }
         itineraryRepository.softDeleteById(id);
     }
 
