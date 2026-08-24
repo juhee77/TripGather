@@ -17,9 +17,6 @@ backend_startup.log
 # JVM temporary files
 hs_err_pid*
 
-# Build and temporary files
-/build/
-/out/
-/bin/
-.gradle/
-hs_err_pid*
+# Local documentation reports
+docs/backend_executive_report.html
+docs/*.html
