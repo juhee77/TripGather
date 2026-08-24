@@ -23,9 +23,15 @@ public class TripService {
     private final ItineraryRepository itineraryRepository;
     private final SecurityService securityService;
     private final PackingService packingService; // 자동 템플릿 세팅을 위한 서비스 주입
+    private final ProfanityFilterService profanityFilterService;
 
     @Transactional
     public TripResponse createTrip(TripRequest request) {
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 제목을 입력해주세요.");
+        }
+        profanityFilterService.validateText(request.getTitle());
+
         User owner = securityService.getCurrentUser();
         Trip trip = Trip.of(request.getTitle(), request.getDestination(), request.getCountry(), owner);
         trip.setStartDate(request.getStartDate());
