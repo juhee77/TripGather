@@ -64,10 +64,13 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
 
     @Override
     @Transactional
-    public void markMessagesAsRead(String myEmail, String otherUserEmail) {
-        User me = userRepository.findByEmail(myEmail)
+    public void markMessagesAsRead(String currentEmail, String partnerEmail) {
+        if (currentEmail != null && currentEmail.equals(partnerEmail)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신과의 대화방은 처리할 수 없습니다.");
+        }
+        User me = userRepository.findByEmail(currentEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        User other = userRepository.findByEmail(otherUserEmail)
+        User other = userRepository.findByEmail(partnerEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         
         List<DirectMessage> unread = dmRepository.findUnreadMessages(other, me);

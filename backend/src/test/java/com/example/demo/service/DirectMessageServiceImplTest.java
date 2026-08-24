@@ -92,6 +92,29 @@ class DirectMessageServiceImplTest {
     }
 
     @Test
+    @DisplayName("채팅 내역 조회 시 존재하지 않는 사용자 이메일 전달 시 예외 발생")
+    void getChatHistory_UserNotFound_ThrowsException() {
+        // given
+        given(userRepository.findByEmail("u1@ex.com")).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> dmService.getChatHistory("u1@ex.com", "u2@ex.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("사용자를 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 DM 읽음 처리 시 예외 발생")
+    void markAsRead_NotFound_ThrowsException() {
+        // given
+        given(dmRepository.findById(99L)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> dmService.markAsRead(99L))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
     @DisplayName("DM 단건 읽음 처리 테스트")
     void markAsRead_Success() {
         // given
@@ -168,5 +191,13 @@ class DirectMessageServiceImplTest {
         assertThatThrownBy(() -> dmService.sendDM("sender@example.com", "receiver@example.com", "   "))
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("메시지 내용을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("자기 자신과의 대화방 읽음 처리 시 예외 발생")
+    void markMessagesAsRead_SelfEmail_ThrowsException() {
+        assertThatThrownBy(() -> dmService.markMessagesAsRead("same@example.com", "same@example.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("자기 자신과의 대화방은 처리할 수 없습니다.");
     }
 }
