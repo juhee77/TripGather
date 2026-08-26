@@ -213,6 +213,9 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     @Override
     @Transactional
     public Itinerary mergeItinerary(Long sourceId, Long targetId, int targetDay) {
+        if (sourceId.equals(targetId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신 여정과는 병합할 수 없습니다.");
+        }
         Itinerary source = getById(sourceId);
         Itinerary target = getById(targetId);
 

@@ -407,4 +407,40 @@ class ItineraryServiceImplTest {
         // then
         verify(itineraryRepository).softDeleteById(itineraryId);
     }
+
+    @Test
+    @DisplayName("존재하지 않는 여정 수정 시 예외 발생")
+    void updateItinerary_NotFound_ThrowsException() {
+        // given
+        Long itineraryId = 99L;
+        given(itineraryRepository.findById(itineraryId)).willReturn(Optional.empty());
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.updateItinerary(itineraryId, new Itinerary()))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 여정의 경로 포인트 토글 완료 처리 시 예외 발생")
+    void toggleRoutePointCompletion_ItineraryNotFound_ThrowsException() {
+        // given
+        Long itineraryId = 99L;
+        given(itineraryRepository.findById(itineraryId)).willReturn(Optional.empty());
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.toggleRoutePointCompletion(itineraryId, 10L, "user@test.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("동일한 여정 ID 병합 시도 시 예외 발생")
+    void mergeItinerary_SameItinerary_ThrowsException() {
+        // given
+        Long itineraryId = 1L;
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.mergeItinerary(itineraryId, itineraryId, 1))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("자기 자신 여정과는 병합할 수 없습니다.");
+    }
 }
