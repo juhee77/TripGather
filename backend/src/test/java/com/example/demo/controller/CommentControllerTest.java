@@ -187,4 +187,31 @@ class CommentControllerTest {
                 .content("{\"content\": \"   \"}"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("존재하지 않는 모임에 댓글 작성 시도 시 404 Not Found 반환")
+    void addComment_GatheringNotFound_ReturnsNotFound() throws Exception {
+        // given
+        given(gatheringService.getGathering(99L))
+                .willThrow(new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.GATHERING_NOT_FOUND));
+
+        // when & then
+        mockMvc.perform(post("/api/gatherings/99/comments")
+                .principal(principal)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\": \"Hello Gathering\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 댓글 삭제 시도 시 400 Bad Request 반환")
+    void deleteComment_NotFound_ReturnsBadRequest() throws Exception {
+        // given
+        given(commentRepository.findById(99L)).willReturn(Optional.empty());
+
+        // when & then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/gatherings/1/comments/99")
+                .principal(principal))
+                .andExpect(status().isBadRequest());
+    }
 }
