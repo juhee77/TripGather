@@ -65,6 +65,9 @@ public class GatheringServiceImpl implements GatheringUseCase {
         if (gathering.getMaxJoining() < 2) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 인원은 최소 2명 이상이어야 합니다.");
         }
+        if (gathering.getMaxJoining() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 인원은 최대 100명까지만 설정 가능합니다.");
+        }
 
         if (gathering.getStartDate() != null && gathering.getEndDate() != null) {
             if (gathering.getEndDate().isBefore(gathering.getStartDate())) {

@@ -538,4 +538,19 @@ class GatheringServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("종료일은 시작일보다 빠를 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("모임 생성 시 정원이 100명을 초과하는 경우 예외 발생")
+    void createGathering_ExceedMaxJoining_ThrowsException() {
+        // given
+        Gathering gathering = Gathering.builder()
+                .title("대규모 모임")
+                .maxJoining(150)
+                .build();
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.createGathering(gathering))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("모임 인원은 최대 100명까지만 설정 가능합니다.");
+    }
 }

@@ -186,6 +186,9 @@ public class GatheringMemberService implements GatheringMemberUseCase {
         validateHost(gatheringId);
         
         Gathering gathering = getGatheringById(gatheringId);
+        if (gathering.getHost().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.SELF_ACTION_NOT_ALLOWED, "호스트 본인을 초대할 수 없습니다.");
+        }
         User guest = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "초대할 사용자를 찾을 수 없습니다."));
         
@@ -286,18 +289,23 @@ public class GatheringMemberService implements GatheringMemberUseCase {
         if (!isAuthorized) {
             throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "모임에 승인된 멤버만 체크인할 수 있습니다.");
         }
+
+        // 위치 기반 100m 거리 검증 (데모 강제 우회 설정이 꺼져있을 때만 검사)
+        if (!force) {
+            if (gathering.getLat() == null || gathering.getLng() == null) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "만남 장소 위치 정보가 등록되어 있지 않습니다.");
+            }
+            if (userLat != null && userLng != null) {
+                double distance = calculateDistance(userLat, userLng, gathering.getLat(), gathering.getLng());
+                if (distance > 100.0) {
+                    throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "만남 장소와 거리가 너무 멉니다 (현재 오차 거리: " + (int) distance + "m). 약속 장소 반경 100m 이내에 있어야 체크인이 가능합니다.");
+                }
+            }
+        }
         
         boolean alreadyCheckedIn = stampRepository.existsByUserIdAndGatheringId(user.getId(), gatheringId);
         if (alreadyCheckedIn) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이미 체크인을 완료하여 보상을 받았습니다.");
-        }
-
-        // 위치 기반 100m 거리 검증 (데모 강제 우회 설정이 꺼져있을 때만 검사)
-        if (!force && userLat != null && userLng != null && gathering.getLat() != null && gathering.getLng() != null) {
-            double distance = calculateDistance(userLat, userLng, gathering.getLat(), gathering.getLng());
-            if (distance > 100.0) {
-                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "만남 장소와 거리가 너무 멉니다 (현재 오차 거리: " + (int) distance + "m). 약속 장소 반경 100m 이내에 있어야 체크인이 가능합니다.");
-            }
         }
         
         // 보상 지급 (+50 PTS, 1 Stamp)

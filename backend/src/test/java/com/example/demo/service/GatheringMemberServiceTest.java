@@ -647,4 +647,36 @@ class GatheringMemberServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("모임 정원이 초과되었습니다.");
     }
+
+    @Test
+    @DisplayName("모임 멤버 초대 시 호스트 본인을 초대 시도할 경우 예외 발생")
+    void inviteMember_HostSelfInvite_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.inviteMember(10L, 1L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("호스트 본인을 초대할 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("스탠바이 체크인 시 만남 장소 위경도가 미등록된 경우 예외 발생")
+    void checkinStandbyGathering_MissingLocation_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("만남 장소 위치 정보가 등록되어 있지 않습니다.");
+    }
 }
