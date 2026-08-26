@@ -237,4 +237,29 @@ class UserServiceImplTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("닉네임은 공백일 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("유저 생성 시 공백 또는 null 이메일 전달 시 예외 발생")
+    void createUser_EmptyEmail_ThrowsException() {
+        // given
+        User newUser = User.builder().email("   ").name("New User").build();
+
+        // when & then
+        assertThatThrownBy(() -> userService.createUser(newUser))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("이메일은 필수 입력값입니다.");
+    }
+
+    @Test
+    @DisplayName("유저 생성 시 비속어 닉네임 사용 시 예외 발생")
+    void createUser_ProfanityName_ThrowsException() {
+        // given
+        User newUser = User.builder().email("new@test.com").name("개새끼").build();
+        org.mockito.BDDMockito.willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText("개새끼");
+
+        // when & then
+        assertThatThrownBy(() -> userService.createUser(newUser))
+                .isInstanceOf(CustomException.class);
+    }
 }

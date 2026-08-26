@@ -104,6 +104,15 @@ class DirectMessageServiceImplTest {
     }
 
     @Test
+    @DisplayName("채팅 내역 조회 시 공백 또는 null 이메일 전달 시 예외 발생")
+    void getChatHistory_EmptyEmail_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> dmService.getChatHistory("  ", "u2@ex.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("이메일 정보가 필요합니다.");
+    }
+
+    @Test
     @DisplayName("존재하지 않는 DM 읽음 처리 시 예외 발생")
     void markAsRead_NotFound_ThrowsException() {
         // given

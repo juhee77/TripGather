@@ -67,6 +67,15 @@ public class UserServiceImpl implements UserUseCase {
 
     @Transactional
     public User createUser(User user) {
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일은 필수 입력값입니다.");
+        }
+        if (user.getName() != null) {
+            if (user.getName().trim().isEmpty()) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "닉네임은 공백일 수 없습니다.");
+            }
+            profanityFilterService.validateText(user.getName());
+        }
         return userRepository.save(user);
     }
 
