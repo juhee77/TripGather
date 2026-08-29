@@ -166,4 +166,33 @@ class GatheringPostControllerTest {
                 .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("존재하지 않는 모임 게시글 삭제 시도 시 400 Bad Request 반환")
+    void deletePost_NotFound_ReturnsBadRequest() throws Exception {
+        // given
+        given(postRepository.findById(999L)).willReturn(Optional.empty());
+
+        // when & then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/gatherings/10/posts/999")
+                .principal(principal))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("비회원/미승인 사용자가 모임 게시글 작성 시도 시 403 Forbidden 반환")
+    void createPost_NonMember_ReturnsForbidden() throws Exception {
+        // given
+        given(gatheringMemberService.isAuthorizedMember(10L, "user@example.com")).willReturn(false);
+
+        GatheringPostController.PostRequest request = new GatheringPostController.PostRequest();
+        request.setContent("비회원 작성 시도");
+
+        // when & then
+        mockMvc.perform(post("/api/gatherings/10/posts")
+                .principal(principal)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
 }

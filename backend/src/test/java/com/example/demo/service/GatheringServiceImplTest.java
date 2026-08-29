@@ -553,4 +553,26 @@ class GatheringServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("모임 인원은 최대 100명까지만 설정 가능합니다.");
     }
+
+    @Test
+    @DisplayName("모임 정보 수정 시 종료일이 시작일보다 빠를 경우 예외 발생")
+    void updateGathering_InvalidDateRange_ThrowsException() {
+        // given
+        Long gatheringId = 1L;
+        User host = User.builder().id(10L).email("host@test.com").build();
+        Gathering existing = Gathering.builder().id(gatheringId).host(host).build();
+        Gathering updateData = Gathering.builder()
+                .title("수정된 모임")
+                .startDate(java.time.LocalDate.of(2026, 8, 30))
+                .endDate(java.time.LocalDate.of(2026, 8, 20))
+                .build();
+
+        given(gatheringRepository.findById(gatheringId)).willReturn(java.util.Optional.of(existing));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.updateGathering(gatheringId, updateData))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("종료일은 시작일보다 빠를 수 없습니다.");
+    }
 }

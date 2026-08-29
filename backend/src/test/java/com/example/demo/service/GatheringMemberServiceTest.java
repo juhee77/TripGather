@@ -679,4 +679,16 @@ class GatheringMemberServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("만남 장소 위치 정보가 등록되어 있지 않습니다.");
     }
+
+    @Test
+    @DisplayName("모임 멤버 초대 시 존재하지 않는 모임 ID 전달 시 예외 발생")
+    void inviteMember_GatheringNotFound_ThrowsException() {
+        // given
+        given(gatheringRepository.findById(99L)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.inviteMember(99L, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("Invalid gathering ID");
+    }
 }
