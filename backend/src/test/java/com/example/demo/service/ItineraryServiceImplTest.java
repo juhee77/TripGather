@@ -443,4 +443,18 @@ class ItineraryServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("자기 자신 여정과는 병합할 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("여정 내 존재하지 않는 경로 포인트 ID 토글 완료 처리 시 예외 발생")
+    void toggleRoutePointCompletion_PointNotFound_ThrowsException() {
+        // given
+        Long itineraryId = 1L;
+        Itinerary itinerary = Itinerary.builder().id(itineraryId).routePoints(new ArrayList<>()).build();
+        given(itineraryRepository.findById(itineraryId)).willReturn(Optional.of(itinerary));
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.toggleRoutePointCompletion(itineraryId, 999L, "user@test.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("경로 포인트를 찾을 수 없습니다.");
+    }
 }

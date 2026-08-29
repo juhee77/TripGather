@@ -252,4 +252,45 @@ class TripExpenseServiceTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("여행을 찾을 수 없습니다");
     }
+
+    @Test
+    @DisplayName("N빵 정산 계산 시 0명 이하의 인원 전달 시 예외 발생")
+    void calculateSettlement_InvalidMemberCount_ThrowsException() {
+        // given
+        Long tripId = 10L;
+        given(tripRepository.existsById(tripId)).willReturn(true);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.calculateSettlement(tripId, 0))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("정산 인원은 최소 1명 이상이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("지출 내역 수정 성공 테스트")
+    void updateExpense_Success() {
+        // given
+        Long expenseId = 10L;
+        String email = "owner@test.com";
+        User user = User.builder().id(1L).email(email).name("Hong").build();
+        Trip trip = Trip.builder().id(100L).title("Jeju").build();
+        TripExpense expense = TripExpense.builder().id(expenseId).payer(user).trip(trip).amount(new BigDecimal("50000")).title("점심").build();
+
+        given(tripExpenseRepository.findById(expenseId)).willReturn(Optional.of(expense));
+        given(tripExpenseRepository.save(any(TripExpense.class))).willReturn(expense);
+
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .title("저녁 식사")
+                .amount(new BigDecimal("70000"))
+                .category("식비")
+                .build();
+
+        // when
+        TripExpenseResponse response = tripExpenseService.updateExpense(expenseId, email, request);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.getTitle()).isEqualTo("저녁 식사");
+        assertThat(response.getAmount()).isEqualByComparingTo(new BigDecimal("70000"));
+    }
 }

@@ -34,6 +34,9 @@ public class TripService {
 
         User owner = securityService.getCurrentUser();
         Trip trip = Trip.of(request.getTitle(), request.getDestination(), request.getCountry(), owner);
+        if (request.getStartDate() != null && request.getEndDate() != null && request.getStartDate().isAfter(request.getEndDate())) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
+        }
         trip.setStartDate(request.getStartDate());
         trip.setEndDate(request.getEndDate());
         trip.setBgImageUrl(request.getBgImageUrl());

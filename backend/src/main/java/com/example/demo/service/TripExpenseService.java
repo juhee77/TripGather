@@ -126,7 +126,7 @@ public class TripExpenseService {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다: " + tripId);
         }
         if (memberCount <= 0) {
-            memberCount = 1;
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "정산 인원은 최소 1명 이상이어야 합니다.");
         }
 
         List<TripExpense> expenses = tripExpenseRepository.findByTripIdOrderByExpenseDateDesc(tripId);
