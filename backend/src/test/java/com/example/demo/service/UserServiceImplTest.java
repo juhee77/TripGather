@@ -262,4 +262,16 @@ class UserServiceImplTest {
         assertThatThrownBy(() -> userService.createUser(newUser))
                 .isInstanceOf(CustomException.class);
     }
+
+    @Test
+    @DisplayName("유저 생성 시 공백 닉네임 전달 시 예외 발생")
+    void createUser_EmptyName_ThrowsException() {
+        // given
+        User newUser = User.builder().email("new@test.com").name("   ").build();
+
+        // when & then
+        assertThatThrownBy(() -> userService.createUser(newUser))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("닉네임은 공백일 수 없습니다.");
+    }
 }

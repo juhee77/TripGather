@@ -50,6 +50,9 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
         if (email1 == null || email1.trim().isEmpty() || email2 == null || email2.trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 필요합니다.");
         }
+        if (email1.equals(email2)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신과의 채팅 내역은 조회할 수 없습니다.");
+        }
         User user1 = userRepository.findByEmail(email1)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         User user2 = userRepository.findByEmail(email2)

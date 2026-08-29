@@ -209,4 +209,12 @@ class DirectMessageServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("자기 자신과의 대화방은 처리할 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("자기 자신과의 채팅 내역 조회 시 예외 발생")
+    void getChatHistory_SelfEmail_ThrowsException() {
+        assertThatThrownBy(() -> dmService.getChatHistory("same@example.com", "same@example.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("자기 자신과의 채팅 내역은 조회할 수 없습니다.");
+    }
 }

@@ -33,6 +33,9 @@ public class StampService implements StampUseCase {
     @Override
     @Transactional
     public void awardStamp(Long userId, Long gatheringId, String title, String stampImageUrl) {
+        if (userId == null) {
+            throw new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.USER_NOT_FOUND, "스탬프를 부여할 유저 ID가 올바르지 않습니다.");
+        }
         // Delegate to pointService to ensure user's stampsCount is atomically updated via pessimistic lock
         pointService.addPoints(userId, 0, 1, title, gatheringId, stampImageUrl);
     }

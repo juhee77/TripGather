@@ -18,6 +18,9 @@ public class NotificationService {
     }
 
     public SseEmitter subscribe(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 올바르지 않습니다.");
+        }
         SseEmitter emitter = new SseEmitter(60L * 1000 * 60); // 1시간 타임아웃
         emitters.put(email, emitter);
 

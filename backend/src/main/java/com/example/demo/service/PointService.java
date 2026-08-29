@@ -30,6 +30,9 @@ public class PointService {
         User user = userRepository.findByIdWithPessimisticLock(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
+        if (amount == 0 && stampsToAdd == 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "적립 또는 차감할 포인트/스탬프를 입력해주세요.");
+        }
         if (user.getPoints() + amount < 0) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "잔액이 부족합니다.");
         }

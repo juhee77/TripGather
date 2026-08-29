@@ -74,4 +74,30 @@ class PointServiceTest {
         assertThat(result.get(0).getAmount()).isEqualTo(50);
         assertThat(result.get(0).getTransactionType()).isEqualTo("EARN");
     }
+
+    @Test
+    @DisplayName("포인트 및 스탬프 적립/차감 금액이 모두 0일 때 예외 발생")
+    void addPoints_ZeroAmountAndStamp_ThrowsException() {
+        // given
+        User user = User.builder().id(100L).points(100).build();
+        given(userRepository.findByIdWithPessimisticLock(100L)).willReturn(Optional.of(user));
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> pointService.addPoints(100L, 0, 0, "유효하지 않은 트랜잭션"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("적립 또는 차감할 포인트/스탬프를 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("포인트 차감 시 잔여 포인트 부족할 때 예외 발생")
+    void addPoints_InsufficientPoints_ThrowsException() {
+        // given
+        User user = User.builder().id(100L).points(50).build();
+        given(userRepository.findByIdWithPessimisticLock(100L)).willReturn(Optional.of(user));
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> pointService.addPoints(100L, -100, 0, "과도한 포인트 차감"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("잔액이 부족합니다.");
+    }
 }
