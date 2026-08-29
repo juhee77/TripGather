@@ -19,6 +19,15 @@ const CreateItineraryModal = ({ onClose, onCreated }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (!formData.title || formData.title.trim().length === 0) {
+            alert("일정 제목을 입력해주세요.");
+            return;
+        }
+        if (!formData.description || formData.description.trim().length === 0) {
+            alert("상세 설명을 입력해주세요.");
+            return;
+        }
+
         const newItinerary = {
             ...formData,
             routePoints: [] // Future: add functionality to add points

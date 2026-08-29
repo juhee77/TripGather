@@ -73,6 +73,12 @@ const CreateGatheringPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    const maxJoiningNum = parseInt(formData.maxJoining, 10);
+    if (isNaN(maxJoiningNum) || maxJoiningNum < 2 || maxJoiningNum > 100) {
+      alert("모집 인원은 최소 2명 이상, 최대 100명 이하로 설정해야 합니다.");
+      return;
+    }
+    
     let finalBgImageUrl = null;
 
     if (selectedFile) {

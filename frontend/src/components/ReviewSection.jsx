@@ -27,7 +27,14 @@ const ReviewSection = ({ tripId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim()) {
+      alert('리뷰 내용을 입력해주세요.');
+      return;
+    }
+    if (rating < 1 || rating > 5) {
+      alert('평점은 1점부터 5점 사이여야 합니다.');
+      return;
+    }
     try {
       const res = await authFetch(`/api/trips/${tripId}/reviews`, {
         method: 'POST',
