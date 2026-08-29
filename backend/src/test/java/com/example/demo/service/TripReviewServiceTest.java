@@ -149,4 +149,64 @@ class TripReviewServiceTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("여행을 찾을 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("리뷰 작성 시 사진 5장 초과 첨부 시 예외 발생")
+    void createReview_ExceedMaxImages_ThrowsException() {
+        String sixImages = "img1.png,img2.png,img3.png,img4.png,img5.png,img6.png";
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.createReview(1L, "좋은 여행 후기", 5, "숙소", sixImages))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("리뷰 사진은 최대 5장까지 첨부할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("리뷰 수정 시 사진 5장 초과 첨부 시 예외 발생")
+    void updateReview_ExceedMaxImages_ThrowsException() {
+        // given
+        Long reviewId = 10L;
+        User author = User.builder().id(1L).email("author@test.com").build();
+        TripReview review = TripReview.builder().id(reviewId).author(author).build();
+        given(tripReviewRepository.findById(reviewId)).willReturn(java.util.Optional.of(review));
+        given(securityService.getCurrentUserEmail()).willReturn("author@test.com");
+
+        String sixImages = "img1.png,img2.png,img3.png,img4.png,img5.png,img6.png";
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.updateReview(reviewId, "수정된 여행 후기", 4, "숙소", sixImages))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("리뷰 사진은 최대 5장까지 첨부할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("리뷰 수정 시 유효하지 않은 평점(0점 또는 6점) 지정 시 예외 발생")
+    void updateReview_InvalidRating_ThrowsException() {
+        // given
+        Long reviewId = 10L;
+        User author = User.builder().id(1L).email("author@test.com").build();
+        TripReview review = TripReview.builder().id(reviewId).author(author).build();
+        given(tripReviewRepository.findById(reviewId)).willReturn(java.util.Optional.of(review));
+        given(securityService.getCurrentUserEmail()).willReturn("author@test.com");
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.updateReview(reviewId, "수정된 여행 후기", 6, "숙소", null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("평점은 1점부터 5점 사이여야 합니다.");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 리뷰 ID로 삭제 요청 시 예외 발생")
+    void deleteReview_NotFound_ThrowsException() {
+        // given
+        Long reviewId = 99L;
+        given(tripReviewRepository.findById(reviewId)).willReturn(java.util.Optional.empty());
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.deleteReview(reviewId))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("리뷰를 찾을 수 없습니다.");
+    }
 }

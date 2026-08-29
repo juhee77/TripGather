@@ -147,4 +147,46 @@ class PackingServiceTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("준비물을 찾을 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("존재하지 않는 여행 ID로 준비물 추가 시 예외 발생")
+    void addItem_TripNotFound_ThrowsException() {
+        // given
+        Long tripId = 99L;
+        given(tripRepository.findById(tripId)).willReturn(java.util.Optional.empty());
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.addItem(tripId, "Passport", "필수"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 여행 ID로 기본 준비물 초기화 시 예외 발생")
+    void initDefaultItems_TripNotFound_ThrowsException() {
+        // given
+        Long tripId = 99L;
+        given(tripRepository.findById(tripId)).willReturn(java.util.Optional.empty());
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.initDefaultItems(tripId))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("준비물 체크 상태 토글 성공")
+    void toggleCheck_Success() {
+        // given
+        Long itemId = 10L;
+        PackingItem item = PackingItem.builder().id(itemId).name("Socks").checked(false).build();
+        given(packingItemRepository.findById(itemId)).willReturn(java.util.Optional.of(item));
+        given(packingItemRepository.save(item)).willReturn(item);
+
+        // when
+        com.example.demo.dto.PackingItemResponse response = packingService.toggleCheck(itemId);
+
+        // then
+        assertThat(response.isChecked()).isTrue();
+    }
 }
