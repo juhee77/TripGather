@@ -10,6 +10,7 @@ import FormInput from '../components/UI/FormInput';
 import PrimaryButton from '../components/UI/PrimaryButton';
 import GatheringFeed from '../components/GatheringFeed';
 import ChatRoom from '../components/ChatRoom';
+import MissionBoard from '../components/MissionBoard';
 
 const GatheringDetailPage = () => {
   const { id } = useParams();
@@ -356,11 +357,12 @@ const GatheringDetailPage = () => {
             {[
               '브리핑', 
               '크루', 
+              isMember ? '미션 🎯' : null,
               `무전 (${comments.length})`, 
               '갤러리 📸',
               (isMember || gathering.isChatPublic) ? '채팅 💬' : null
             ].filter(Boolean).map((tab) => {
-              const tabName = tab.startsWith('무전') ? '무전' : tab.startsWith('갤러리') ? '갤러리' : tab.startsWith('채팅') ? '채팅' : tab;
+              const tabName = tab.startsWith('무전') ? '무전' : tab.startsWith('갤러리') ? '갤러리' : tab.startsWith('채팅') ? '채팅' : tab.startsWith('미션') ? '미션' : tab;
               const isActive = activeTab === tabName;
               
               return (
@@ -686,6 +688,10 @@ const GatheringDetailPage = () => {
                 </div>
               )}
             </div>
+          )}
+
+          {activeTab === '미션' && isMember && (
+            <MissionBoard gatheringId={gathering.id} isHost={isHost} />
           )}
 
           {activeTab === '갤러리' && (
