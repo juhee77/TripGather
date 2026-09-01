@@ -27,6 +27,9 @@ public class TripReviewService {
 
     @Transactional
     public TripReviewResponse createReview(Long tripId, String content, int rating, String category, String imageUrls) {
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
         if (content == null || content.trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 내용을 입력해주세요.");
         }

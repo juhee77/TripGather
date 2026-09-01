@@ -293,4 +293,55 @@ class TripExpenseServiceTest {
         assertThat(response.getTitle()).isEqualTo("저녁 식사");
         assertThat(response.getAmount()).isEqualByComparingTo(new BigDecimal("70000"));
     }
+
+    @Test
+    @DisplayName("지출 내역 등록 시 0원 이하 금액 지정 시 예외 발생")
+    void addExpense_InvalidAmount_ThrowsException() {
+        // given
+        String email = "test@example.com";
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .tripId(10L)
+                .title("Zero Expense")
+                .amount(new BigDecimal("0"))
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense(email, request))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("지출 금액은 0원보다 커야 합니다.");
+    }
+
+    @Test
+    @DisplayName("지출 내역 수정 시 null 지출 ID 전달 시 예외 발생")
+    void updateExpense_NullExpenseIdOrEmail_ThrowsException() {
+        // given
+        TripExpenseRequest request = TripExpenseRequest.builder().title("수정").build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.updateExpense(null, "user@test.com", request))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("지출 ID 또는 유저 정보가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("지출 내역 삭제 시 null 지출 ID 전달 시 예외 발생")
+    void deleteExpense_NullExpenseIdOrEmail_ThrowsException() {
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.deleteExpense(null, "user@test.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("지출 ID 또는 유저 정보가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("N빵 정산 계산 시 존재하지 않는 여행 ID 전달 시 예외 발생")
+    void calculateSettlement_NonExistingTrip_ThrowsException() {
+        // given
+        Long tripId = 999L;
+        given(tripRepository.existsById(tripId)).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.calculateSettlement(tripId, 3))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다: 999");
+    }
 }

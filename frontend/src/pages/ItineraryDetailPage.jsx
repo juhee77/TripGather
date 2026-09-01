@@ -119,7 +119,7 @@ const ItineraryDetailPage = () => {
         setActionLoading(true);
         try {
             // 1. 일정(Itinerary) 클론 생성
-            const clonedItinerary = await JourneyRepository.add(localItinerary.id, currentUser.email);
+            const clonedItinerary = await JourneyRepository.add(localItinerary.id);
             if (!clonedItinerary || !clonedItinerary.id) {
                 throw new Error("Cloning itinerary failed");
             }

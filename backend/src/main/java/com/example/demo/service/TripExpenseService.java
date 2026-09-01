@@ -67,13 +67,14 @@ public class TripExpenseService {
 
     @Transactional
     public void deleteExpense(Long expenseId, String userEmail) {
+        if (expenseId == null || userEmail == null || userEmail.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지출 ID 또는 유저 정보가 올바르지 않습니다.");
+        }
         TripExpense expense = tripExpenseRepository.findById(expenseId)
-                .orElseThrow(() -> new com.example.demo.exception.CustomException(
-                        com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "지출 내역을 찾을 수 없습니다: " + expenseId));
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지출 내역을 찾을 수 없습니다: " + expenseId));
 
         if (!expense.getPayer().getEmail().equals(userEmail)) {
-            throw new com.example.demo.exception.CustomException(
-                    com.example.demo.exception.ErrorCode.FORBIDDEN_ACTION, "지출 등록자만 삭제할 수 있습니다.");
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "지출 등록자만 삭제할 수 있습니다.");
         }
 
         tripExpenseRepository.delete(expense);
@@ -81,6 +82,9 @@ public class TripExpenseService {
 
     @Transactional
     public TripExpenseResponse updateExpense(Long expenseId, String userEmail, TripExpenseRequest request) {
+        if (expenseId == null || userEmail == null || userEmail.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지출 ID 또는 유저 정보가 올바르지 않습니다.");
+        }
         TripExpense expense = tripExpenseRepository.findById(expenseId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지출 내역을 찾을 수 없습니다: " + expenseId));
 

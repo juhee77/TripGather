@@ -189,4 +189,49 @@ class PackingServiceTest {
         // then
         assertThat(response.isChecked()).isTrue();
     }
+
+    @Test
+    @DisplayName("null 여행 ID로 기본 준비물 초기화 시 예외 발생")
+    void initDefaultItems_NullTripId_ThrowsException() {
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.initDefaultItems(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 여행 ID로 준비물 항목 추가 시 예외 발생")
+    void addItem_NullTripId_ThrowsException() {
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.addItem(null, "Towel", "세면"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 여행 ID로 준비물 진행도 조회 시 예외 발생")
+    void getPackingProgress_NullTripId_ThrowsException() {
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.getPackingProgress(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 준비물 ID로 항목 삭제 시 예외 발생")
+    void deleteItem_NullItemId_ThrowsException() {
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.deleteItem(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("준비물 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 준비물 ID로 체크 상태 토글 시 예외 발생")
+    void toggleCheck_NullItemId_ThrowsException() {
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.toggleCheck(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("준비물 ID가 올바르지 않습니다.");
+    }
 }

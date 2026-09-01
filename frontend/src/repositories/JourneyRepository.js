@@ -1,16 +1,18 @@
 import { authFetch } from '../api/client';
 
+/**
+ * 내 여정 API.
+ * 대상 사용자는 서버가 JWT 인증 주체에서 판별하므로 email 을 보내지 않는다.
+ */
 class JourneyRepository {
-  async fetchMine(email) {
-    if (!email) return [];
-    const res = await authFetch(`/api/my-trips?email=${encodeURIComponent(email)}`);
+  async fetchMine() {
+    const res = await authFetch('/api/my-trips');
     if (!res.ok) throw new Error('Failed to fetch my journeys');
     return res.json();
   }
 
-  async add(itineraryId, email) {
-    if (!email) throw new Error('User email required');
-    const res = await authFetch(`/api/my-trips/clone?originalId=${itineraryId}&email=${encodeURIComponent(email)}`, {
+  async add(itineraryId) {
+    const res = await authFetch(`/api/my-trips/clone?originalId=${itineraryId}`, {
       method: 'POST',
     });
     if (!res.ok) throw new Error('Failed to add journey');
@@ -25,8 +27,8 @@ class JourneyRepository {
     if (!res.ok) throw new Error('Failed to remove journey');
   }
 
-  async toggleShare(itineraryId, email, isPublic) {
-    const res = await authFetch(`/api/my-trips/${itineraryId}/share?email=${encodeURIComponent(email)}&isPublic=${isPublic}`, {
+  async toggleShare(itineraryId, isPublic) {
+    const res = await authFetch(`/api/my-trips/${itineraryId}/share?isPublic=${isPublic}`, {
       method: 'PATCH',
     });
     if (!res.ok) throw new Error('Failed to toggle share');
@@ -35,4 +37,3 @@ class JourneyRepository {
 }
 
 export default new JourneyRepository();
-

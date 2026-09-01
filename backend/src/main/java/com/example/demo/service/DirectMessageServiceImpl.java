@@ -25,7 +25,10 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
     @Override
     @Transactional
     public DMResponse sendDM(String senderEmail, String receiverEmail, String content) {
-        if (senderEmail != null && senderEmail.equals(receiverEmail)) {
+        if (senderEmail == null || senderEmail.trim().isEmpty() || receiverEmail == null || receiverEmail.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "발신자 및 수신자 이메일 정보가 올바르지 않습니다.");
+        }
+        if (senderEmail.equals(receiverEmail)) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신에게는 메시지를 발송할 수 없습니다.");
         }
         if (content == null || content.trim().isEmpty()) {
@@ -63,6 +66,9 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
     @Override
     @Transactional
     public void markAsRead(Long dmId) {
+        if (dmId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "메시지 ID가 올바르지 않습니다.");
+        }
         DirectMessage dm = dmRepository.findById(dmId)
                 .orElseThrow(() -> new CustomException(ErrorCode.DM_NOT_FOUND)); 
         dm.setRead(true);
@@ -71,7 +77,10 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
     @Override
     @Transactional
     public void markMessagesAsRead(String currentEmail, String partnerEmail) {
-        if (currentEmail != null && currentEmail.equals(partnerEmail)) {
+        if (currentEmail == null || currentEmail.trim().isEmpty() || partnerEmail == null || partnerEmail.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 필요합니다.");
+        }
+        if (currentEmail.equals(partnerEmail)) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신과의 대화방은 처리할 수 없습니다.");
         }
         User me = userRepository.findByEmail(currentEmail)
@@ -86,6 +95,9 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
     @Override
     @Transactional(readOnly = true)
     public List<User> getChatPartners(String myEmail) {
+        if (myEmail == null || myEmail.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 올바르지 않습니다.");
+        }
         return dmRepository.findChatPartners(myEmail);
     }
 }

@@ -217,4 +217,36 @@ class DirectMessageServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("자기 자신과의 채팅 내역은 조회할 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("채팅 상대 목록 조회 시 공백 또는 null 이메일 전달 시 예외 발생")
+    void getChatPartners_EmptyEmail_ThrowsException() {
+        assertThatThrownBy(() -> dmService.getChatPartners("   "))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("이메일 정보가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("메시지 읽음 처리 시 공백 또는 null 이메일 전달 시 예외 발생")
+    void markMessagesAsRead_EmptyEmail_ThrowsException() {
+        assertThatThrownBy(() -> dmService.markMessagesAsRead("   ", "partner@example.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("이메일 정보가 필요합니다.");
+    }
+
+    @Test
+    @DisplayName("단건 메시지 읽음 처리 시 null dmId 전달 시 예외 발생")
+    void markAsRead_NullDmId_ThrowsException() {
+        assertThatThrownBy(() -> dmService.markAsRead(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("메시지 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("메시지 발송 시 공백 또는 null 이메일 전달 시 예외 발생")
+    void sendDM_EmptyEmail_ThrowsException() {
+        assertThatThrownBy(() -> dmService.sendDM("   ", "receiver@example.com", "안녕"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("발신자 및 수신자 이메일 정보가 올바르지 않습니다.");
+    }
 }

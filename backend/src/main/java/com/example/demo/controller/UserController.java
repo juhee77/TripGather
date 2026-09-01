@@ -45,8 +45,16 @@ public class UserController {
         return ResponseEntity.ok(UserResponse.from(userService.createUser(request.toEntity())));
     }
 
+    /**
+     * 프로필 수정. 본인 계정만 수정할 수 있다.
+     */
     @PatchMapping("/{id}")
     public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @RequestBody com.example.demo.dto.UserRequest request) {
+        User currentUser = userService.getCurrentUser();
+        if (!currentUser.getId().equals(id)) {
+            throw new com.example.demo.exception.CustomException(
+                    com.example.demo.exception.ErrorCode.FORBIDDEN_ACTION);
+        }
         return ResponseEntity.ok(UserResponse.from(userService.updateProfile(id, request.toEntity())));
     }
 

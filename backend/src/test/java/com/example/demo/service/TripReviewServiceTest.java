@@ -209,4 +209,14 @@ class TripReviewServiceTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("리뷰를 찾을 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("null 여행 ID로 여행 후기 작성 시 예외 발생")
+    void createReview_NullTripId_ThrowsException() {
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.createReview(null, "좋은 여행이었습니다.", 5, "숙소", null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행 ID가 올바르지 않습니다.");
+    }
 }

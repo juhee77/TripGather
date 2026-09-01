@@ -81,6 +81,9 @@ public class TripService {
     @Transactional(readOnly = true)
     public List<TripResponse> getMyTrips() {
         String email = securityService.getCurrentUserEmail();
+        if (email == null || email.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "유저 이메일 정보가 올바르지 않습니다.");
+        }
         return tripRepository.findByOwnerEmailOrderByCreatedAtDesc(email)
                 .stream()
                 .map(TripResponse::from)
@@ -97,9 +100,13 @@ public class TripService {
     public TripResponse updateTrip(Long tripId, TripRequest request) {
         Trip trip = findOwnedTrip(tripId);
         if (request.getTitle() != null) {
-            trip.setTitle(request.getTitle());
+            if (request.getTitle().trim().isEmpty()) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 제목은 공백일 수 없습니다.");
+            }
+            profanityFilterService.validateText(request.getTitle());
+            trip.setTitle(request.getTitle().trim());
             if (trip.getItinerary() != null) {
-                trip.getItinerary().setTitle(request.getTitle() + " 일정표");
+                trip.getItinerary().setTitle(request.getTitle().trim() + " 일정표");
             }
         }
         if (request.getDestination() != null) {
@@ -110,6 +117,11 @@ public class TripService {
         }
         if (request.getCountry() != null) {
             trip.setCountry(request.getCountry());
+        }
+        java.time.LocalDate newStart = request.getStartDate() != null ? request.getStartDate() : trip.getStartDate();
+        java.time.LocalDate newEnd = request.getEndDate() != null ? request.getEndDate() : trip.getEndDate();
+        if (newStart != null && newEnd != null && newStart.isAfter(newEnd)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
         }
         if (request.getStartDate() != null) {
             trip.setStartDate(request.getStartDate());
@@ -153,6 +165,9 @@ public class TripService {
     // --- Helper ---
 
     private Trip findTripById(Long tripId) {
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
         return tripRepository.findById(tripId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다."));
     }

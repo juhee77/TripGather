@@ -31,12 +31,15 @@ public class ChatController {
     @MessageMapping("/chat/{gatheringId}/send")
     @SendTo("/topic/chat/{gatheringId}")
     public ChatMessageResponse sendMessage(@DestinationVariable Long gatheringId, @org.springframework.messaging.handler.annotation.Payload ChatMessageRequest request, java.security.Principal principal) {
-        log.info("[Chat] Received message for gathering {}: {}", gatheringId, request.getContent());
-        
-        // Membership check: Only approved members/host can send messages
-        String email = (principal != null) ? principal.getName() : request.getSenderEmail();
-        log.info("[Chat] Sender email: {}, Principal: {}", email, (principal != null ? principal.getName() : "NULL"));
+        // 발신자는 반드시 STOMP 세션의 인증 주체에서만 얻는다.
+        // (클라이언트가 보낸 senderEmail 을 신뢰하면 타인 사칭이 가능하다)
+        if (principal == null) {
+            log.warn("[Chat] Rejected unauthenticated message for gathering {}", gatheringId);
+            return null;
+        }
+        String email = principal.getName();
 
+        // Membership check: Only approved members/host can send messages
         if (!gatheringMemberService.isAuthorizedMember(gatheringId, email)) {
             log.warn("[Chat] Unauthorized chat attempt by {} for gathering {}", email, gatheringId);
             return null; 
@@ -71,6 +74,7 @@ public class ChatController {
     @AllArgsConstructor
     public static class ChatMessageRequest {
         private String content;
+        /** 클라이언트 호환용 필드. 서버는 이 값을 신뢰하지 않고 인증 주체를 사용한다. */
         private String senderEmail;
     }
 }

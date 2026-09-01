@@ -41,7 +41,7 @@ const CreateGatheringPage = () => {
     if (currentUser?.email) {
       setItinerariesLoading(true);
       import('../repositories/JourneyRepository').then(repo => {
-        repo.default.fetchMine(currentUser.email)
+        repo.default.fetchMine()
           .then(data => setMyItineraries(data))
           .catch(err => console.error(err))
           .finally(() => setItinerariesLoading(false));

@@ -191,14 +191,14 @@ class ItineraryServiceImplTest {
                 .dayLabel("Day 1")
                 .sequenceOrder(1)
                 .build();
-        Itinerary target = Itinerary.builder().id(tId).routePoints(new ArrayList<>(java.util.List.of(tPoint))).build();
+        Itinerary target = Itinerary.builder().id(tId).ownerEmail("owner@test.com").routePoints(new ArrayList<>(java.util.List.of(tPoint))).build();
 
         given(itineraryRepository.findById(sId)).willReturn(Optional.of(source));
         given(itineraryRepository.findById(tId)).willReturn(Optional.of(target));
         given(itineraryRepository.save(any(Itinerary.class))).willAnswer(i -> i.getArgument(0));
 
         // when
-        Itinerary result = itineraryService.mergeItinerary(sId, tId, 1);
+        Itinerary result = itineraryService.mergeItinerary(sId, tId, 1, "owner@test.com");
 
         // then
         assertThat(result.getRoutePoints()).hasSize(2);
@@ -439,7 +439,7 @@ class ItineraryServiceImplTest {
         Long itineraryId = 1L;
 
         // when & then
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.mergeItinerary(itineraryId, itineraryId, 1))
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.mergeItinerary(itineraryId, itineraryId, 1, "owner@test.com"))
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("자기 자신 여정과는 병합할 수 없습니다.");
     }
@@ -456,5 +456,41 @@ class ItineraryServiceImplTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.toggleRoutePointCompletion(itineraryId, 999L, "user@test.com"))
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("경로 포인트를 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("타인 소유 여정으로 병합 시도 시 권한 예외 발생")
+    void mergeItinerary_NotOwner_ThrowsForbidden() {
+        // given
+        Long sId = 1L;
+        Long tId = 2L;
+        Itinerary source = Itinerary.builder().id(sId).routePoints(new ArrayList<>()).build();
+        Itinerary target = Itinerary.builder().id(tId).ownerEmail("owner@test.com").routePoints(new ArrayList<>()).build();
+
+        given(itineraryRepository.findById(sId)).willReturn(Optional.of(source));
+        given(itineraryRepository.findById(tId)).willReturn(Optional.of(target));
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> itineraryService.mergeItinerary(sId, tId, 1, "hacker@test.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("여정 병합 시 0명 이하 일차 번호(targetDay) 전달 시 예외 발생")
+    void mergeItinerary_InvalidTargetDay_ThrowsException() {
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.mergeItinerary(1L, 2L, 0, "owner@test.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("병합 대상 일차 번호는 1 이상이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여정 공개 상태 토글 시 공백 또는 null 이메일 전달 시 예외 발생")
+    void togglePublicStatus_EmptyEmail_ThrowsException() {
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.togglePublicStatus(1L, "   ", true))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("유저 이메일 정보가 올바르지 않습니다.");
     }
 }

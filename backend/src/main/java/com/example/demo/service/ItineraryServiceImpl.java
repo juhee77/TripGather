@@ -131,6 +131,9 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     @Override
     @Transactional
     public Itinerary togglePublicStatus(Long id, String email, boolean isPublic) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "유저 이메일 정보가 올바르지 않습니다.");
+        }
         Itinerary itinerary = getById(id);
         if (!itinerary.getOwnerEmail().equals(email)) {
             throw new CustomException(ErrorCode.FORBIDDEN_ACTION); // Use standard forbidden error
@@ -212,12 +215,26 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
 
     @Override
     @Transactional
-    public Itinerary mergeItinerary(Long sourceId, Long targetId, int targetDay) {
+    public Itinerary mergeItinerary(Long sourceId, Long targetId, int targetDay, String requesterEmail) {
+        if (targetDay <= 0) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "병합 대상 일차 번호는 1 이상이어야 합니다.");
+        }
+        if (sourceId == null || targetId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "병합할 여정 ID가 올바르지 않습니다.");
+        }
+        if (requesterEmail == null || requesterEmail.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "유저 이메일 정보가 올바르지 않습니다.");
+        }
         if (sourceId.equals(targetId)) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신 여정과는 병합할 수 없습니다.");
         }
         Itinerary source = getById(sourceId);
         Itinerary target = getById(targetId);
+
+        // 병합은 대상 여정에 경로를 써 넣는 쓰기 작업이므로 소유자만 수행할 수 있다.
+        if (!requesterEmail.equals(target.getOwnerEmail())) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION);
+        }
 
         // Find existing day label for targetDay if exists
         String targetDayLabel = target.getRoutePoints().stream()

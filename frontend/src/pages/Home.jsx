@@ -47,7 +47,7 @@ const Home = () => {
   useEffect(() => {
     if (!currentUser?.email) return;
     const loadJourneys = () => {
-      JourneyRepository.fetchMine(currentUser.email)
+      JourneyRepository.fetchMine()
         .then(setJourneyItineraries)
         .catch((err) => console.error('Failed to fetch journeys:', err));
     };

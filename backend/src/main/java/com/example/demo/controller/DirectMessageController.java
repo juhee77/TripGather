@@ -30,9 +30,16 @@ public class DirectMessageController {
 
     @MessageMapping("/dm/send")
     public void sendDM(@org.springframework.messaging.handler.annotation.Payload DMRequest request, java.security.Principal principal) {
-        String senderEmail = (principal != null) ? principal.getName() : request.getSenderEmail();
-        log.info("[DM] Sending from {} (Principal: {}) to {}: {}", senderEmail, (principal != null ? principal.getName() : "NULL"), request.getReceiverEmail(), request.getContent());
-        
+        // 발신자는 반드시 STOMP 세션의 인증 주체에서만 얻는다.
+        // (클라이언트가 보낸 senderEmail 을 신뢰하면 타인 사칭이 가능하다)
+        if (principal == null) {
+            log.warn("[DM] Rejected unauthenticated message to {}", request.getReceiverEmail());
+            return;
+        }
+        String senderEmail = principal.getName();
+        log.debug("[DM] Sending from {} to {}", senderEmail, request.getReceiverEmail());
+
+
         // Use the DTO directly from the service
         DMResponse response = dmService.sendDM(senderEmail, request.getReceiverEmail(), request.getContent());
 
@@ -80,6 +87,7 @@ public class DirectMessageController {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class DMRequest {
+        /** 클라이언트 호환용 필드. 서버는 이 값을 신뢰하지 않고 인증 주체를 사용한다. */
         private String senderEmail;
         private String receiverEmail;
         private String content;

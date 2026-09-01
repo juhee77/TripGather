@@ -97,6 +97,7 @@ class UserControllerTest {
         // given
         User updateData = User.builder().name("New Name").build();
         User updatedUser = User.builder().id(1L).name("New Name").email("test@example.com").build();
+        given(userService.getCurrentUser()).willReturn(User.builder().id(1L).email("test@example.com").build());
         given(userService.updateProfile(anyLong(), any(User.class))).willReturn(updatedUser);
 
         // when & then
@@ -106,6 +107,22 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(updateData)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("New Name"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("타인 프로필 수정 시도 시 권한 예외 발생")
+    void updateProfile_NotOwner_ReturnsForbidden() throws Exception {
+        // given
+        User updateData = User.builder().name("Hacked").build();
+        given(userService.getCurrentUser()).willReturn(User.builder().id(2L).email("other@example.com").build());
+
+        // when & then
+        mockMvc.perform(patch("/api/users/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateData)))
+                .andExpect(status().isForbidden());
     }
 
     @Test

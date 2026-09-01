@@ -43,6 +43,9 @@ public class PackingService {
 
     @Transactional
     public List<PackingItemResponse> initDefaultItems(Long tripId) {
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다."));
 
@@ -63,6 +66,9 @@ public class PackingService {
 
     @Transactional
     public PackingItemResponse addItem(Long tripId, String name, String category) {
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
         if (name == null || name.trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "준비물 항목명을 입력해주세요.");
         }
@@ -80,6 +86,9 @@ public class PackingService {
 
     @Transactional
     public PackingItemResponse toggleCheck(Long itemId) {
+        if (itemId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "준비물 ID가 올바르지 않습니다.");
+        }
         PackingItem item = packingItemRepository.findById(itemId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "준비물을 찾을 수 없습니다."));
         item.setChecked(!item.isChecked());
@@ -88,6 +97,9 @@ public class PackingService {
 
     @Transactional
     public void deleteItem(Long itemId) {
+        if (itemId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "준비물 ID가 올바르지 않습니다.");
+        }
         PackingItem item = packingItemRepository.findById(itemId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "준비물을 찾을 수 없습니다."));
         packingItemRepository.delete(item);
@@ -95,6 +107,9 @@ public class PackingService {
 
     @Transactional(readOnly = true)
     public com.example.demo.dto.PackingProgressResponse getPackingProgress(Long tripId) {
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
         if (!tripRepository.existsById(tripId)) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다.");
         }
