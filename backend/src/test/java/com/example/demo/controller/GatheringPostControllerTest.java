@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -194,5 +195,64 @@ class GatheringPostControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("공개 갤러리의 게시글 목록은 비회원도 공개 게시글만 조회 가능")
+    void getPosts_PublicGallery_NonMember_SeesOnlyPublicPosts() throws Exception {
+        // given
+        Gathering publicGallery = Gathering.builder().id(10L).title("Test Gathering").isGalleryPublic(true).build();
+        com.example.demo.domain.GatheringPost publicPost = com.example.demo.domain.GatheringPost.builder()
+                .id(1L).author(user).gathering(publicGallery).content("공개 게시글").isPublic(true).build();
+        com.example.demo.domain.GatheringPost privatePost = com.example.demo.domain.GatheringPost.builder()
+                .id(2L).author(user).gathering(publicGallery).content("비공개 게시글").isPublic(false).build();
+
+        given(gatheringService.getGathering(10L)).willReturn(publicGallery);
+        given(gatheringMemberService.isAuthorizedMember(10L, null)).willReturn(false);
+        given(postRepository.findByGatheringOrderByCreatedAtDesc(publicGallery))
+                .willReturn(java.util.List.of(publicPost, privatePost));
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings/10/posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].content").value("공개 게시글"));
+    }
+
+    @Test
+    @DisplayName("공개 갤러리의 게시글 목록은 승인된 멤버에게 비공개 게시글까지 노출")
+    void getPosts_Member_SeesAllPosts() throws Exception {
+        // given
+        Gathering publicGallery = Gathering.builder().id(10L).title("Test Gathering").isGalleryPublic(true).build();
+        com.example.demo.domain.GatheringPost publicPost = com.example.demo.domain.GatheringPost.builder()
+                .id(1L).author(user).gathering(publicGallery).content("공개 게시글").isPublic(true).build();
+        com.example.demo.domain.GatheringPost privatePost = com.example.demo.domain.GatheringPost.builder()
+                .id(2L).author(user).gathering(publicGallery).content("비공개 게시글").isPublic(false).build();
+
+        given(gatheringService.getGathering(10L)).willReturn(publicGallery);
+        given(gatheringMemberService.isAuthorizedMember(10L, "user@example.com")).willReturn(true);
+        given(postRepository.findByGatheringOrderByCreatedAtDesc(publicGallery))
+                .willReturn(java.util.List.of(publicPost, privatePost));
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings/10/posts").principal(principal))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    @DisplayName("비공개 갤러리의 게시글 목록은 비회원에게 빈 목록 반환")
+    void getPosts_PrivateGallery_NonMember_ReturnsEmpty() throws Exception {
+        // given
+        Gathering privateGallery = Gathering.builder().id(10L).title("Test Gathering").isGalleryPublic(false).build();
+        given(gatheringService.getGathering(10L)).willReturn(privateGallery);
+        given(gatheringMemberService.isAuthorizedMember(10L, null)).willReturn(false);
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings/10/posts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+        org.mockito.Mockito.verify(postRepository, org.mockito.Mockito.never())
+                .findByGatheringOrderByCreatedAtDesc(org.mockito.ArgumentMatchers.any());
     }
 }

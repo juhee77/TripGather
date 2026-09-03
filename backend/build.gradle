@@ -79,14 +79,15 @@ jacocoTestReport {
 	afterEvaluate {
 		classDirectories.setFrom(files(classDirectories.files.collect {
 			// 리포트 측정 범위 = 아래 커버리지 게이트 강제 범위와 동일하게 유지한다.
+			// 남은 제외 대상은 QueryDSL 생성 클래스, 부트스트랩 클래스,
+			// 그리고 로직이 없는 데이터/설정/조회 계층뿐이다.
 			fileTree(dir: it, exclude: [
 				"**/Q*",
 				"**/*Application*",
 				"**/*dto*",
 				"**/*domain*",
 				"**/*config*",
-				"**/*repository*",
-				"**/*Controller*"
+				"**/*repository*"
 			])
 		}))
 	}
@@ -116,15 +117,16 @@ jacocoTestCoverageVerification {
 			]
 		}
 
-		// [규칙 2] 인증/예외 처리 계층 - 회귀 시 영향 범위가 가장 큰 지점부터 단계적으로 강제 확대
+		// [규칙 2] 인증/예외 처리 및 API 계층
 		//   - security: JWT 필터/STOMP 연결 인증/소셜 로그인(oauth 하위 포함)
 		//   - exception: 전역 예외 응답 변환
-		// 아직 미포함: controller 계층
+		//   - controller: REST/STOMP 엔드포인트
 		rule {
 			element = 'CLASS'
 			includes = [
 				"com.example.demo.security.*",
-				"com.example.demo.exception.*"
+				"com.example.demo.exception.*",
+				"com.example.demo.controller.*"
 			]
 			limit {
 				counter = 'LINE'

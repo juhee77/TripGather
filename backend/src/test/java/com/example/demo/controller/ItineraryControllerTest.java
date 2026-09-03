@@ -102,4 +102,20 @@ class ItineraryControllerTest {
                         .with(csrf()))
                 .andExpect(status().isNoContent());
     }
+
+    @Test
+    @WithMockUser
+    @DisplayName("경로 지점 방문 완료 토글 API 성공")
+    void toggleRoutePoint_Success() throws Exception {
+        // given
+        com.example.demo.domain.RoutePoint point = com.example.demo.domain.RoutePoint.builder()
+                .id(7L).label("성산일출봉").build();
+        given(itineraryService.toggleRoutePointCompletion(anyLong(), anyLong(), any()))
+                .willReturn(point);
+
+        // when & then
+        mockMvc.perform(patch("/api/itineraries/1/points/7/toggle").with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(7));
+    }
 }

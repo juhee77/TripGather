@@ -216,4 +216,84 @@ class GatheringControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].title").value("Joined"));
     }
+
+    @Test
+    @WithMockUser
+    @DisplayName("인기 모임 목록 조회 성공")
+    void getPopularGatherings_Success() throws Exception {
+        // given
+        Gathering g = Gathering.builder().id(1L).title("인기 모임").build();
+        given(gatheringService.getPopularGatherings()).willReturn(List.of(g));
+        given(gatheringService.isLikedByUser(anyLong(), any())).willReturn(true);
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings/popular"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("인기 모임"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("내가 찜한 모임 목록 조회 성공")
+    void getUserLikedGatherings_Success() throws Exception {
+        // given
+        Gathering g = Gathering.builder().id(1L).title("찜한 모임").build();
+        given(gatheringService.getUserLikedGatherings(any())).willReturn(List.of(g));
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings/me/liked"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("찜한 모임"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("모임 찜 여부 조회 성공")
+    void isLikedByUser_Success() throws Exception {
+        // given
+        given(gatheringService.isLikedByUser(anyLong(), any())).willReturn(true);
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings/1/is-liked"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("모임 참여 권한 조회 성공")
+    void isAuthorizedMember_Success() throws Exception {
+        // given
+        given(gatheringMemberService.isAuthorizedMember(anyLong(), any())).willReturn(true);
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings/1/is-authorized"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("멤버 초대 성공")
+    void inviteMember_Success() throws Exception {
+        // when & then
+        mockMvc.perform(post("/api/gatherings/1/invite/2").with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("스탠바이 모임 체크인 성공 - 좌표와 강제 여부 전달")
+    void checkinStandbyGathering_Success() throws Exception {
+        // when & then
+        mockMvc.perform(post("/api/gatherings/1/checkin")
+                        .with(csrf())
+                        .param("lat", "33.45")
+                        .param("lng", "126.56")
+                        .param("force", "true"))
+                .andExpect(status().isOk());
+
+        org.mockito.Mockito.verify(gatheringMemberService)
+                .checkinStandbyGathering(1L, 33.45, 126.56, true);
+    }
 }
