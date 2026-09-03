@@ -79,8 +79,6 @@ jacocoTestReport {
 	afterEvaluate {
 		classDirectories.setFrom(files(classDirectories.files.collect {
 			// 리포트 측정 범위 = 아래 커버리지 게이트 강제 범위와 동일하게 유지한다.
-			// security 최상위(JwtAuthenticationFilter, StompHandler 등)는 아직 미강제라 제외하되,
-			// security/oauth 하위 패키지는 강제 대상이므로 *.class 로 한정해 제외한다.
 			fileTree(dir: it, exclude: [
 				"**/Q*",
 				"**/*Application*",
@@ -88,7 +86,6 @@ jacocoTestReport {
 				"**/*domain*",
 				"**/*config*",
 				"**/*repository*",
-				"**/security/*.class",
 				"**/*Controller*"
 			])
 		}))
@@ -120,13 +117,13 @@ jacocoTestCoverageVerification {
 		}
 
 		// [규칙 2] 인증/예외 처리 계층 - 회귀 시 영향 범위가 가장 큰 지점부터 단계적으로 강제 확대
-		//   - security.oauth: 카카오/네이버 로그인 플로우
+		//   - security: JWT 필터/STOMP 연결 인증/소셜 로그인(oauth 하위 포함)
 		//   - exception: 전역 예외 응답 변환
-		// 아직 미포함: security 최상위(JwtAuthenticationFilter, StompHandler, SecurityService), controller 계층
+		// 아직 미포함: controller 계층
 		rule {
 			element = 'CLASS'
 			includes = [
-				"com.example.demo.security.oauth.*",
+				"com.example.demo.security.*",
 				"com.example.demo.exception.*"
 			]
 			limit {
