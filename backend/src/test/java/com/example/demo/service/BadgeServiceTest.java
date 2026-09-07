@@ -41,7 +41,7 @@ class BadgeServiceTest {
         User user = User.builder().id(1L).email(email).points(1500).build();
 
         given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
-        given(gatheringRepository.findAll()).willReturn(List.of());
+        given(gatheringRepository.countByHostId(1L)).willReturn(0L);
         given(stampRepository.countByUserId(1L)).willReturn(2L);
 
         // when
@@ -53,5 +53,24 @@ class BadgeServiceTest {
         assertThat(badges.get(1).isUnlocked()).isFalse(); // 열정적인 호스트 (0개)
         assertThat(badges.get(2).isUnlocked()).isTrue(); // 스탬프 수집가 (2개)
         assertThat(badges.get(3).isUnlocked()).isTrue(); // 포인트 리치 (1500pt)
+    }
+
+    @Test
+    @DisplayName("모임을 1회 이상 호스팅하면 '열정적인 호스트' 뱃지가 해금된다")
+    void getUserBadges_HostedGathering_UnlocksHostBadge() {
+        // given
+        String email = "host@example.com";
+        User user = User.builder().id(2L).email(email).points(0).build();
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(gatheringRepository.countByHostId(2L)).willReturn(3L);
+        given(stampRepository.countByUserId(2L)).willReturn(0L);
+
+        // when
+        List<BadgeDto> badges = badgeService.getUserBadges(email);
+
+        // then
+        assertThat(badges.get(1).isUnlocked()).isTrue();  // 열정적인 호스트
+        assertThat(badges.get(2).isUnlocked()).isFalse(); // 스탬프 수집가 (0개)
     }
 }

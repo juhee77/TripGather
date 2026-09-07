@@ -37,9 +37,7 @@ public class BadgeService {
                 .build());
 
         // 2. 열정적인 호스트 (호스팅한 모임 1개 이상)
-        long hostedCount = gatheringRepository.findAll().stream()
-                .filter(g -> g.getHost() != null && g.getHost().getId().equals(user.getId()))
-                .count();
+        long hostedCount = gatheringRepository.countByHostId(user.getId());
         badges.add(BadgeDto.builder()
                 .code("PASSIONATE_HOST")
                 .name("열정적인 호스트")

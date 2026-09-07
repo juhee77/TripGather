@@ -359,11 +359,13 @@ class TripServiceTest {
         Trip trip = Trip.of("Busan Trip", "부산", "Korea", owner);
         trip.setId(1L);
         given(tripRepository.findById(1L)).willReturn(java.util.Optional.of(trip));
-        given(itineraryRepository.findAll()).willReturn(java.util.List.of(
-                com.example.demo.domain.Itinerary.builder().id(1L).title("부산 2박3일").location("부산 해운대구").publicStatus(true).build(),
-                com.example.demo.domain.Itinerary.builder().id(2L).title("비공개 부산").location("부산").publicStatus(false).build(),
-                com.example.demo.domain.Itinerary.builder().id(3L).title("제주 여행").location("제주도").publicStatus(true).build()
-        ));
+        // 공개 여부/삭제 여부/목적지 매칭은 모두 DB 쿼리로 위임되었다.
+        given(itineraryRepository
+                .findByPublicStatusTrueAndDeletedFalseAndLocationContainingOrderByCreatedAtDesc("부산"))
+                .willReturn(java.util.List.of(
+                        com.example.demo.domain.Itinerary.builder()
+                                .id(1L).title("부산 2박3일").location("부산 해운대구").publicStatus(true).build()
+                ));
 
         // when
         var result = tripService.getRecommendedItineraries(1L);
