@@ -162,6 +162,9 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Override
     @Transactional
     public void likeGathering(Long id) {
+        if (id == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
         User user = securityService.getCurrentUser();
         Gathering gathering = getGathering(id);
         

@@ -593,4 +593,13 @@ class GatheringServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("모임 ID가 올바르지 않습니다.");
     }
+
+    @Test
+    @DisplayName("null 모임 ID로 찜 토글 시 예외 발생")
+    void likeGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringService.likeGathering(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
 }
