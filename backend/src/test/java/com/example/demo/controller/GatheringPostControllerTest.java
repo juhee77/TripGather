@@ -209,4 +209,12 @@ class GatheringPostControllerTest {
                 .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("인증되지 않은 사용자가 모임 게시글 삭제 시도 시 401 Unauthorized 반환")
+    void deletePost_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        // when & then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/gatherings/10/posts/100"))
+                .andExpect(status().isUnauthorized());
+    }
 }

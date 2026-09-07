@@ -95,6 +95,7 @@ public class GatheringPostController {
             @PathVariable Long postId,
             Principal principal) {
         
+        if (gatheringId == null || postId == null) throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID 또는 게시글 ID가 올바르지 않습니다.");
         if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
 
         GatheringPost post = postRepository.findById(postId)
