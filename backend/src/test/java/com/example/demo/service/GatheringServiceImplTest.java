@@ -575,4 +575,22 @@ class GatheringServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("종료일은 시작일보다 빠를 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("null 모임 ID로 단건 조회 시 예외 발생")
+    void getGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringService.getGathering(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID로 삭제 시 예외 발생")
+    void deleteGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringService.deleteGathering(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
 }

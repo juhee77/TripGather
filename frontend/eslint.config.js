@@ -26,4 +26,11 @@ export default defineConfig([globalIgnores(['dist']), {
   rules: {
     'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_', caughtErrors: 'none' }],
   },
+}, {
+  // 리포지토리 루트의 빌드 설정 및 일회성 개발 스크립트는 Node 환경에서 실행된다.
+  files: ['*.js'],
+  languageOptions: {
+    globals: { ...globals.node },
+    sourceType: 'module',
+  },
 }, ...storybook.configs["flat/recommended"]])

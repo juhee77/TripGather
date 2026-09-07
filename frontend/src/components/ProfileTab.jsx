@@ -17,7 +17,6 @@ const ProfileTab = () => {
   useEffect(() => {
     refetch().catch(err => console.error("Failed to refetch user in ProfileTab:", err));
 
-    setLoading(true);
     authFetch('/api/stamps/me')
       .then(res => {
         if (!res.ok) throw new Error("Failed to fetch stamps");

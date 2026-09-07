@@ -7,7 +7,7 @@
  * 상용 배포 시 환경 변수 설정에 따라 실제 분석 툴 SDK로 쉽게 스위칭할 수 있습니다.
  */
 
-const IS_PROD = process.env.NODE_ENV === 'production';
+const IS_PROD = import.meta.env.PROD;
 
 // 실제 Mixpanel / GA4 SDK가 로드되어 있는 경우를 대비한 헬퍼
 const getGlobalTracker = () => {
@@ -32,7 +32,7 @@ export const analytics = {
         mixpanel.people.set(traits);
       }
       if (gtag) {
-        gtag('config', process.env.REACT_APP_GA_MEASUREMENT_ID, { 'user_id': userId });
+        gtag('config', import.meta.env.VITE_GA_MEASUREMENT_ID, { 'user_id': userId });
       }
     }
     

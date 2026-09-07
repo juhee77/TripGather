@@ -219,4 +219,132 @@ class TripReviewServiceTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("여행 ID가 올바르지 않습니다.");
     }
+
+    @Test
+    @DisplayName("여행 후기 작성 성공 시 저장되고 100포인트가 적립된다")
+    void createReview_Success() {
+        // given
+        Long tripId = 1L;
+        Trip trip = Trip.builder().id(tripId).title("Busan").build();
+        User author = User.builder().id(10L).email("author@test.com").name("Reviewer").build();
+        given(securityService.getCurrentUser()).willReturn(author);
+        given(tripRepository.findById(tripId)).willReturn(java.util.Optional.of(trip));
+        given(tripReviewRepository.save(org.mockito.ArgumentMatchers.any(TripReview.class)))
+                .willAnswer(i -> i.getArgument(0));
+
+        // when
+        var response = tripReviewService.createReview(tripId, "정말 좋았습니다.", 5, "숙소", null);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.getRating()).isEqualTo(5);
+        verify(profanityFilterService).validateText("정말 좋았습니다.");
+        verify(pointService).addPoints(10L, 100, 0, "여행 후기 작성");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 여행에 후기 작성 시 예외 발생")
+    void createReview_TripNotFound_ThrowsException() {
+        // given
+        User author = User.builder().id(10L).email("author@test.com").build();
+        given(securityService.getCurrentUser()).willReturn(author);
+        given(tripRepository.findById(99L)).willReturn(java.util.Optional.empty());
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.createReview(99L, "좋았습니다.", 4, "숙소", null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("카테고리 지정 시 해당 카테고리 리뷰만 조회한다")
+    void getReviews_WithCategoryFilter() {
+        // given
+        Long tripId = 1L;
+        Trip trip = Trip.builder().id(tripId).build();
+        User author = User.builder().id(10L).name("Reviewer").build();
+        given(tripRepository.existsById(tripId)).willReturn(true);
+        given(tripReviewRepository.findByTripIdAndCategoryOrderByCreatedAtDesc(tripId, "숙소"))
+                .willReturn(List.of(TripReview.of(trip, author, "좋은 숙소", 5, "숙소")));
+
+        // when
+        var result = tripReviewService.getReviews(tripId, " 숙소 ");
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getCategory()).isEqualTo("숙소");
+    }
+
+    @Test
+    @DisplayName("본인 리뷰 수정 성공")
+    void updateReview_Success() {
+        // given
+        Long reviewId = 10L;
+        User author = User.builder().id(1L).email("author@test.com").name("Reviewer").build();
+        Trip trip = Trip.builder().id(1L).build();
+        TripReview review = TripReview.of(trip, author, "이전 내용", 3, "관광지");
+        given(tripReviewRepository.findById(reviewId)).willReturn(java.util.Optional.of(review));
+        given(securityService.getCurrentUserEmail()).willReturn("author@test.com");
+        given(tripReviewRepository.save(org.mockito.ArgumentMatchers.any(TripReview.class)))
+                .willAnswer(i -> i.getArgument(0));
+
+        // when
+        var response = tripReviewService.updateReview(reviewId, "  수정된 내용  ", 5, " 숙소 ", null);
+
+        // then
+        assertThat(response.getContent()).isEqualTo("수정된 내용");
+        assertThat(response.getRating()).isEqualTo(5);
+        assertThat(response.getCategory()).isEqualTo("숙소");
+    }
+
+    @Test
+    @DisplayName("타인 리뷰 수정 시도 시 권한 예외 발생")
+    void updateReview_NotAuthor_ThrowsForbidden() {
+        // given
+        Long reviewId = 10L;
+        User author = User.builder().id(1L).email("author@test.com").build();
+        TripReview review = TripReview.builder().id(reviewId).author(author).build();
+        given(tripReviewRepository.findById(reviewId)).willReturn(java.util.Optional.of(review));
+        given(securityService.getCurrentUserEmail()).willReturn("hacker@test.com");
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.updateReview(reviewId, "수정", 5, "숙소", null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("본인 리뷰 삭제 성공")
+    void deleteReview_Success() {
+        // given
+        Long reviewId = 10L;
+        User author = User.builder().id(1L).email("author@test.com").build();
+        TripReview review = TripReview.builder().id(reviewId).author(author).build();
+        given(tripReviewRepository.findById(reviewId)).willReturn(java.util.Optional.of(review));
+        given(securityService.getCurrentUserEmail()).willReturn("author@test.com");
+
+        // when
+        tripReviewService.deleteReview(reviewId);
+
+        // then
+        verify(tripReviewRepository).delete(review);
+    }
+
+    @Test
+    @DisplayName("타인 리뷰 삭제 시도 시 권한 예외 발생")
+    void deleteReview_NotAuthor_ThrowsForbidden() {
+        // given
+        Long reviewId = 10L;
+        User author = User.builder().id(1L).email("author@test.com").build();
+        TripReview review = TripReview.builder().id(reviewId).author(author).build();
+        given(tripReviewRepository.findById(reviewId)).willReturn(java.util.Optional.of(review));
+        given(securityService.getCurrentUserEmail()).willReturn("hacker@test.com");
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.deleteReview(reviewId))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("본인의 리뷰만 삭제할 수 있습니다.");
+    }
 }

@@ -5,9 +5,9 @@ const puppeteer = require('puppeteer');
     const page = await browser.newPage();
     
     await page.goto('http://localhost:5173/login', { waitUntil: 'networkidle0' });
-    await page.type('input[name=\"email\"]', 'alex@test.com');
-    await page.type('input[name=\"password\"]', 'pass1234');
-    await page.click('button[type=\"submit\"]');
+    await page.type('input[name="email"]', 'alex@test.com');
+    await page.type('input[name="password"]', 'pass1234');
+    await page.click('button[type="submit"]');
     await page.waitForNavigation({ waitUntil: 'networkidle0' });
 
     // Open create modal
@@ -15,12 +15,12 @@ const puppeteer = require('puppeteer');
     await new Promise(r => setTimeout(r, 500));
 
     // Fill form
-    await page.type('input[name=\"title\"]', 'Test Gathering');
-    await page.type('input[name=\"location\"]', 'Test Location');
-    await page.type('input[name=\"date\"]', '0202-02-02');
-    await page.type('input[name=\"time\"]', '12:00');
+    await page.type('input[name="title"]', 'Test Gathering');
+    await page.type('input[name="location"]', 'Test Location');
+    await page.type('input[name="date"]', '0202-02-02');
+    await page.type('input[name="time"]', '12:00');
     // submit
-    await page.click('button[type=\"submit\"]');
+    await page.click('button[type="submit"]');
     
     await new Promise(r => setTimeout(r, 1000));
     

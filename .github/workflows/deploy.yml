@@ -31,7 +31,7 @@ jobs:
           cd backend
           ./gradlew build jacocoTestReport
           
-      # 80% 커버리지 규칙 통과 여부는 JaCoCo 플러그인을 통해 빌드 시 자동 검증됩니다.
+      # jacocoTestCoverageVerification 이 check 에 연결되어 있어, 클래스별 80% 미달 시 이 잡이 실패합니다.
 
   # 2. 프론트엔드 빌드 및 린트 검증
   frontend-ci:
@@ -53,6 +53,11 @@ jobs:
         run: |
           cd frontend
           npm install
+
+      - name: Lint Frontend (ESLint)
+        run: |
+          cd frontend
+          npm run lint
 
       - name: Build Frontend (Vite)
         run: |

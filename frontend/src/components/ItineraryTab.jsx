@@ -3,9 +3,8 @@ import TicketCard from './TicketCard';
 import { Plus, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
-import JourneyRepository from '../repositories/JourneyRepository';
 
-const ItineraryTab = ({ onAddToJourney }) => {
+const ItineraryTab = () => {
     const navigate = useNavigate();
     const {
         itineraries,
@@ -88,7 +87,7 @@ const ItineraryTab = ({ onAddToJourney }) => {
                         }}>
                             <div style={{ fontSize: '56px', marginBottom: '20px' }}>✈️</div>
                             <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontWeight: 600 }}>아직 등록된 여행 일정이 없습니다.</p>
-                            <button className="primary-btn" onClick={() => openEditor()}>
+                            <button className="primary-btn" onClick={() => navigate('/itinerary/create')}>
                                 첫 여행 일정 만들기
                             </button>
                         </div>

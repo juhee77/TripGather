@@ -135,6 +135,9 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Override
     @Transactional
     public void deleteGathering(Long id) {
+        if (id == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
         validateHost(id);
         gatheringRepository.softDeleteById(id);
     }
@@ -149,6 +152,9 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Override
     @Transactional(readOnly = true)
     public Gathering getGathering(Long id) {
+        if (id == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
         return gatheringRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND, "Invalid gathering ID"));
     }

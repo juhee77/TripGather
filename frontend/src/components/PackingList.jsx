@@ -125,9 +125,12 @@ const PackingList = ({ tripId }) => {
         </div>
       ))}
       
-      {items.length === 0 && (
+      {items.length === 0 && !loading && (
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)', fontWeight: 600 }}>
-          등록된 준비물이 없습니다.
+          <p style={{ marginBottom: '16px' }}>등록된 준비물이 없습니다.</p>
+          <button type="button" className="primary-btn" onClick={initDefaultItems}>
+            기본 준비물 불러오기
+          </button>
         </div>
       )}
     </div>
