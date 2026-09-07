@@ -109,6 +109,9 @@ public class GatheringMissionService implements GatheringMissionUseCase {
     @Override
     @Transactional
     public void deleteMission(Long gatheringId, Long missionId) {
+        if (gatheringId == null || missionId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID 또는 미션 ID가 올바르지 않습니다.");
+        }
         requireHost(gatheringId);
         GatheringMission mission = getMissionOf(gatheringId, missionId);
 

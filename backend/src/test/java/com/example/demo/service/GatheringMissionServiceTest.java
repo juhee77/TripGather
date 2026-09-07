@@ -691,5 +691,14 @@ class GatheringMissionServiceTest {
             assertThat(response.getProgressPercentage()).isZero();
             assertThat(response.getEarnedPoints()).isZero();
         }
+
+        @Test
+        @DisplayName("null 모임 ID 또는 미션 ID로 삭제 시 예외가 발생한다")
+        void deleteMission_NullGatheringIdOrMissionId_ThrowsException() {
+            // when & then
+            assertThatThrownBy(() -> missionService.deleteMission(null, 1L))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("모임 ID 또는 미션 ID가 올바르지 않습니다.");
+        }
     }
 }
