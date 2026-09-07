@@ -60,6 +60,7 @@ public class GatheringPostController {
             @RequestBody PostRequest request,
             Principal principal) {
         
+        if (gatheringId == null) throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
         if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
 
         if (request.getContent() == null || request.getContent().trim().isEmpty()) {

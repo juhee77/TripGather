@@ -195,4 +195,18 @@ class GatheringPostControllerTest {
                 .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request)))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("인증되지 않은 사용자가 모임 게시글 작성 시도 시 401 Unauthorized 반환")
+    void createPost_Unauthenticated_ReturnsUnauthorized() throws Exception {
+        // given
+        GatheringPostController.PostRequest request = new GatheringPostController.PostRequest();
+        request.setContent("미인증 작성 시도");
+
+        // when & then
+        mockMvc.perform(post("/api/gatherings/10/posts")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+    }
 }
