@@ -155,11 +155,10 @@ class CustomOAuth2UserServiceTest {
 
         // then
         assertThat(thrown).isInstanceOf(OAuth2AuthenticationException.class);
-        // OAuth2AuthenticationException(String) 은 인자를 "메시지"가 아닌 "에러 코드"로 취급하므로
-        // getMessage() 는 null 이고 진단 문자열은 OAuth2Error 의 errorCode 에 담긴다.
         OAuth2Error error = ((OAuth2AuthenticationException) thrown).getError();
-        assertThat(error.getErrorCode()).isEqualTo("Unsupported provider: google");
-        assertThat(thrown).hasMessage(null);
+        assertThat(error.getErrorCode()).isEqualTo("unsupported_provider");
+        // 어떤 제공자로 시도했는지가 메시지에 남아야 로그로 추적할 수 있다.
+        assertThat(thrown).hasMessageContaining("google");
         verify(userRepository, never()).save(any(User.class));
     }
 }

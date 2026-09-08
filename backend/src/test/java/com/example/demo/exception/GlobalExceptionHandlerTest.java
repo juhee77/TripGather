@@ -138,4 +138,33 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getMessage()).isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR.getMessage());
         assertThat(response.getBody().getMessage()).doesNotContain("prod-db");
     }
+
+    @Test
+    @DisplayName("CustomException 상세 메시지가 공백이면 ErrorCode 기본 메시지로 대체")
+    void handleCustomException_BlankMessage_FallsBackToDefault() {
+        // given
+        CustomException exception = new CustomException(ErrorCode.USER_NOT_FOUND, "   ");
+
+        // when
+        ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleCustomException(exception);
+
+        // then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getMessage()).isEqualTo(ErrorCode.USER_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("CustomException 상세 메시지가 null이면 ErrorCode 기본 메시지로 대체")
+    void handleCustomException_NullMessage_FallsBackToDefault() {
+        // given
+        CustomException exception = new CustomException(ErrorCode.FORBIDDEN_ACTION, null);
+
+        // when
+        ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleCustomException(exception);
+
+        // then
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getMessage()).isEqualTo(ErrorCode.FORBIDDEN_ACTION.getMessage());
+    }
 }

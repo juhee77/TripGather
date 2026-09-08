@@ -70,6 +70,17 @@ jacoco {
 	toolVersion = "0.8.11"
 }
 
+// 커버리지 측정 제외 대상 (리포트와 게이트가 같은 범위를 보도록 한 곳에서 정의)
+// QueryDSL 생성 클래스, 부트스트랩 클래스, 그리고 자체 로직이 없는 데이터/설정/조회 계층.
+ext.coverageExcludes = [
+	"**/Q*",
+	"**/*Application*",
+	"**/*dto*",
+	"**/*domain*",
+	"**/*config*",
+	"**/*repository*"
+]
+
 jacocoTestReport {
 	reports {
 		xml.required = true
@@ -78,23 +89,20 @@ jacocoTestReport {
 	}
 	afterEvaluate {
 		classDirectories.setFrom(files(classDirectories.files.collect {
-			// 리포트 측정 범위 = 아래 커버리지 게이트 강제 범위와 동일하게 유지한다.
-			// 남은 제외 대상은 QueryDSL 생성 클래스, 부트스트랩 클래스,
-			// 그리고 로직이 없는 데이터/설정/조회 계층뿐이다.
-			fileTree(dir: it, exclude: [
-				"**/Q*",
-				"**/*Application*",
-				"**/*dto*",
-				"**/*domain*",
-				"**/*config*",
-				"**/*repository*"
-			])
+			fileTree(dir: it, exclude: project.ext.coverageExcludes)
 		}))
 	}
 }
 
 jacocoTestCoverageVerification {
 	dependsOn test // 검증은 최신 테스트 실행 결과(jacoco exec)를 기준으로 수행
+	afterEvaluate {
+		// BUNDLE 규칙은 클래스 단위 excludes 가 적용되지 않으므로,
+		// 측정 대상 자체를 리포트와 동일한 범위로 좁혀 둔다.
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: project.ext.coverageExcludes)
+		}))
+	}
 	violationRules {
 		// [규칙 1] 서비스 계층 - 핵심 비즈니스 로직
 		rule {
@@ -132,6 +140,19 @@ jacocoTestCoverageVerification {
 				counter = 'LINE'
 				value = 'COVEREDRATIO'
 				minimum = 0.80
+			}
+		}
+
+		// [규칙 3] 분기(BRANCH) 커버리지 하한선 - 후퇴 방지용 래칫
+		// 라인 커버리지는 메서드를 한 번만 호출해도 채워지지만, 조건문의 반대 경로는
+		// 검증되지 않은 채 남는다. 전체 기준으로 분기 커버리지 바닥을 고정해 두고
+		// 개선될 때마다 이 수치를 올린다. (현재 77.4%)
+		rule {
+			element = 'BUNDLE'
+			limit {
+				counter = 'BRANCH'
+				value = 'COVEREDRATIO'
+				minimum = 0.75
 			}
 		}
 	}

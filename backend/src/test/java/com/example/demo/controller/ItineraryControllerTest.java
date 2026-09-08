@@ -118,4 +118,5 @@ class ItineraryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(7));
     }
+
 }
