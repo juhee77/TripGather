@@ -60,6 +60,21 @@ public class GatheringServiceImpl implements GatheringUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<Gathering> searchGatherings(String query, String category, String location, Boolean availableOnly,
+                                            String sortBy, int page, int size) {
+        String filterLocation = (location != null && !location.trim().isEmpty() && !location.equals("전체")) ? location.trim() : null;
+        int safePage = Math.max(page, 0);
+        int safeSize = (size <= 0) ? DEFAULT_PAGE_SIZE : Math.min(size, MAX_PAGE_SIZE);
+
+        List<Gathering> rows = gatheringRepository.searchGatherings(
+                query, category, filterLocation, availableOnly, sortBy, safePage, safeSize);
+
+        // 리포지토리가 hasNext 판단을 위해 size+1 건을 읽어 왔다면 마지막 한 건을 잘라낸다.
+        return rows.size() > safeSize ? rows.subList(0, safeSize) : rows;
+    }
+
+    @Override
     @Transactional
     public Gathering createGathering(Gathering gathering) {
         if (gathering == null) {

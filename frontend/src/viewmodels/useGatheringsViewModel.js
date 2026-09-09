@@ -1,5 +1,7 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import GatheringRepository from '../repositories/GatheringRepository';
+
+const PAGE_SIZE = 20;
 
 export const useGatheringsViewModel = () => {
   const [gatherings, setGatherings] = useState([]);
@@ -7,14 +9,21 @@ export const useGatheringsViewModel = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [availableOnly, setAvailableOnly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState(null);
+  // 현재 로드된 마지막 페이지 번호. 리렌더를 유발할 필요가 없어 ref 로 둔다.
+  const pageRef = useRef(0);
 
   const fetchGatherings = useCallback(async (filters = {}) => {
     setIsLoading(true);
     setError(null);
+    pageRef.current = 0;
     try {
-      const data = await GatheringRepository.search(filters);
+      const data = await GatheringRepository.search(filters, 0, PAGE_SIZE);
       setGatherings(data || []);
+      // 응답 건수가 요청한 size 와 같으면 다음 페이지가 있을 수 있다고 본다.
+      setHasMore((data || []).length >= PAGE_SIZE);
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -22,6 +31,29 @@ export const useGatheringsViewModel = () => {
       setIsLoading(false);
     }
   }, []);
+
+  // 현재 필터를 유지한 채 다음 페이지를 이어붙인다.
+  const loadMoreGatherings = useCallback(async () => {
+    if (isLoading || isLoadingMore || !hasMore) return;
+    const nextPage = pageRef.current + 1;
+    setIsLoadingMore(true);
+    try {
+      const data = await GatheringRepository.search(
+        { location: selectedRegion, query: searchQuery, availableOnly },
+        nextPage,
+        PAGE_SIZE
+      );
+      if (data && data.length > 0) {
+        setGatherings(prev => [...prev, ...data]);
+        pageRef.current = nextPage;
+      }
+      setHasMore((data || []).length >= PAGE_SIZE);
+    } catch (err) {
+      console.error('Failed to load more gatherings:', err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [selectedRegion, searchQuery, availableOnly, isLoading, isLoadingMore, hasMore]);
 
   useEffect(() => {
     // debounce would be ideal, but direct call for now
@@ -78,8 +110,9 @@ export const useGatheringsViewModel = () => {
     createGathering,
     deleteGathering,
     refreshGatherings,
-    likeGathering
-  }), [handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, createGathering, deleteGathering, refreshGatherings, likeGathering]);
+    likeGathering,
+    loadMoreGatherings
+  }), [handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, createGathering, deleteGathering, refreshGatherings, likeGathering, loadMoreGatherings]);
 
   return {
     gatherings,
@@ -87,6 +120,8 @@ export const useGatheringsViewModel = () => {
     searchQuery,
     availableOnly,
     isLoading,
+    isLoadingMore,
+    hasMore,
     error,
     actions
   };

@@ -18,6 +18,31 @@ public class GatheringRepositoryCustomImpl implements GatheringRepositoryCustom 
     @Override
     public List<Gathering> searchGatherings(String query, String category, String location, Boolean availableOnly, String sortBy) {
         QGathering gathering = QGathering.gathering;
+        BooleanBuilder builder = buildConditions(gathering, query, category, location, availableOnly);
+
+        return queryFactory.selectFrom(gathering)
+                .where(builder)
+                .orderBy(resolveOrder(gathering, sortBy), gathering.createdAt.desc(), gathering.id.desc())
+                .fetch();
+    }
+
+    @Override
+    public List<Gathering> searchGatherings(String query, String category, String location, Boolean availableOnly,
+                                            String sortBy, int page, int size) {
+        QGathering gathering = QGathering.gathering;
+        BooleanBuilder builder = buildConditions(gathering, query, category, location, availableOnly);
+
+        return queryFactory.selectFrom(gathering)
+                .where(builder)
+                .orderBy(resolveOrder(gathering, sortBy), gathering.createdAt.desc(), gathering.id.desc())
+                .offset((long) page * size)
+                // 다음 페이지 존재 여부를 별도 COUNT 없이 판단하기 위해 한 건 더 읽는다.
+                .limit(size + 1L)
+                .fetch();
+    }
+
+    private BooleanBuilder buildConditions(QGathering gathering, String query, String category,
+                                           String location, Boolean availableOnly) {
         BooleanBuilder builder = new BooleanBuilder();
 
         if (query != null && !query.trim().isEmpty()) {
@@ -38,16 +63,16 @@ public class GatheringRepositoryCustomImpl implements GatheringRepositoryCustom 
             builder.and(gathering.status.eq(com.example.demo.domain.GatheringStatus.OPEN));
         }
 
-        com.querydsl.core.types.OrderSpecifier<?> orderSpecifier = gathering.createdAt.desc();
-        if ("LIKES".equalsIgnoreCase(sortBy) || "POPULAR".equalsIgnoreCase(sortBy)) {
-            orderSpecifier = gathering.likeCount.desc();
-        } else if ("MEMBERS".equalsIgnoreCase(sortBy)) {
-            orderSpecifier = gathering.currentJoining.desc();
-        }
+        return builder;
+    }
 
-        return queryFactory.selectFrom(gathering)
-                .where(builder)
-                .orderBy(orderSpecifier, gathering.createdAt.desc())
-                .fetch();
+    private com.querydsl.core.types.OrderSpecifier<?> resolveOrder(QGathering gathering, String sortBy) {
+        if ("LIKES".equalsIgnoreCase(sortBy) || "POPULAR".equalsIgnoreCase(sortBy)) {
+            return gathering.likeCount.desc();
+        }
+        if ("MEMBERS".equalsIgnoreCase(sortBy)) {
+            return gathering.currentJoining.desc();
+        }
+        return gathering.createdAt.desc();
     }
 }

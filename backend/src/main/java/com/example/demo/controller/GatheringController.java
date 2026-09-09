@@ -25,9 +25,17 @@ public class GatheringController {
     private final com.example.demo.repository.GatheringLikeRepository gatheringLikeRepository;
 
 
+    /**
+     * 라운지 피드. page/size 로 페이지 단위 조회하며, 응답 건수가 size 보다 적으면 마지막 페이지다.
+     */
     @GetMapping
-    public ResponseEntity<List<GatheringResponse>> getAllGatherings(@RequestParam(required = false) String location, java.security.Principal principal) {
-        return ResponseEntity.ok(toResponses(gatheringService.getAllGatherings(location), principal));
+    public ResponseEntity<List<GatheringResponse>> getAllGatherings(
+            @RequestParam(required = false) String location,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            java.security.Principal principal) {
+        return ResponseEntity.ok(toResponses(
+                gatheringService.searchGatherings(null, null, location, null, "LATEST", page, size), principal));
     }
 
     @GetMapping("/popular")
@@ -53,6 +61,9 @@ public class GatheringController {
         return ResponseEntity.ok(GatheringResponse.from(gathering, isLiked, hasCheckedIn));
     }
 
+    /**
+     * 모임 검색. page/size 로 페이지 단위 조회하며, 응답 건수가 size 보다 적으면 마지막 페이지다.
+     */
     @GetMapping("/search")
     public ResponseEntity<List<GatheringResponse>> searchGatherings(
             @RequestParam(required = false) String query,
@@ -60,8 +71,12 @@ public class GatheringController {
             @RequestParam(required = false) String location,
             @RequestParam(required = false) Boolean availableOnly,
             @RequestParam(required = false, defaultValue = "LATEST") String sortBy,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
             java.security.Principal principal) {
-        return ResponseEntity.ok(toResponses(gatheringService.searchGatherings(query, category, location, availableOnly, sortBy), principal));
+        return ResponseEntity.ok(toResponses(
+                gatheringService.searchGatherings(query, category, location, availableOnly, sortBy, page, size),
+                principal));
     }
 
     @PostMapping

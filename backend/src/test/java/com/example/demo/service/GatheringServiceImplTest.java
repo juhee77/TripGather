@@ -187,6 +187,72 @@ class GatheringServiceImplTest {
     }
 
     @Test
+    @DisplayName("페이지 검색 - size 이하로 돌아오면 그대로 반환한다")
+    void searchGatherings_Paged_ReturnsAsIs_WhenWithinSize() {
+        // given
+        Gathering g1 = Gathering.builder().id(1L).title("G1").build();
+        given(gatheringRepository.searchGatherings(null, null, null, null, "LATEST", 0, 20))
+                .willReturn(List.of(g1));
+
+        // when
+        List<Gathering> result = gatheringService.searchGatherings(null, null, null, null, "LATEST", 0, 20);
+
+        // then
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("페이지 검색 - size+1건이 돌아오면 마지막 한 건을 잘라낸다")
+    void searchGatherings_Paged_TrimsLastRow_WhenSizePlusOneReturned() {
+        // given
+        List<Gathering> sizePlusOne = java.util.stream.IntStream.rangeClosed(1, 21)
+                .mapToObj(i -> Gathering.builder().id((long) i).title("G" + i).build())
+                .toList();
+        given(gatheringRepository.searchGatherings(null, null, null, null, "LATEST", 0, 20))
+                .willReturn(sizePlusOne);
+
+        // when
+        List<Gathering> result = gatheringService.searchGatherings(null, null, null, null, "LATEST", 0, 20);
+
+        // then
+        assertThat(result).hasSize(20);
+        assertThat(result.get(19).getId()).isEqualTo(20L);
+    }
+
+    @Test
+    @DisplayName("페이지 검색 - size 가 상한을 넘으면 최대치로 제한된다")
+    void searchGatherings_Paged_SizeCappedAtMax() {
+        // given
+        org.mockito.ArgumentCaptor<Integer> sizeCaptor = org.mockito.ArgumentCaptor.forClass(Integer.class);
+        given(gatheringRepository.searchGatherings(
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.eq("LATEST"), org.mockito.ArgumentMatchers.eq(0), sizeCaptor.capture()))
+                .willReturn(List.of());
+
+        // when
+        gatheringService.searchGatherings(null, null, null, null, "LATEST", 0, 100000);
+
+        // then
+        assertThat(sizeCaptor.getValue())
+                .isEqualTo(com.example.demo.usecase.GatheringUseCase.MAX_PAGE_SIZE);
+    }
+
+    @Test
+    @DisplayName("페이지 검색 - 음수 페이지 번호는 0으로 보정된다")
+    void searchGatherings_Paged_NegativePageClampedToZero() {
+        // given
+        given(gatheringRepository.searchGatherings(null, null, null, null, "LATEST", 0, 20))
+                .willReturn(List.of());
+
+        // when
+        gatheringService.searchGatherings(null, null, null, null, "LATEST", -5, 20);
+
+        // then
+        verify(gatheringRepository).searchGatherings(null, null, null, null, "LATEST", 0, 20);
+    }
+
+    @Test
     @DisplayName("인기 모임 TOP 5 조회 성공")
     void getPopularGatherings_Success() {
         // given

@@ -25,7 +25,9 @@ const Home = () => {
     searchQuery,
     availableOnly,
     isLoading,
-    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, likeGathering }
+    isLoadingMore,
+    hasMore,
+    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, likeGathering, loadMoreGatherings }
   } = useGatheringsViewModel();
 
   const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem('tg_activeTab') || '라운지');
@@ -326,7 +328,30 @@ const Home = () => {
 
                   </div>
                 ))}
-                
+
+                {/* 서버는 페이지 단위로 내려주므로, 그 이후 모임은 여기서 이어서 불러온다. */}
+                {gatherings.length > 0 && hasMore && (
+                  <button
+                    type="button"
+                    onClick={loadMoreGatherings}
+                    disabled={isLoadingMore}
+                    style={{
+                      alignSelf: 'center',
+                      margin: '4px auto 12px',
+                      padding: '10px 24px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      borderRadius: 'var(--radius-full)',
+                      border: '1px solid var(--border-color)',
+                      background: 'white',
+                      color: 'var(--text-secondary)',
+                      cursor: isLoadingMore ? 'default' : 'pointer'
+                    }}
+                  >
+                    {isLoadingMore ? '불러오는 중...' : '더 보기'}
+                  </button>
+                )}
+
                 {/* Empty State */}
                 {gatherings.filter(g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))).length === 0 && (
                   <Card 
