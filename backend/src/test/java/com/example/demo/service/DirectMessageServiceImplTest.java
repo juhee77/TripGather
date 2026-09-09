@@ -249,4 +249,98 @@ class DirectMessageServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("발신자 및 수신자 이메일 정보가 올바르지 않습니다.");
     }
+
+    @Test
+    @DisplayName("페이지 조회 시 최신순 결과를 화면 표시 순서로 뒤집어 반환한다")
+    void getChatHistoryPaged_ReturnsAscending() {
+        // given
+        User me = User.builder().id(1L).email("me@test.com").build();
+        User other = User.builder().id(2L).email("other@test.com").build();
+        given(userRepository.findByEmail("me@test.com")).willReturn(Optional.of(me));
+        given(userRepository.findByEmail("other@test.com")).willReturn(Optional.of(other));
+
+        DirectMessage newer = DirectMessage.builder().id(2L).content("두번째").sender(me).receiver(other).build();
+        DirectMessage older = DirectMessage.builder().id(1L).content("첫번째").sender(me).receiver(other).build();
+        given(dmRepository.findLatestChatHistory(
+                org.mockito.ArgumentMatchers.eq(me),
+                org.mockito.ArgumentMatchers.eq(other),
+                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of(newer, older));
+
+        // when
+        List<DirectMessage> result = dmService.getChatHistory("me@test.com", "other@test.com", null, 50);
+
+        // then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getContent()).isEqualTo("첫번째");
+        assertThat(result.get(1).getContent()).isEqualTo("두번째");
+    }
+
+    @Test
+    @DisplayName("before 커서를 주면 해당 메시지 이전 구간을 조회한다")
+    void getChatHistoryPaged_WithBeforeCursor() {
+        // given
+        User me = User.builder().id(1L).email("me@test.com").build();
+        User other = User.builder().id(2L).email("other@test.com").build();
+        given(userRepository.findByEmail("me@test.com")).willReturn(Optional.of(me));
+        given(userRepository.findByEmail("other@test.com")).willReturn(Optional.of(other));
+        given(dmRepository.findOlderChatHistory(
+                org.mockito.ArgumentMatchers.eq(me),
+                org.mockito.ArgumentMatchers.eq(other),
+                org.mockito.ArgumentMatchers.eq(10L),
+                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of());
+
+        // when
+        List<DirectMessage> result = dmService.getChatHistory("me@test.com", "other@test.com", 10L, 50);
+
+        // then
+        assertThat(result).isEmpty();
+        verify(dmRepository).findOlderChatHistory(
+                org.mockito.ArgumentMatchers.eq(me),
+                org.mockito.ArgumentMatchers.eq(other),
+                org.mockito.ArgumentMatchers.eq(10L),
+                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class));
+    }
+
+    @Test
+    @DisplayName("요청 size 가 상한을 넘으면 최대치로 제한된다")
+    void getChatHistoryPaged_SizeCappedAtMax() {
+        // given
+        User me = User.builder().id(1L).email("me@test.com").build();
+        User other = User.builder().id(2L).email("other@test.com").build();
+        given(userRepository.findByEmail("me@test.com")).willReturn(Optional.of(me));
+        given(userRepository.findByEmail("other@test.com")).willReturn(Optional.of(other));
+
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        given(dmRepository.findLatestChatHistory(
+                org.mockito.ArgumentMatchers.eq(me),
+                org.mockito.ArgumentMatchers.eq(other),
+                captor.capture()))
+                .willReturn(List.of());
+
+        // when
+        dmService.getChatHistory("me@test.com", "other@test.com", null, 100000);
+
+        // then
+        assertThat(captor.getValue().getPageSize())
+                .isEqualTo(com.example.demo.usecase.DirectMessageUseCase.MAX_PAGE_SIZE);
+    }
+
+    @Test
+    @DisplayName("페이지 조회 시 공백 이메일이면 예외가 발생한다")
+    void getChatHistoryPaged_BlankEmail_ThrowsException() {
+        assertThatThrownBy(() -> dmService.getChatHistory("  ", "other@test.com", null, 50))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("이메일 정보가 필요합니다.");
+    }
+
+    @Test
+    @DisplayName("페이지 조회 시 자기 자신과의 대화는 조회할 수 없다")
+    void getChatHistoryPaged_SelfChat_ThrowsException() {
+        assertThatThrownBy(() -> dmService.getChatHistory("me@test.com", "me@test.com", null, 50))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("자기 자신과의 채팅 내역은 조회할 수 없습니다.");
+    }
 }

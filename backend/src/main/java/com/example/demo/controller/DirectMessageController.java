@@ -51,10 +51,16 @@ public class DirectMessageController {
         notificationService.send(response.getReceiverEmail(), "dm-received", response);
     }
 
+    /**
+     * 1:1 대화 내역. 기본은 최신 50건이며, before 커서로 과거 메시지를 이어서 읽는다.
+     */
     @GetMapping("/history/{otherUserEmail}")
-    public List<DMResponse> getChatHistory(@PathVariable String otherUserEmail, Principal principal) {
+    public List<DMResponse> getChatHistory(@PathVariable String otherUserEmail,
+                                           @RequestParam(required = false) Long before,
+                                           @RequestParam(defaultValue = "50") int size,
+                                           Principal principal) {
         String myEmail = principal.getName();
-        return dmService.getChatHistory(myEmail, otherUserEmail).stream()
+        return dmService.getChatHistory(myEmail, otherUserEmail, before, size).stream()
                 .map(DMResponse::from)
                 .toList();
     }

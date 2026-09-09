@@ -64,6 +64,34 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<DirectMessage> getChatHistory(String email1, String email2, Long beforeId, int size) {
+        if (email1 == null || email1.trim().isEmpty() || email2 == null || email2.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 필요합니다.");
+        }
+        if (email1.equals(email2)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신과의 채팅 내역은 조회할 수 없습니다.");
+        }
+        User user1 = userRepository.findByEmail(email1)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User user2 = userRepository.findByEmail(email2)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        int pageSize = Math.min(size <= 0 ? DEFAULT_PAGE_SIZE : size, MAX_PAGE_SIZE);
+        org.springframework.data.domain.PageRequest page =
+                org.springframework.data.domain.PageRequest.of(0, pageSize);
+
+        // 최신순 한 페이지를 읽은 뒤, 화면 표시 순서(오래된 -> 최신)로 뒤집어 반환한다.
+        List<DirectMessage> messages = (beforeId == null)
+                ? dmRepository.findLatestChatHistory(user1, user2, page)
+                : dmRepository.findOlderChatHistory(user1, user2, beforeId, page);
+
+        List<DirectMessage> ascending = new java.util.ArrayList<>(messages);
+        java.util.Collections.reverse(ascending);
+        return ascending;
+    }
+
+    @Override
     @Transactional
     public void markAsRead(Long dmId) {
         if (dmId == null) {

@@ -53,9 +53,18 @@ public class ChatController {
         return response;
     }
 
+    /**
+     * 채팅 내역 조회. 기본은 최신 50건이며, before 커서로 과거 메시지를 이어서 읽는다.
+     *
+     * @param before 이 메시지 ID 보다 과거 메시지를 조회 (위로 스크롤). 생략 시 최신부터.
+     * @param size   조회 개수. 서버에서 최대치로 제한된다.
+     */
     @GetMapping("/api/chat/{gatheringId}/history")
     @ResponseBody
-    public List<ChatMessageResponse> getChatHistory(@PathVariable Long gatheringId, java.security.Principal principal) {
+    public List<ChatMessageResponse> getChatHistory(@PathVariable Long gatheringId,
+                                                    @org.springframework.web.bind.annotation.RequestParam(required = false) Long before,
+                                                    @org.springframework.web.bind.annotation.RequestParam(defaultValue = "50") int size,
+                                                    java.security.Principal principal) {
         com.example.demo.domain.Gathering gathering = gatheringService.getGathering(gatheringId);
         
         // Check privacy: if not public, only members or host can view
@@ -66,7 +75,7 @@ public class ChatController {
             }
         }
 
-        return chatService.getChatHistory(gatheringId);
+        return chatService.getChatHistory(gatheringId, before, size);
     }
 
     @Data
