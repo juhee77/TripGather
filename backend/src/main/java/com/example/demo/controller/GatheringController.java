@@ -22,28 +22,17 @@ public class GatheringController {
     private final GatheringMemberUseCase gatheringMemberService;
     private final UserRepository userRepository;
     private final StampRepository stampRepository;
+    private final com.example.demo.repository.GatheringLikeRepository gatheringLikeRepository;
 
 
     @GetMapping
     public ResponseEntity<List<GatheringResponse>> getAllGatherings(@RequestParam(required = false) String location, java.security.Principal principal) {
-        return ResponseEntity.ok(gatheringService.getAllGatherings(location).stream()
-                .map(g -> {
-                    boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
-                    boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);
-                    return GatheringResponse.from(g, isLiked, hasCheckedIn);
-                })
-                .collect(Collectors.toList()));
+        return ResponseEntity.ok(toResponses(gatheringService.getAllGatherings(location), principal));
     }
 
     @GetMapping("/popular")
     public ResponseEntity<List<GatheringResponse>> getPopularGatherings(java.security.Principal principal) {
-        return ResponseEntity.ok(gatheringService.getPopularGatherings().stream()
-                .map(g -> {
-                    boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
-                    boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);
-                    return GatheringResponse.from(g, isLiked, hasCheckedIn);
-                })
-                .collect(Collectors.toList()));
+        return ResponseEntity.ok(toResponses(gatheringService.getPopularGatherings(), principal));
     }
 
     @GetMapping("/me/liked")
@@ -51,12 +40,9 @@ public class GatheringController {
         if (principal == null) {
             return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(gatheringService.getUserLikedGatherings(principal.getName()).stream()
-                .map(g -> {
-                    boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);
-                    return GatheringResponse.from(g, true, hasCheckedIn);
-                })
-                .collect(Collectors.toList()));
+        // 좋아요 목록이므로 isLiked 는 항상 true 다.
+        return ResponseEntity.ok(
+                toResponses(gatheringService.getUserLikedGatherings(principal.getName()), principal, true));
     }
 
     @GetMapping("/{id}")
@@ -75,13 +61,7 @@ public class GatheringController {
             @RequestParam(required = false) Boolean availableOnly,
             @RequestParam(required = false, defaultValue = "LATEST") String sortBy,
             java.security.Principal principal) {
-        return ResponseEntity.ok(gatheringService.searchGatherings(query, category, location, availableOnly, sortBy).stream()
-                .map(g -> {
-                    boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
-                    boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);
-                    return GatheringResponse.from(g, isLiked, hasCheckedIn);
-                })
-                .collect(Collectors.toList()));
+        return ResponseEntity.ok(toResponses(gatheringService.searchGatherings(query, category, location, availableOnly, sortBy), principal));
     }
 
     @PostMapping
@@ -102,24 +82,12 @@ public class GatheringController {
 
     @GetMapping("/my/hosted")
     public ResponseEntity<List<GatheringResponse>> getMyHostedGatherings(java.security.Principal principal) {
-        return ResponseEntity.ok(gatheringService.getHostedGatherings().stream()
-                .map(g -> {
-                    boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
-                    boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);
-                    return GatheringResponse.from(g, isLiked, hasCheckedIn);
-                })
-                .collect(Collectors.toList()));
+        return ResponseEntity.ok(toResponses(gatheringService.getHostedGatherings(), principal));
     }
 
     @GetMapping({"/my/joined", "/my/participating"})
     public ResponseEntity<List<GatheringResponse>> getMyJoinedGatherings(java.security.Principal principal) {
-        return ResponseEntity.ok(gatheringMemberService.getJoinedGatherings().stream()
-                .map(g -> {
-                    boolean isLiked = principal != null && gatheringService.isLikedByUser(g.getId(), principal.getName());
-                    boolean hasCheckedIn = checkUserHasCheckedIn(g.getId(), principal);
-                    return GatheringResponse.from(g, isLiked, hasCheckedIn);
-                })
-                .collect(Collectors.toList()));
+        return ResponseEntity.ok(toResponses(gatheringMemberService.getJoinedGatherings(), principal));
     }
 
     @PostMapping("/{id}/join")
@@ -185,5 +153,45 @@ public class GatheringController {
         return userRepository.findByEmail(principal.getName())
                 .map(u -> stampRepository.existsByUserIdAndGatheringId(u.getId(), gatheringId))
                 .orElse(false);
+    }
+
+    /**
+     * 목록 응답 매핑.
+     *
+     * 행마다 좋아요/체크인 여부를 개별 조회하면 모임 수에 비례해 쿼리가 늘어난다(N+1).
+     * 뷰어의 좋아요 집합과 스탬프 집합을 요청당 한 번씩만 읽어 두고, 행에서는 집합 조회만 한다.
+     */
+    private List<GatheringResponse> toResponses(List<Gathering> gatherings, java.security.Principal principal) {
+        return toResponses(gatherings, principal, false);
+    }
+
+    /**
+     * @param forceLiked 좋아요 목록처럼 모든 행이 좋아요 상태임이 자명한 경우 true
+     */
+    private List<GatheringResponse> toResponses(List<Gathering> gatherings,
+                                                java.security.Principal principal,
+                                                boolean forceLiked) {
+        java.util.Set<Long> likedIds = java.util.Collections.emptySet();
+        java.util.Set<Long> checkedInIds = java.util.Collections.emptySet();
+
+        if (principal != null) {
+            java.util.Optional<com.example.demo.domain.User> viewer =
+                    userRepository.findByEmail(principal.getName());
+            if (viewer.isPresent()) {
+                Long viewerId = viewer.get().getId();
+                if (!forceLiked) {
+                    likedIds = new java.util.HashSet<>(gatheringLikeRepository.findLikedGatheringIdsByUserId(viewerId));
+                }
+                checkedInIds = new java.util.HashSet<>(stampRepository.findStampedGatheringIdsByUserId(viewerId));
+            }
+        }
+
+        final java.util.Set<Long> liked = likedIds;
+        final java.util.Set<Long> checkedIn = checkedInIds;
+        return gatherings.stream()
+                .map(g -> GatheringResponse.from(g,
+                        forceLiked || liked.contains(g.getId()),
+                        checkedIn.contains(g.getId())))
+                .collect(Collectors.toList());
     }
 }
