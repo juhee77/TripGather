@@ -44,6 +44,14 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
 
     @Transactional
     public Itinerary createItinerary(Itinerary itinerary) {
+        if (itinerary == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 정보가 올바르지 않습니다.");
+        }
+        if (itinerary.getStartDate() != null && itinerary.getEndDate() != null) {
+            if (itinerary.getEndDate().isBefore(itinerary.getStartDate())) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
+            }
+        }
         if (itinerary.getTitle() != null) profanityFilterService.validateText(itinerary.getTitle());
         if (itinerary.getDescription() != null) profanityFilterService.validateText(itinerary.getDescription());
         
@@ -144,7 +152,16 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
 
     @Transactional
     public Itinerary updateItinerary(Long id, Itinerary update) {
+        if (id == null || update == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 ID 또는 수정 정보가 올바르지 않습니다.");
+        }
         Itinerary itinerary = getById(id);
+        
+        if (update.getStartDate() != null && update.getEndDate() != null) {
+            if (update.getEndDate().isBefore(update.getStartDate())) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
+            }
+        }
         
         // 여정 완수 감지 (이전에 stampImageUrl이 없었으나, 새로 들어온 경우)
         boolean completedNow = (itinerary.getStampImageUrl() == null && update.getStampImageUrl() != null);
