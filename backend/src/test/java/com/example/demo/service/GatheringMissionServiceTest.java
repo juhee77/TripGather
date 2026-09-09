@@ -700,5 +700,14 @@ class GatheringMissionServiceTest {
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining("모임 ID 또는 미션 ID가 올바르지 않습니다.");
         }
+
+        @Test
+        @DisplayName("null 모임 ID 또는 미션 ID로 인증 제출 시 예외가 발생한다")
+        void submitCompletion_NullGatheringIdOrMissionId_ThrowsException() {
+            // when & then
+            assertThatThrownBy(() -> missionService.submitCompletion(null, 1L, com.example.demo.dto.MissionSubmitRequest.builder().build()))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("모임 ID 또는 미션 ID가 올바르지 않습니다.");
+        }
     }
 }

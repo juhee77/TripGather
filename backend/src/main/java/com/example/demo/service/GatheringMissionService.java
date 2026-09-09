@@ -270,6 +270,11 @@ public class GatheringMissionService implements GatheringMissionUseCase {
     @Override
     @Transactional
     public MissionCompletionResponse submitCompletion(Long gatheringId, Long missionId, MissionSubmitRequest request) {
+        // 조회를 시작하기 전에 두 식별자를 함께 검증한다.
+        // (gatheringId 만 먼저 걸리면 missionId 누락이 가려진다)
+        if (gatheringId == null || missionId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID 또는 미션 ID가 올바르지 않습니다.");
+        }
         Gathering gathering = getGatheringOrThrow(gatheringId);
         User me = requireCrew(gathering);
 
@@ -408,8 +413,8 @@ public class GatheringMissionService implements GatheringMissionUseCase {
 
     /** 다른 모임의 미션 id 를 끼워 넣어 접근하는 것을 막는다. */
     private GatheringMission getMissionOf(Long gatheringId, Long missionId) {
-        if (missionId == null) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "미션 ID가 올바르지 않습니다.");
+        if (gatheringId == null || missionId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID 또는 미션 ID가 올바르지 않습니다.");
         }
         GatheringMission mission = missionRepository.findById(missionId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MISSION_NOT_FOUND));
