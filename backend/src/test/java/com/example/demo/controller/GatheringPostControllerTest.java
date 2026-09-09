@@ -211,6 +211,26 @@ class GatheringPostControllerTest {
     }
 
     @Test
+    @DisplayName("다른 모임의 게시글을 삭제 시도할 경우 400 Bad Request 반환")
+    void deletePost_MismatchedGatheringId_ReturnsBadRequest() throws Exception {
+        // given
+        Gathering otherGathering = Gathering.builder().id(99L).title("Other Gathering").build();
+        GatheringPost post = GatheringPost.builder()
+                .id(100L)
+                .author(user)
+                .gathering(otherGathering)
+                .content("다른 모임 글")
+                .build();
+
+        given(postRepository.findById(100L)).willReturn(Optional.of(post));
+
+        // when & then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/gatherings/10/posts/100")
+                .principal(principal))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("인증되지 않은 사용자가 모임 게시글 삭제 시도 시 401 Unauthorized 반환")
     void deletePost_Unauthenticated_ReturnsUnauthorized() throws Exception {
         // when & then
