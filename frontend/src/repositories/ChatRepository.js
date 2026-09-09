@@ -9,8 +9,10 @@ const getAuthHeaders = () => {
 };
 
 const ChatRepository = {
-  getChatHistory: async (gatheringId) => {
-    const response = await axios.get(`${API_BASE_URL}/chat/${gatheringId}/history`, {
+  // before 를 주면 해당 메시지 ID 이전의 과거 메시지를 읽는다 (위로 스크롤).
+  getChatHistory: async (gatheringId, before = null) => {
+    const query = before ? `?before=${before}` : '';
+    const response = await axios.get(`${API_BASE_URL}/chat/${gatheringId}/history${query}`, {
       headers: getAuthHeaders()
     });
     return response.data;

@@ -15,12 +15,16 @@ export const useChatViewModel = (gathering, currentUser) => {
   const scrollRef = useRef(null);
   const clientRef = useRef(null);
   const isInitialLoad = useRef(true);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
 
   const fetchHistory = useCallback(async () => {
     if (!gathering?.id) return;
     try {
       const history = await ChatRepository.getChatHistory(gathering.id);
       setMessages(history);
+      // 서버 기본 페이지(50건)를 꽉 채워 받았다면 더 과거 메시지가 있을 수 있다.
+      setHasMoreHistory(history.length >= 50);
       // 최초 히스토리 로드 후 스크롤을 맨 아래로 보내기 위한 처리
       setTimeout(() => {
         if (scrollRef.current) {
@@ -40,6 +44,39 @@ export const useChatViewModel = (gathering, currentUser) => {
       fetchHistory();
     }
   }, [gathering?.id, currentUser?.email, fetchHistory]);
+
+  // 과거 메시지 추가 로드 (위로 스크롤). 로드 후 스크롤 위치를 보정해 점프를 막는다.
+  const loadOlderMessages = useCallback(async () => {
+    if (!gathering?.id || isLoadingOlder || !hasMoreHistory || messages.length === 0) return;
+
+    const oldestId = messages[0]?.id;
+    if (!oldestId) return;
+
+    setIsLoadingOlder(true);
+    const container = scrollRef.current;
+    const previousHeight = container ? container.scrollHeight : 0;
+
+    try {
+      const older = await ChatRepository.getChatHistory(gathering.id, oldestId);
+      if (older.length === 0) {
+        setHasMoreHistory(false);
+        return;
+      }
+      setMessages(prev => [...older, ...prev]);
+      setHasMoreHistory(older.length >= 50);
+
+      // 앞쪽에 붙인 만큼 스크롤을 내려 현재 보고 있던 메시지를 유지한다.
+      setTimeout(() => {
+        if (container) {
+          container.scrollTop = container.scrollHeight - previousHeight;
+        }
+      }, 0);
+    } catch (err) {
+      console.error('Failed to load older messages:', err);
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  }, [gathering?.id, messages, isLoadingOlder, hasMoreHistory]);
 
   // 2. 웹소켓 연결 관리용 Ref
   const connectionRef = useRef({ gatheringId: null, userEmail: null });
@@ -202,7 +239,10 @@ export const useChatViewModel = (gathering, currentUser) => {
     connectionStatus,
     showScrollButton,
     handleScroll,
-    scrollToBottom
+    scrollToBottom,
+    loadOlderMessages,
+    isLoadingOlder,
+    hasMoreHistory
   };
 };
 

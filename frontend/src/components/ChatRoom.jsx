@@ -19,7 +19,10 @@ const ChatRoom = ({ gathering, onBack, onStartDM, inline = false }) => {
         connectionStatus,
         showScrollButton,
         handleScroll,
-        scrollToBottom
+        scrollToBottom,
+        loadOlderMessages,
+        isLoadingOlder,
+        hasMoreHistory
     } = useChatViewModel(gathering, currentUser);
 
     const isActualHost = currentUser && (
@@ -143,6 +146,28 @@ const ChatRoom = ({ gathering, onBack, onStartDM, inline = false }) => {
                     className="hide-scrollbar"
                     style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative' }}
                 >
+                    {/* 서버는 최신 50건만 내려주므로, 그 이전 대화는 여기서 이어서 불러온다. */}
+                    {messages.length > 0 && hasMoreHistory && (
+                        <button
+                            type="button"
+                            onClick={loadOlderMessages}
+                            disabled={isLoadingOlder}
+                            style={{
+                                alignSelf: 'center',
+                                marginBottom: '8px',
+                                padding: '6px 16px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                borderRadius: 'var(--radius-full)',
+                                border: '1px solid var(--border-color)',
+                                background: 'white',
+                                color: 'var(--text-secondary)',
+                                cursor: isLoadingOlder ? 'default' : 'pointer'
+                            }}
+                        >
+                            {isLoadingOlder ? '불러오는 중...' : '이전 대화 더 보기'}
+                        </button>
+                    )}
                     {messages.map((m, idx) => {
                         const isMe = m.senderEmail === currentUser.email;
                         const showName = !isMe && (idx === 0 || messages[idx-1].senderEmail !== m.senderEmail);
