@@ -599,7 +599,37 @@ class GatheringServiceImplTest {
     void likeGathering_NullGatheringId_ThrowsException() {
         // when & then
         assertThatThrownBy(() -> gatheringService.likeGathering(null))
-                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .isInstanceOf(CustomException.class)
                 .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("모임 생성 시 제목이 공백/null일 경우 예외 발생")
+    void createGathering_NullOrEmptyTitle_ThrowsException() {
+        // given
+        Gathering gathering = Gathering.builder().title("   ").location("서울").maxJoining(5).build();
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.createGathering(gathering))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 제목을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("모임 정보 수정 시 최대 모집 인원이 현재 참여 인원보다 적은 경우 예외 발생")
+    void updateGathering_MaxJoiningLessThanCurrentJoining_ThrowsException() {
+        // given
+        Long gatheringId = 1L;
+        User host = User.builder().id(10L).email("host@test.com").build();
+        Gathering existing = Gathering.builder().id(gatheringId).host(host).currentJoining(5).build();
+        Gathering updateData = Gathering.builder().title("수정 모임").location("서울").maxJoining(3).build();
+
+        given(gatheringRepository.findById(gatheringId)).willReturn(Optional.of(existing));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.updateGathering(gatheringId, updateData))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("최대 모집 인원은 현재 참여 인원 이상이어야 합니다.");
     }
 }

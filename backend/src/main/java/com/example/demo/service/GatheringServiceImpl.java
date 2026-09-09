@@ -62,6 +62,15 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Override
     @Transactional
     public Gathering createGathering(Gathering gathering) {
+        if (gathering == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 정보가 올바르지 않습니다.");
+        }
+        if (gathering.getTitle() != null && gathering.getTitle().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 제목을 입력해주세요.");
+        }
+        if (gathering.getLocation() != null && gathering.getLocation().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "만나는 장소를 입력해주세요.");
+        }
         if (gathering.getMaxJoining() < 2) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 인원은 최소 2명 이상이어야 합니다.");
         }
@@ -100,7 +109,22 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Override
     @Transactional
     public Gathering updateGathering(Long id, Gathering updateData) {
+        if (id == null || updateData == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID 또는 수정 정보가 올바르지 않습니다.");
+        }
         validateHost(id);
+
+        Gathering gathering = getGathering(id);
+
+        if (updateData.getMaxJoining() > 0) {
+            if (updateData.getMaxJoining() < 2 || updateData.getMaxJoining() > 100) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 인원은 최소 2명 이상 최대 100명 이하이어야 합니다.");
+            }
+            if (updateData.getMaxJoining() < gathering.getCurrentJoining()) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "최대 모집 인원은 현재 참여 인원 이상이어야 합니다.");
+            }
+        }
+
         if (updateData.getStartDate() != null && updateData.getEndDate() != null) {
             if (updateData.getEndDate().isBefore(updateData.getStartDate())) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
@@ -109,7 +133,6 @@ public class GatheringServiceImpl implements GatheringUseCase {
         if (updateData.getTitle() != null) profanityFilterService.validateText(updateData.getTitle());
         if (updateData.getLocation() != null) profanityFilterService.validateText(updateData.getLocation());
 
-        Gathering gathering = getGathering(id);
         gathering.setTitle(updateData.getTitle());
         gathering.setLocation(updateData.getLocation());
         gathering.setStartDate(updateData.getStartDate());
