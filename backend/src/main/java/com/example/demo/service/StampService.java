@@ -24,6 +24,10 @@ public class StampService implements StampUseCase {
     @Transactional(readOnly = true)
     public List<StampResponse> getMyStamps() {
         String email = securityService.getCurrentUserEmail();
+        if (email == null || email.isBlank()) {
+            throw new com.example.demo.exception.CustomException(
+                    com.example.demo.exception.ErrorCode.UNAUTHORIZED_ACCESS, "인증된 사용자만 스탬프 목록을 조회할 수 있습니다.");
+        }
         List<Stamp> stamps = stampRepository.findByUserEmailOrderByCompletedAtDesc(email);
         return stamps.stream()
                 .map(StampResponse::from)
@@ -36,7 +40,8 @@ public class StampService implements StampUseCase {
         if (userId == null) {
             throw new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.USER_NOT_FOUND, "스탬프를 부여할 유저 ID가 올바르지 않습니다.");
         }
+        String stampTitle = (title != null && !title.isBlank()) ? title.trim() : "모임 참여 스탬프";
         // Delegate to pointService to ensure user's stampsCount is atomically updated via pessimistic lock
-        pointService.addPoints(userId, 0, 1, title, gatheringId, stampImageUrl);
+        pointService.addPoints(userId, 0, 1, stampTitle, gatheringId, stampImageUrl);
     }
 }

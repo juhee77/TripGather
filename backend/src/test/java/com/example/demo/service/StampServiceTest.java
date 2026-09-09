@@ -69,4 +69,26 @@ class StampServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("스탬프를 부여할 유저 ID가 올바르지 않습니다.");
     }
+
+    @Test
+    @DisplayName("미인증 사용자 스탬프 목록 조회 시 예외 발생")
+    void getMyStamps_Unauthenticated_ThrowsException() {
+        // given
+        given(securityService.getCurrentUserEmail()).willReturn(null);
+
+        // when & then
+        assertThatThrownBy(() -> stampService.getMyStamps())
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("인증된 사용자만 스탬프 목록을 조회할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("스탬프 부여 시 title이 공백/null인 경우 기본 타이틀을 사용한다")
+    void awardStamp_NullOrBlankTitle_UsesDefaultTitle() {
+        // when
+        stampService.awardStamp(1L, 10L, "   ", "stamp.png");
+
+        // then
+        verify(pointService).addPoints(1L, 0, 1, "모임 참여 스탬프", 10L, "stamp.png");
+    }
 }
