@@ -347,4 +347,21 @@ class TripReviewServiceTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("본인의 리뷰만 삭제할 수 있습니다.");
     }
+
+    @Test
+    @DisplayName("다른 여행의 리뷰 삭제 시도 시 예외 발생")
+    void deleteReview_MismatchedTripId_ThrowsException() {
+        // given
+        Long reviewId = 10L;
+        User author = User.builder().id(1L).email("author@test.com").build();
+        Trip otherTrip = Trip.builder().id(99L).build();
+        TripReview review = TripReview.builder().id(reviewId).author(author).trip(otherTrip).build();
+        given(tripReviewRepository.findById(reviewId)).willReturn(java.util.Optional.of(review));
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.deleteReview(1L, reviewId))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("해당 여행의 리뷰가 아닙니다.");
+    }
 }

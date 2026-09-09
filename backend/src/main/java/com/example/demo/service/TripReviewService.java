@@ -71,8 +71,21 @@ public class TripReviewService {
 
     @Transactional
     public void deleteReview(Long reviewId) {
+        deleteReview(null, reviewId);
+    }
+
+    @Transactional
+    public void deleteReview(Long tripId, Long reviewId) {
+        if (reviewId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 ID가 올바르지 않습니다.");
+        }
         TripReview review = tripReviewRepository.findById(reviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰를 찾을 수 없습니다."));
+
+        if (tripId != null && review.getTrip() != null && !review.getTrip().getId().equals(tripId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "해당 여행의 리뷰가 아닙니다.");
+        }
+
         String email = securityService.getCurrentUserEmail();
         if (!review.getAuthor().getEmail().equals(email)) {
             throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "본인의 리뷰만 삭제할 수 있습니다.");

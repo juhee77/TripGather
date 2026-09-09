@@ -36,7 +36,7 @@ public class TripReviewController {
 
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Void> deleteReview(@PathVariable Long tripId, @PathVariable Long reviewId) {
-        tripReviewService.deleteReview(reviewId);
+        tripReviewService.deleteReview(tripId, reviewId);
         return ResponseEntity.noContent().build();
     }
 
