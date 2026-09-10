@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
 import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle, Share2, Heart, Plane } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
-import { authFetch, apiUrl } from '../api/client';
+import { authFetch } from '../api/client';
 import ModalHeader from '../components/UI/ModalHeader';
 import ModalFooter from '../components/UI/ModalFooter';
 import FormInput from '../components/UI/FormInput';

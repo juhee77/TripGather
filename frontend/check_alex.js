@@ -6,9 +6,9 @@ import puppeteer from 'puppeteer';
     await page.setViewport({ width: 390, height: 844 });
     
     await page.goto('http://localhost:5173/login', { waitUntil: 'networkidle0' });
-    await page.type('input[name=\"email\"]', 'alex@test.com');
-    await page.type('input[name=\"password\"]', 'pass1234');
-    await page.click('button[type=\"submit\"]');
+    await page.type('input[name="email"]', 'alex@test.com');
+    await page.type('input[name="password"]', 'pass1234');
+    await page.click('button[type="submit"]');
     await page.waitForNavigation({ waitUntil: 'networkidle0' });
     
     await new Promise(r => setTimeout(r, 1000));

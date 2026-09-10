@@ -3,13 +3,11 @@ import { useUser } from '../contexts/UserContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Pencil, X, MapPin, LogOut } from 'lucide-react';
 import { authFetch } from '../api/client';
-import { useNavigate } from 'react-router-dom';
 import StampBook from '../components/StampBook';
 import UserBadges from '../components/UserBadges';
 import PointHistoryCard from '../components/PointHistoryCard';
 
 const MyPage = () => {
-  const navigate = useNavigate();
   const { logout } = useAuth();
   const { user, loading, error, refetch, updateProfile } = useUser();
   const [isEditOpen, setIsEditOpen] = useState(false);

@@ -11,7 +11,6 @@ import Card from '../components/UI/Card';
 import PrimaryButton from '../components/UI/PrimaryButton';
 import { useUser } from '../contexts/UserContext';
 import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
-import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
 import { Search, Map as MapIcon, Plus, MessageCircle, Plane } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
@@ -37,21 +36,12 @@ const Home = () => {
   }, [activeTab]);
 
   const [showOnlyHosted, setShowOnlyHosted] = useState(false);
-  const [journeyItineraries, setJourneyItineraries] = useState([]);
-  const [sortBy, setSortBy] = useState('latest'); // 'latest' or 'startDate'
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
-  const { itineraries } = useItinerariesViewModel();
 
   const [trips, setTrips] = useState([]);
 
   useEffect(() => {
     if (!currentUser?.email) return;
-    const loadJourneys = () => {
-      JourneyRepository.fetchMine()
-        .then(setJourneyItineraries)
-        .catch((err) => console.error('Failed to fetch journeys:', err));
-    };
-    
     const loadTrips = async () => {
       try {
         const res = await authFetch('/api/trips');
@@ -62,7 +52,6 @@ const Home = () => {
     };
     
     const refreshData = () => {
-      loadJourneys();
       loadTrips();
       refetchUser().catch((err) => console.error('Failed to refetch user:', err));
     };
@@ -76,15 +65,6 @@ const Home = () => {
 
   const handleEditItinerary = (itinerary) => {
     navigate(`/itinerary/edit/${itinerary.id}`);
-  };
-
-  const handleRemoveJourney = async (itineraryId) => {
-    try {
-      await JourneyRepository.remove(itineraryId);
-      setJourneyItineraries(prev => prev.filter(j => j.id !== itineraryId));
-    } catch (err) {
-      alert('여정 제거에 실패했습니다.');
-    }
   };
 
   return (
@@ -404,7 +384,7 @@ const Home = () => {
               </PrimaryButton>
             </div>
 
-            {trips.map((trip, idx) => (
+            {trips.map((trip) => (
               <TripCard 
                 key={trip.id} 
                 trip={trip} 
@@ -436,18 +416,7 @@ const Home = () => {
         )}
 
         {activeTab === '여행 피드' && (
-          <ItineraryTab
-            onAddToJourney={async () => {
-              try {
-                const mine = await JourneyRepository.fetchMine();
-                setJourneyItineraries(mine);
-              } catch (e) {
-                console.error(e);
-              }
-              setActiveTab('내 여행');
-            }}
-            onEdit={handleEditItinerary}
-          />
+          <ItineraryTab onEdit={handleEditItinerary} />
         )}
 
         {activeTab === '내 여권' && (

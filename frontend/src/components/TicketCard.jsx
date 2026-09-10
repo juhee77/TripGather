@@ -3,14 +3,13 @@ import TicketContainer from './UI/TicketContainer';
 import PrimaryButton from './UI/PrimaryButton';
 import { useUser } from '../contexts/UserContext';
 
-const TicketCard = ({ itinerary, onViewRoute, onEdit, onRemove, isMine: isMineProp, onClick, onInfo }) => {
+const TicketCard = ({ itinerary, onViewRoute, onEdit, onRemove, isMine: isMineProp, onClick }) => {
     const { user: currentUser } = useUser();
     const isMine = isMineProp || (currentUser && (
         itinerary.ownerEmail === currentUser.email ||
         itinerary.authorEmail === currentUser.email ||
         (itinerary.author && typeof itinerary.author === 'object' && itinerary.author.email === currentUser.email)
     ));
-    const isHost = isMine; // In the new system, mine means I can edit/remove it.
     const { title, author, itineraryAuthor, description, createdAt, startDate, endDate } = itinerary;
     
     const formatDate = (dateStr) => {
