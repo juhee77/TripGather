@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.PointTransactionResponse;
-import com.example.demo.service.PointService;
+import com.example.demo.dto.BadgeDto;
+import com.example.demo.service.BadgeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,50 +23,44 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
-class PointControllerTest {
+class BadgeControllerTest {
 
     private MockMvc mockMvc;
 
     @Mock
-    private PointService pointService;
+    private BadgeService badgeService;
 
     @InjectMocks
-    private PointController pointController;
+    private BadgeController badgeController;
 
     private Principal principal;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(pointController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(badgeController).build();
         principal = mock(Principal.class);
         lenient().when(principal.getName()).thenReturn("user@example.com");
     }
 
     @Test
-    @DisplayName("유저 포인트 거래 내역 조회 성공")
-    void getUserPointTransactions_Success() throws Exception {
+    @DisplayName("내 배지 목록 조회 API 성공")
+    void getMyBadges_Success() throws Exception {
         // given
-        PointTransactionResponse res = PointTransactionResponse.builder()
-                .id(1L)
-                .amount(50)
-                .transactionType("EARN")
-                .description("체크인 보상")
-                .build();
-
-        given(pointService.getUserPointTransactions("user@example.com", "EARN")).willReturn(List.of(res));
+        given(badgeService.getUserBadges("user@example.com")).willReturn(List.of(
+                BadgeDto.builder().code("FIRST_TRIP").name("첫 여행").unlocked(true).build()));
 
         // when & then
-        mockMvc.perform(get("/api/points/transactions").param("type", "EARN").principal(principal))
+        mockMvc.perform(get("/api/users/me/badges").principal(principal))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].amount").value(50))
-                .andExpect(jsonPath("$[0].transactionType").value("EARN"));
+                .andExpect(jsonPath("$[0].code").value("FIRST_TRIP"))
+                .andExpect(jsonPath("$[0].unlocked").value(true));
     }
 
     @Test
-    @DisplayName("인증 정보 없이 포인트 거래 내역 조회 시 401 반환")
-    void getUserPointTransactions_NoPrincipal_Returns401() throws Exception {
+    @DisplayName("인증 정보 없이 배지 목록 조회 시 401 반환")
+    void getMyBadges_NoPrincipal_Returns401() throws Exception {
         // when & then
-        mockMvc.perform(get("/api/points/transactions"))
+        mockMvc.perform(get("/api/users/me/badges"))
                 .andExpect(status().isUnauthorized());
     }
 }

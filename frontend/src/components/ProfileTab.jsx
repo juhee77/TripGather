@@ -17,6 +17,8 @@ const ProfileTab = () => {
   useEffect(() => {
     refetch().catch(err => console.error("Failed to refetch user in ProfileTab:", err));
 
+    // loading 은 useState(true) 로 이미 초기화되어 있다. 이펙트 안에서 동기적으로
+    // setState 를 다시 호출하면 연쇄 렌더가 발생해 react-hooks 규칙에 걸린다.
     authFetch('/api/stamps/me')
       .then(res => {
         if (!res.ok) throw new Error("Failed to fetch stamps");

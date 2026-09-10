@@ -45,4 +45,41 @@ class ProfanityFilterServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
     }
+
+    @Test
+    @DisplayName("null 또는 공백 텍스트는 검증 없이 통과")
+    void validateText_NullOrBlank_Passes() {
+        // when & then
+        org.assertj.core.api.Assertions.assertThatNoException()
+                .isThrownBy(() -> profanityFilterService.validateText(null));
+        org.assertj.core.api.Assertions.assertThatNoException()
+                .isThrownBy(() -> profanityFilterService.validateText("   "));
+    }
+
+    @Test
+    @DisplayName("null 또는 공백 단어는 비속어 사전에 등록되지 않음")
+    void addProfanityWord_NullOrBlank_Ignored() {
+        // given
+        int before = profanityFilterService.getForbiddenWords().size();
+
+        // when
+        profanityFilterService.addProfanityWord(null);
+        profanityFilterService.addProfanityWord("   ");
+
+        // then
+        org.assertj.core.api.Assertions.assertThat(profanityFilterService.getForbiddenWords())
+                .hasSize(before);
+    }
+
+    @Test
+    @DisplayName("비속어 사전 조회는 외부 변경이 불가능한 사본을 반환")
+    void getForbiddenWords_ReturnsImmutableCopy() {
+        // given
+        java.util.Set<String> words = profanityFilterService.getForbiddenWords();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThat(words).contains("바보");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> words.add("새단어"))
+                .isInstanceOf(UnsupportedOperationException.class);
+    }
 }

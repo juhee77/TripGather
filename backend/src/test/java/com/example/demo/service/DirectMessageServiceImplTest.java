@@ -343,4 +343,55 @@ class DirectMessageServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("자기 자신과의 채팅 내역은 조회할 수 없습니다.");
     }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "sender=''{0}'', receiver=''{1}''")
+    @org.junit.jupiter.params.provider.CsvSource(value = {
+            "NULL, other@test.com",
+            "'   ', other@test.com",
+            "me@test.com, NULL",
+            "me@test.com, '   '"
+    }, nullValues = "NULL")
+    @DisplayName("DM 발송 시 발신자/수신자 이메일이 비어 있으면 예외 발생")
+    void sendDM_BlankEmails_ThrowsException(String sender, String receiver) {
+        assertThatThrownBy(() -> dmService.sendDM(sender, receiver, "안녕하세요"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("발신자 및 수신자 이메일 정보가 올바르지 않습니다.");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "email1=''{0}'', email2=''{1}''")
+    @org.junit.jupiter.params.provider.CsvSource(value = {
+            "NULL, other@test.com",
+            "'   ', other@test.com",
+            "me@test.com, NULL",
+            "me@test.com, '   '"
+    }, nullValues = "NULL")
+    @DisplayName("DM 대화 이력 조회 시 이메일이 비어 있으면 예외 발생")
+    void getChatHistory_BlankEmails_ThrowsException(String email1, String email2) {
+        assertThatThrownBy(() -> dmService.getChatHistory(email1, email2))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("이메일 정보가 필요합니다.");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "current=''{0}'', partner=''{1}''")
+    @org.junit.jupiter.params.provider.CsvSource(value = {
+            "NULL, other@test.com",
+            "'   ', other@test.com",
+            "me@test.com, NULL",
+            "me@test.com, '   '"
+    }, nullValues = "NULL")
+    @DisplayName("DM 읽음 처리 시 이메일이 비어 있으면 예외 발생")
+    void markMessagesAsRead_BlankEmails_ThrowsException(String current, String partner) {
+        assertThatThrownBy(() -> dmService.markMessagesAsRead(current, partner))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("이메일 정보가 필요합니다.");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "email=''{0}''")
+    @org.junit.jupiter.params.provider.CsvSource(value = {"NULL", "'   '"}, nullValues = "NULL")
+    @DisplayName("DM 대화 상대 목록 조회 시 이메일이 비어 있으면 예외 발생")
+    void getChatPartners_BlankEmail_ThrowsException(String email) {
+        assertThatThrownBy(() -> dmService.getChatPartners(email))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("이메일 정보가 올바르지 않습니다.");
+    }
 }

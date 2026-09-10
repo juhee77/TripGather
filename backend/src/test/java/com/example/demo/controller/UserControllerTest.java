@@ -13,6 +13,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -137,5 +138,47 @@ class UserControllerTest {
         mockMvc.perform(delete("/api/users/me")
                         .with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("인증 정보가 없어 현재 유저를 특정할 수 없으면 프로필 조회는 401 반환")
+    void getMyProfile_NoCurrentUser_Returns401() throws Exception {
+        // given
+        given(userService.getCurrentUser()).willThrow(new IllegalStateException("인증 정보 없음"));
+
+        // when & then
+        mockMvc.perform(get("/api/users/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("유저 생성 API 성공")
+    void createUser_Success() throws Exception {
+        // given
+        User created = User.builder().id(5L).email("new@example.com").name("신규유저").build();
+        given(userService.createUser(any(User.class))).willReturn(created);
+
+        // when & then
+        mockMvc.perform(post("/api/users")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", "new@example.com", "name", "신규유저"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("new@example.com"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("인증 정보가 없어 현재 유저를 특정할 수 없으면 회원 탈퇴는 401 반환")
+    void withdrawMyProfile_NoCurrentUser_Returns401() throws Exception {
+        // given
+        given(userService.getCurrentUser()).willThrow(new IllegalStateException("인증 정보 없음"));
+
+        // when & then
+        mockMvc.perform(delete("/api/users/me").with(csrf()))
+                .andExpect(status().isUnauthorized());
     }
 }

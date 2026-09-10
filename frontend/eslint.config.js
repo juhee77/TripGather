@@ -27,8 +27,9 @@ export default defineConfig([globalIgnores(['dist']), {
     'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_', caughtErrors: 'none' }],
   },
 }, {
-  // 리포지토리 루트의 빌드 설정 및 일회성 개발 스크립트는 Node 환경에서 실행된다.
-  files: ['*.js'],
+  // 루트의 빌드 설정/유틸 스크립트는 브라우저가 아닌 Node 에서 실행된다.
+  // 위 블록의 globals.browser 만 적용하면 process, require, __dirname 이 no-undef 로 잡힌다.
+  files: ['*.{js,cjs,mjs}'],
   languageOptions: {
     globals: { ...globals.node },
     sourceType: 'module',
