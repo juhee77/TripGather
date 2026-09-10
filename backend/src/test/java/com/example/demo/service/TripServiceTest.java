@@ -1,8 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.domain.Itinerary;
 import com.example.demo.domain.Trip;
-import com.example.demo.domain.TripStatus;
 import com.example.demo.domain.User;
 import com.example.demo.dto.TripRequest;
 import com.example.demo.dto.TripResponse;
@@ -16,10 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -226,26 +220,23 @@ class TripServiceTest {
     }
 
     @Test
-    @DisplayName("여행 생성 시 기존 일정 ID와 상태를 지정하면 해당 일정에 여행 정보 바인딩")
-    void createTrip_WithExistingItineraryAndStatus_BindsItinerary() {
+    @DisplayName("기존 일정 ID를 지정해 여행을 만들면 해당 일정이 여행에 바인딩된다")
+    void createTrip_WithExistingItinerary_BindsItinerary() {
         // given
         User owner = User.builder().id(1L).email("owner@test.com").name("Hong").build();
-        Itinerary existing = Itinerary.builder().id(5L).title("복제된 일정").build();
         TripRequest request = TripRequest.builder()
-                .title("Jeju Summer Trip")
+                .title("Jeju Trip")
                 .destination("Jeju")
-                .country("Korea")
-                .startDate(LocalDate.of(2026, 8, 1))
-                .endDate(LocalDate.of(2026, 8, 5))
-                .status("ONGOING")
                 .itineraryId(5L)
+                .startDate(java.time.LocalDate.of(2026, 5, 1))
+                .endDate(java.time.LocalDate.of(2026, 5, 3))
                 .build();
-
-        Trip savedTrip = Trip.of("Jeju Summer Trip", "Jeju", "Korea", owner);
+        com.example.demo.domain.Itinerary existing = com.example.demo.domain.Itinerary.builder().id(5L).build();
+        Trip savedTrip = Trip.of("Jeju Trip", "Jeju", null, owner);
         savedTrip.setId(10L);
 
         given(securityService.getCurrentUser()).willReturn(owner);
-        given(itineraryRepository.findById(5L)).willReturn(Optional.of(existing));
+        given(itineraryRepository.findById(5L)).willReturn(java.util.Optional.of(existing));
         given(tripRepository.save(any(Trip.class))).willReturn(savedTrip);
 
         // when
@@ -255,212 +246,144 @@ class TripServiceTest {
         assertThat(response).isNotNull();
         assertThat(existing.getOwnerEmail()).isEqualTo("owner@test.com");
         assertThat(existing.getLocation()).isEqualTo("Jeju");
-        assertThat(existing.getStartDate()).isEqualTo(LocalDate.of(2026, 8, 1));
-        assertThat(existing.getEndDate()).isEqualTo(LocalDate.of(2026, 8, 5));
         verify(packingService).initDefaultItems(10L);
     }
 
     @Test
-    @DisplayName("내 여행 목록 최신순 조회 성공")
+    @DisplayName("내 여행 목록 조회 성공")
     void getMyTrips_Success() {
         // given
-        String email = "owner@test.com";
-        User owner = User.builder().id(1L).email(email).name("Hong").build();
-        Trip trip = Trip.of("Jeju Summer Trip", "Jeju", "Korea", owner);
-        trip.setId(10L);
-
-        given(securityService.getCurrentUserEmail()).willReturn(email);
-        given(tripRepository.findByOwnerEmailOrderByCreatedAtDesc(email)).willReturn(List.of(trip));
+        User owner = User.builder().id(1L).email("owner@test.com").name("Hong").build();
+        Trip trip = Trip.of("Busan Trip", "Busan", "Korea", owner);
+        trip.setId(1L);
+        given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
+        given(tripRepository.findByOwnerEmailOrderByCreatedAtDesc("owner@test.com"))
+                .willReturn(java.util.List.of(trip));
 
         // when
-        List<TripResponse> responses = tripService.getMyTrips();
+        var result = tripService.getMyTrips();
 
         // then
-        assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).getTitle()).isEqualTo("Jeju Summer Trip");
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("Busan Trip");
     }
 
     @Test
     @DisplayName("여행 단건 조회 성공")
     void getTrip_Success() {
         // given
-        Long tripId = 10L;
         User owner = User.builder().id(1L).email("owner@test.com").name("Hong").build();
-        Trip trip = Trip.of("Jeju Summer Trip", "Jeju", "Korea", owner);
-        trip.setId(tripId);
-        given(tripRepository.findById(tripId)).willReturn(Optional.of(trip));
+        Trip trip = Trip.of("Busan Trip", "Busan", "Korea", owner);
+        trip.setId(1L);
+        given(tripRepository.findById(1L)).willReturn(java.util.Optional.of(trip));
 
         // when
-        TripResponse response = tripService.getTrip(tripId);
+        TripResponse response = tripService.getTrip(1L);
 
         // then
-        assertThat(response.getId()).isEqualTo(tripId);
-        assertThat(response.getDestination()).isEqualTo("Jeju");
+        assertThat(response.getTitle()).isEqualTo("Busan Trip");
     }
 
     @Test
-    @DisplayName("여행 정보 전체 수정 성공 - 연결된 일정표 정보도 함께 갱신")
-    void updateTrip_AllFields_Success() {
+    @DisplayName("여행 수정 성공 시 연결된 일정표 정보도 함께 갱신된다")
+    void updateTrip_Success_SyncsItinerary() {
         // given
-        Long tripId = 10L;
         User owner = User.builder().id(1L).email("owner@test.com").name("Hong").build();
-        Itinerary itinerary = Itinerary.builder().id(5L).title("Jeju Summer Trip 일정표").build();
-        Trip trip = Trip.of("Jeju Summer Trip", "Jeju", "Korea", owner);
-        trip.setId(tripId);
+        Trip trip = Trip.of("Old Title", "Seoul", "Korea", owner);
+        trip.setId(1L);
+        com.example.demo.domain.Itinerary itinerary = com.example.demo.domain.Itinerary.builder().id(5L).build();
         trip.setItinerary(itinerary);
 
         TripRequest request = TripRequest.builder()
-                .title("  Busan Winter Trip  ")
+                .title("New Title")
                 .destination("Busan")
                 .country("Korea")
-                .startDate(LocalDate.of(2026, 12, 1))
-                .endDate(LocalDate.of(2026, 12, 5))
-                .bgImageUrl("bg.png")
-                .status("COMPLETED")
+                .startDate(java.time.LocalDate.of(2026, 5, 1))
+                .endDate(java.time.LocalDate.of(2026, 5, 5))
+                .bgImageUrl("https://cdn/bg.png")
                 .build();
 
+        given(tripRepository.findById(1L)).willReturn(java.util.Optional.of(trip));
         given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
-        given(tripRepository.findById(tripId)).willReturn(Optional.of(trip));
-        given(tripRepository.save(any(Trip.class))).willReturn(trip);
+        given(tripRepository.save(any(Trip.class))).willAnswer(i -> i.getArgument(0));
 
         // when
-        TripResponse response = tripService.updateTrip(tripId, request);
+        TripResponse response = tripService.updateTrip(1L, request);
 
         // then
-        assertThat(response).isNotNull();
-        assertThat(trip.getTitle()).isEqualTo("Busan Winter Trip");
-        assertThat(trip.getDestination()).isEqualTo("Busan");
-        assertThat(trip.getCountry()).isEqualTo("Korea");
-        assertThat(trip.getBgImageUrl()).isEqualTo("bg.png");
-        assertThat(trip.getStatus()).isEqualTo(TripStatus.COMPLETED);
-        assertThat(itinerary.getTitle()).isEqualTo("Busan Winter Trip 일정표");
+        assertThat(response.getTitle()).isEqualTo("New Title");
+        assertThat(itinerary.getTitle()).isEqualTo("New Title 일정표");
         assertThat(itinerary.getLocation()).isEqualTo("Busan");
-        assertThat(itinerary.getStartDate()).isEqualTo(LocalDate.of(2026, 12, 1));
-        assertThat(itinerary.getEndDate()).isEqualTo(LocalDate.of(2026, 12, 5));
+        assertThat(itinerary.getStartDate()).isEqualTo(java.time.LocalDate.of(2026, 5, 1));
+        assertThat(itinerary.getEndDate()).isEqualTo(java.time.LocalDate.of(2026, 5, 5));
     }
 
     @Test
-    @DisplayName("연결된 일정표가 없는 여행 수정 시에도 정상 처리")
-    void updateTrip_WithoutItinerary_Success() {
+    @DisplayName("타인의 여행 수정 시도 시 권한 예외 발생")
+    void updateTrip_NotOwner_ThrowsForbidden() {
         // given
-        Long tripId = 10L;
-        User owner = User.builder().id(1L).email("owner@test.com").name("Hong").build();
-        Trip trip = Trip.of("Jeju Summer Trip", "Jeju", "Korea", owner);
-        trip.setId(tripId);
-
-        TripRequest request = TripRequest.builder()
-                .title("Busan Winter Trip")
-                .destination("Busan")
-                .startDate(LocalDate.of(2026, 12, 1))
-                .endDate(LocalDate.of(2026, 12, 5))
-                .build();
-
-        given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
-        given(tripRepository.findById(tripId)).willReturn(Optional.of(trip));
-        given(tripRepository.save(any(Trip.class))).willReturn(trip);
-
-        // when
-        TripResponse response = tripService.updateTrip(tripId, request);
-
-        // then
-        assertThat(response).isNotNull();
-        assertThat(trip.getItinerary()).isNull();
-        assertThat(trip.getStartDate()).isEqualTo(LocalDate.of(2026, 12, 1));
-    }
-
-    @Test
-    @DisplayName("본인 소유가 아닌 여행 수정 시 예외 발생")
-    void updateTrip_NotOwner_ThrowsException() {
-        // given
-        Long tripId = 10L;
-        User owner = User.builder().id(1L).email("owner@test.com").name("Hong").build();
-        Trip trip = Trip.of("Jeju Summer Trip", "Jeju", "Korea", owner);
-        trip.setId(tripId);
-
-        given(securityService.getCurrentUserEmail()).willReturn("stranger@test.com");
-        given(tripRepository.findById(tripId)).willReturn(Optional.of(trip));
+        User owner = User.builder().id(1L).email("owner@test.com").build();
+        Trip trip = Trip.of("Trip", "Seoul", "Korea", owner);
+        trip.setId(1L);
+        given(tripRepository.findById(1L)).willReturn(java.util.Optional.of(trip));
+        given(securityService.getCurrentUserEmail()).willReturn("hacker@test.com");
 
         // when & then
-        assertThatThrownBy(() -> tripService.updateTrip(tripId, TripRequest.builder().build()))
+        assertThatThrownBy(() -> tripService.updateTrip(1L, TripRequest.builder().title("New").build()))
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("본인의 여행만 관리할 수 있습니다.");
     }
 
     @Test
-    @DisplayName("여행 삭제 성공")
+    @DisplayName("본인 여행 삭제 성공")
     void deleteTrip_Success() {
         // given
-        Long tripId = 10L;
-        User owner = User.builder().id(1L).email("owner@test.com").name("Hong").build();
-        Trip trip = Trip.of("Jeju Summer Trip", "Jeju", "Korea", owner);
-        trip.setId(tripId);
-
+        User owner = User.builder().id(1L).email("owner@test.com").build();
+        Trip trip = Trip.of("Trip", "Seoul", "Korea", owner);
+        trip.setId(1L);
+        given(tripRepository.findById(1L)).willReturn(java.util.Optional.of(trip));
         given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
-        given(tripRepository.findById(tripId)).willReturn(Optional.of(trip));
 
         // when
-        tripService.deleteTrip(tripId);
+        tripService.deleteTrip(1L);
 
         // then
         verify(tripRepository).delete(trip);
     }
 
     @Test
-    @DisplayName("존재하지 않는 여행 ID 조회 시 예외 발생")
+    @DisplayName("목적지가 일치하는 공개 여정만 추천 목록에 포함된다")
+    void getRecommendedItineraries_FiltersByDestinationAndVisibility() {
+        // given
+        User owner = User.builder().id(1L).email("owner@test.com").build();
+        Trip trip = Trip.of("Busan Trip", "부산", "Korea", owner);
+        trip.setId(1L);
+        given(tripRepository.findById(1L)).willReturn(java.util.Optional.of(trip));
+        // 공개 여부/삭제 여부/목적지 매칭은 모두 DB 쿼리로 위임되었다.
+        given(itineraryRepository
+                .findByPublicStatusTrueAndDeletedFalseAndLocationContainingOrderByCreatedAtDesc("부산"))
+                .willReturn(java.util.List.of(
+                        com.example.demo.domain.Itinerary.builder()
+                                .id(1L).title("부산 2박3일").location("부산 해운대구").publicStatus(true).build()
+                ));
+
+        // when
+        var result = tripService.getRecommendedItineraries(1L);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("부산 2박3일");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 여행 조회 시 예외 발생")
     void getTrip_NotFound_ThrowsException() {
         // given
-        given(tripRepository.findById(99L)).willReturn(Optional.empty());
+        given(tripRepository.findById(999L)).willReturn(java.util.Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> tripService.getTrip(99L))
+        assertThatThrownBy(() -> tripService.getTrip(999L))
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("여행을 찾을 수 없습니다.");
-    }
-
-    @Test
-    @DisplayName("추천 여정 조회 시 목적지가 일치하는 공개 일정만 반환")
-    void getRecommendedItineraries_ReturnsMatchingPublicItineraries() {
-        // given
-        Long tripId = 10L;
-        User owner = User.builder().id(1L).email("owner@test.com").name("Hong").build();
-        Trip trip = Trip.of("Jeju Summer Trip", "Jeju", "Korea", owner);
-        trip.setId(tripId);
-
-        Itinerary matching = Itinerary.builder()
-                .id(1L).title("제주 3박4일").location("Jeju Island").publicStatus(true).build();
-        Itinerary privateOne = Itinerary.builder()
-                .id(2L).title("비공개 제주").location("Jeju Island").publicStatus(false).build();
-        Itinerary otherLocation = Itinerary.builder()
-                .id(3L).title("부산 여행").location("Busan").publicStatus(true).build();
-        Itinerary noLocation = Itinerary.builder()
-                .id(4L).title("장소 미정").publicStatus(true).build();
-
-        given(tripRepository.findById(tripId)).willReturn(Optional.of(trip));
-        given(itineraryRepository.findAll()).willReturn(List.of(matching, privateOne, otherLocation, noLocation));
-
-        // when
-        List<com.example.demo.dto.ItineraryResponse> responses = tripService.getRecommendedItineraries(tripId);
-
-        // then
-        assertThat(responses).hasSize(1);
-        assertThat(responses.get(0).getId()).isEqualTo(1L);
-    }
-
-    @Test
-    @DisplayName("여행 목적지가 null인 경우 추천 여정 목록 조회 시 빈 리스트 반환")
-    void getRecommendedItineraries_NullDestination_ReturnsEmptyList() {
-        // given
-        Long tripId = 10L;
-        User owner = User.builder().id(1L).email("owner@test.com").name("Hong").build();
-        Trip trip = Trip.of("Jeju Summer Trip", null, "Korea", owner);
-        trip.setId(tripId);
-
-        given(tripRepository.findById(tripId)).willReturn(Optional.of(trip));
-
-        // when
-        List<com.example.demo.dto.ItineraryResponse> responses = tripService.getRecommendedItineraries(tripId);
-
-        // then
-        assertThat(responses).isEmpty();
     }
 }

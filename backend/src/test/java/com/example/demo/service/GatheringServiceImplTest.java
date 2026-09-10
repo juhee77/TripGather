@@ -187,6 +187,72 @@ class GatheringServiceImplTest {
     }
 
     @Test
+    @DisplayName("페이지 검색 - size 이하로 돌아오면 그대로 반환한다")
+    void searchGatherings_Paged_ReturnsAsIs_WhenWithinSize() {
+        // given
+        Gathering g1 = Gathering.builder().id(1L).title("G1").build();
+        given(gatheringRepository.searchGatherings(null, null, null, null, "LATEST", 0, 20))
+                .willReturn(List.of(g1));
+
+        // when
+        List<Gathering> result = gatheringService.searchGatherings(null, null, null, null, "LATEST", 0, 20);
+
+        // then
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("페이지 검색 - size+1건이 돌아오면 마지막 한 건을 잘라낸다")
+    void searchGatherings_Paged_TrimsLastRow_WhenSizePlusOneReturned() {
+        // given
+        List<Gathering> sizePlusOne = java.util.stream.IntStream.rangeClosed(1, 21)
+                .mapToObj(i -> Gathering.builder().id((long) i).title("G" + i).build())
+                .toList();
+        given(gatheringRepository.searchGatherings(null, null, null, null, "LATEST", 0, 20))
+                .willReturn(sizePlusOne);
+
+        // when
+        List<Gathering> result = gatheringService.searchGatherings(null, null, null, null, "LATEST", 0, 20);
+
+        // then
+        assertThat(result).hasSize(20);
+        assertThat(result.get(19).getId()).isEqualTo(20L);
+    }
+
+    @Test
+    @DisplayName("페이지 검색 - size 가 상한을 넘으면 최대치로 제한된다")
+    void searchGatherings_Paged_SizeCappedAtMax() {
+        // given
+        org.mockito.ArgumentCaptor<Integer> sizeCaptor = org.mockito.ArgumentCaptor.forClass(Integer.class);
+        given(gatheringRepository.searchGatherings(
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.eq("LATEST"), org.mockito.ArgumentMatchers.eq(0), sizeCaptor.capture()))
+                .willReturn(List.of());
+
+        // when
+        gatheringService.searchGatherings(null, null, null, null, "LATEST", 0, 100000);
+
+        // then
+        assertThat(sizeCaptor.getValue())
+                .isEqualTo(com.example.demo.usecase.GatheringUseCase.MAX_PAGE_SIZE);
+    }
+
+    @Test
+    @DisplayName("페이지 검색 - 음수 페이지 번호는 0으로 보정된다")
+    void searchGatherings_Paged_NegativePageClampedToZero() {
+        // given
+        given(gatheringRepository.searchGatherings(null, null, null, null, "LATEST", 0, 20))
+                .willReturn(List.of());
+
+        // when
+        gatheringService.searchGatherings(null, null, null, null, "LATEST", -5, 20);
+
+        // then
+        verify(gatheringRepository).searchGatherings(null, null, null, null, "LATEST", 0, 20);
+    }
+
+    @Test
     @DisplayName("인기 모임 TOP 5 조회 성공")
     void getPopularGatherings_Success() {
         // given
@@ -574,5 +640,62 @@ class GatheringServiceImplTest {
         assertThatThrownBy(() -> gatheringService.updateGathering(gatheringId, updateData))
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("종료일은 시작일보다 빠를 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID로 단건 조회 시 예외 발생")
+    void getGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringService.getGathering(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID로 삭제 시 예외 발생")
+    void deleteGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringService.deleteGathering(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID로 찜 토글 시 예외 발생")
+    void likeGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringService.likeGathering(null))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("모임 생성 시 제목이 공백/null일 경우 예외 발생")
+    void createGathering_NullOrEmptyTitle_ThrowsException() {
+        // given
+        Gathering gathering = Gathering.builder().title("   ").location("서울").maxJoining(5).build();
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.createGathering(gathering))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 제목을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("모임 정보 수정 시 최대 모집 인원이 현재 참여 인원보다 적은 경우 예외 발생")
+    void updateGathering_MaxJoiningLessThanCurrentJoining_ThrowsException() {
+        // given
+        Long gatheringId = 1L;
+        User host = User.builder().id(10L).email("host@test.com").build();
+        Gathering existing = Gathering.builder().id(gatheringId).host(host).currentJoining(5).build();
+        Gathering updateData = Gathering.builder().title("수정 모임").location("서울").maxJoining(3).build();
+
+        given(gatheringRepository.findById(gatheringId)).willReturn(Optional.of(existing));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.updateGathering(gatheringId, updateData))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("최대 모집 인원은 현재 참여 인원 이상이어야 합니다.");
     }
 }

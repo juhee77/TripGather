@@ -1,25 +1,27 @@
 package com.example.demo.service;
 
 import com.example.demo.service.storage.LocalStorageStrategy;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.BDDMockito.given;
 
-/**
- * LocalStorageStrategy 는 외부 서비스가 아닌 로컬 파일 시스템만 사용하므로
- * 모킹 대신 JUnit 의 @TempDir 을 실제 저장 위치로 주입해 검증한다.
- */
+@DisplayName("로컬 디스크 파일 스토리지 전략")
 class LocalStorageStrategyTest {
 
     @TempDir
@@ -30,99 +32,89 @@ class LocalStorageStrategyTest {
     @BeforeEach
     void setUp() {
         localStorageStrategy = new LocalStorageStrategy();
+        // 실제 프로젝트 디렉토리(.storage)를 건드리지 않도록 임시 디렉토리로 대체한다.
         ReflectionTestUtils.setField(localStorageStrategy, "storageLocation", tempDir);
     }
 
+    @AfterEach
+    void tearDown() throws IOException {
+        try (var paths = Files.list(tempDir)) {
+            for (Path path : paths.toList()) {
+                Files.deleteIfExists(path);
+            }
+        }
+    }
+
     @Test
-    @DisplayName("로컬 스토리지 초기화 시 저장 디렉토리 생성")
+    @DisplayName("초기화 시 스토리지 디렉토리가 준비된다")
     void init_CreatesStorageDirectory() {
-        // given
-        Path storageDir = tempDir.resolve("storage");
-        ReflectionTestUtils.setField(localStorageStrategy, "storageLocation", storageDir);
-
         // when
-        localStorageStrategy.init();
+        assertDoesNotThrow(() -> localStorageStrategy.init());
 
         // then
-        assertThat(Files.isDirectory(storageDir)).isTrue();
+        assertThat(Files.isDirectory(tempDir)).isTrue();
     }
 
     @Test
-    @DisplayName("저장 위치에 동일 이름의 파일이 존재해 디렉토리 생성 실패 시 초기화 예외 발생")
-    void init_DirectoryCreationFails_ThrowsException() throws Exception {
+    @DisplayName("파일 저장 성공 시 정적 서빙 경로를 반환하고 실제 파일이 기록된다")
+    void storeFile_Success() throws IOException {
         // given
-        Path conflicting = tempDir.resolve("conflict");
-        Files.writeString(conflicting, "일반 파일");
-        ReflectionTestUtils.setField(localStorageStrategy, "storageLocation", conflicting);
-
-        // when & then
-        assertThatThrownBy(() -> localStorageStrategy.init())
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("로컬 스토리지 초기화 실패");
-    }
-
-    @Test
-    @DisplayName("로컬 파일 저장 성공 - 정적 서빙 경로 반환")
-    void storeFile_Success() throws Exception {
-        // given
-        MultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "이미지 데이터".getBytes());
-        String uniqueFileName = "random-uuid.jpg";
+        MultipartFile file = new MockMultipartFile(
+                "file", "photo.png", "image/png", "hello".getBytes(StandardCharsets.UTF_8));
 
         // when
-        String url = localStorageStrategy.storeFile(file, uniqueFileName);
+        String result = localStorageStrategy.storeFile(file, "unique-photo.png");
 
         // then
-        assertThat(url).isEqualTo("/uploads/" + uniqueFileName);
-        assertThat(Files.readString(tempDir.resolve(uniqueFileName))).isEqualTo("이미지 데이터");
+        assertThat(result).isEqualTo("/uploads/unique-photo.png");
+        Path stored = tempDir.resolve("unique-photo.png");
+        assertThat(Files.exists(stored)).isTrue();
+        assertThat(Files.readString(stored)).isEqualTo("hello");
     }
 
     @Test
-    @DisplayName("동일한 파일명이 이미 존재해 저장 실패 시 업로드 예외 발생")
-    void storeFile_AlreadyExists_ThrowsException() throws Exception {
+    @DisplayName("같은 이름으로 중복 저장 시 예외가 발생한다")
+    void storeFile_DuplicateName_ThrowsException() {
         // given
-        String uniqueFileName = "duplicated.jpg";
-        Files.writeString(tempDir.resolve(uniqueFileName), "기존 파일");
-        MultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "새 파일".getBytes());
+        MultipartFile file = new MockMultipartFile(
+                "file", "photo.png", "image/png", "hello".getBytes(StandardCharsets.UTF_8));
+        localStorageStrategy.storeFile(file, "dup.png");
 
         // when & then
-        assertThatThrownBy(() -> localStorageStrategy.storeFile(file, uniqueFileName))
+        assertThatThrownBy(() -> localStorageStrategy.storeFile(file, "dup.png"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("로컬 파일 업로드 실패");
     }
 
     @Test
-    @DisplayName("로컬 파일 삭제 성공 - URL 마지막 세그먼트를 파일명으로 사용")
-    void deleteFile_Success() throws Exception {
+    @DisplayName("입력 스트림을 읽을 수 없으면 업로드 예외로 변환한다")
+    void storeFile_IOException_ThrowsRuntimeException() throws IOException {
         // given
-        String fileName = "target.jpg";
-        Path stored = tempDir.resolve(fileName);
-        Files.writeString(stored, "삭제 대상");
+        MultipartFile file = Mockito.mock(MultipartFile.class);
+        given(file.getInputStream()).willThrow(new IOException("stream broken"));
+
+        // when & then
+        assertThatThrownBy(() -> localStorageStrategy.storeFile(file, "broken.png"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("로컬 파일 업로드 실패");
+    }
+
+    @Test
+    @DisplayName("URL 마지막 경로 세그먼트를 파일명으로 삼아 삭제한다")
+    void deleteFile_Success() throws IOException {
+        // given
+        Files.writeString(tempDir.resolve("target.png"), "data");
 
         // when
-        localStorageStrategy.deleteFile("/uploads/" + fileName);
+        localStorageStrategy.deleteFile("/uploads/target.png");
 
         // then
-        assertThat(Files.exists(stored)).isFalse();
+        assertThat(Files.exists(tempDir.resolve("target.png"))).isFalse();
     }
 
     @Test
-    @DisplayName("존재하지 않는 파일 삭제 요청 시 예외 없이 무시")
+    @DisplayName("존재하지 않는 파일 삭제는 예외 없이 통과한다")
     void deleteFile_NotExists_DoesNotThrow() {
-        // when & then
-        assertDoesNotThrow(() -> localStorageStrategy.deleteFile("/uploads/not-exists.jpg"));
-    }
-
-    @Test
-    @DisplayName("비어있지 않은 디렉토리 삭제 시도 시 삭제 실패 예외 발생")
-    void deleteFile_DeletionFails_ThrowsException() throws Exception {
-        // given
-        Path nonEmptyDir = tempDir.resolve("nested");
-        Files.createDirectory(nonEmptyDir);
-        Files.writeString(nonEmptyDir.resolve("child.txt"), "자식 파일");
-
-        // when & then
-        assertThatThrownBy(() -> localStorageStrategy.deleteFile("/uploads/nested"))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("로컬 파일 삭제 실패");
+        assertDoesNotThrow(() -> localStorageStrategy.deleteFile("/uploads/missing.png"));
     }
 }

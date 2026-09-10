@@ -492,8 +492,43 @@ class ItineraryServiceImplTest {
     void togglePublicStatus_EmptyEmail_ThrowsException() {
         // when & then
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.togglePublicStatus(1L, "   ", true))
-                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .isInstanceOf(CustomException.class)
                 .hasMessageContaining("유저 이메일 정보가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("여정 생성 시 종료일이 시작일보다 빠를 경우 예외 발생")
+    void createItinerary_InvalidDateRange_ThrowsException() {
+        // given
+        Itinerary itinerary = Itinerary.builder()
+                .title("일자역전 여정")
+                .startDate(java.time.LocalDate.of(2026, 9, 20))
+                .endDate(java.time.LocalDate.of(2026, 9, 15))
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("종료일은 시작일보다 빠를 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("여정 수정 시 종료일이 시작일보다 빠를 경우 예외 발생")
+    void updateItinerary_InvalidDateRange_ThrowsException() {
+        // given
+        Itinerary existing = Itinerary.builder().id(1L).title("Old Title").routePoints(new ArrayList<>()).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        Itinerary updateInfo = Itinerary.builder()
+                .title("Updated Title")
+                .startDate(java.time.LocalDate.of(2026, 9, 20))
+                .endDate(java.time.LocalDate.of(2026, 9, 10))
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.updateItinerary(1L, updateInfo))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("종료일은 시작일보다 빠를 수 없습니다.");
     }
 
     private com.example.demo.domain.RoutePoint point(Long id, String label, int day, int seq) {

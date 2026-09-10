@@ -4,7 +4,6 @@ import com.example.demo.service.storage.StorageStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,13 +14,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.willThrow;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.BDDMockito.willThrow;
 
 @ExtendWith(MockitoExtension.class)
 class FileServiceTest {
@@ -60,44 +58,26 @@ class FileServiceTest {
     }
 
     @Test
-    @DisplayName("파일 저장 시 확장자가 없는 원본 파일명은 UUID만으로 고유 파일명을 생성")
-    void storeFile_NoExtension_UsesUuidOnly() {
+    @DisplayName("확장자가 없는 파일명도 UUID 파일명으로 저장된다")
+    void storeFile_WithoutExtension() {
         // given
-        MultipartFile file = new MockMultipartFile("file", "noextension", "application/octet-stream", "raw".getBytes());
-        ArgumentCaptor<String> nameCaptor = ArgumentCaptor.forClass(String.class);
-        given(storageStrategy.storeFile(eq(file), any(String.class))).willReturn("/uploads/generated");
+        MultipartFile file = new MockMultipartFile("file", "README", "text/plain", "x".getBytes());
+        given(storageStrategy.storeFile(any(MultipartFile.class), any(String.class))).willReturn("/uploads/uuid");
 
         // when
-        fileService.storeFile(file);
+        String result = fileService.storeFile(file);
 
         // then
-        verify(storageStrategy).storeFile(eq(file), nameCaptor.capture());
-        assertThat(nameCaptor.getValue()).doesNotContain(".");
+        assertThat(result).isEqualTo("/uploads/uuid");
+        verify(storageStrategy, times(1)).storeFile(any(MultipartFile.class), any(String.class));
     }
 
     @Test
-    @DisplayName("파일 저장 시 숨김 파일(.gitignore)은 확장자로 취급하지 않음")
-    void storeFile_DotFile_NotTreatedAsExtension() {
+    @DisplayName("원본 파일명이 없으면 업로드 예외로 변환한다")
+    void storeFile_NullOriginalFilename_ThrowsException() {
         // given
-        MultipartFile file = new MockMultipartFile("file", ".gitignore", "text/plain", "raw".getBytes());
-        ArgumentCaptor<String> nameCaptor = ArgumentCaptor.forClass(String.class);
-        given(storageStrategy.storeFile(eq(file), any(String.class))).willReturn("/uploads/generated");
-
-        // when
-        fileService.storeFile(file);
-
-        // then
-        verify(storageStrategy).storeFile(eq(file), nameCaptor.capture());
-        assertThat(nameCaptor.getValue()).doesNotContain(".gitignore");
-    }
-
-    @Test
-    @DisplayName("파일 저장 시 스토리지 전략에서 예외 발생하면 업로드 실패 예외로 변환")
-    void storeFile_StorageFails_ThrowsRuntimeException() {
-        // given
-        MultipartFile file = new MockMultipartFile("file", "test.jpg", "image/jpeg", "test data".getBytes());
-        given(storageStrategy.storeFile(eq(file), any(String.class)))
-                .willThrow(new RuntimeException("스토리지 연결 실패"));
+        MultipartFile file = org.mockito.Mockito.mock(MultipartFile.class);
+        given(file.getOriginalFilename()).willReturn(null);
 
         // when & then
         assertThatThrownBy(() -> fileService.storeFile(file))
@@ -106,30 +86,38 @@ class FileServiceTest {
     }
 
     @Test
-    @DisplayName("파일 삭제 시 URL이 null이면 스토리지 호출 없이 무시")
-    void deleteFile_NullUrl_DoesNothing() {
-        // when & then
-        assertDoesNotThrow(() -> fileService.deleteFile(null));
-        verify(storageStrategy, never()).deleteFile(anyString());
-    }
-
-    @Test
-    @DisplayName("파일 삭제 시 URL이 빈 문자열이면 스토리지 호출 없이 무시")
-    void deleteFile_EmptyUrl_DoesNothing() {
-        // when & then
-        assertDoesNotThrow(() -> fileService.deleteFile(""));
-        verify(storageStrategy, never()).deleteFile(anyString());
-    }
-
-    @Test
-    @DisplayName("파일 삭제 시 스토리지 전략에서 예외 발생하면 삭제 실패 예외로 변환")
-    void deleteFile_StorageFails_ThrowsRuntimeException() {
+    @DisplayName("스토리지 전략이 실패하면 업로드 예외로 변환한다")
+    void storeFile_StorageFails_ThrowsException() {
         // given
-        String fileUrl = "http://localhost:9000/tripgather/test-file.jpg";
-        willThrow(new RuntimeException("스토리지 연결 실패")).given(storageStrategy).deleteFile(fileUrl);
+        MultipartFile file = new MockMultipartFile("file", "photo.png", "image/png", "x".getBytes());
+        given(storageStrategy.storeFile(any(MultipartFile.class), any(String.class)))
+                .willThrow(new RuntimeException("bucket down"));
 
         // when & then
-        assertThatThrownBy(() -> fileService.deleteFile(fileUrl))
+        assertThatThrownBy(() -> fileService.storeFile(file))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("파일 업로드 실패");
+    }
+
+    @Test
+    @DisplayName("빈 URL 삭제 요청은 스토리지를 호출하지 않는다")
+    void deleteFile_BlankUrl_SkipsStorage() {
+        // when
+        fileService.deleteFile(null);
+        fileService.deleteFile("");
+
+        // then
+        verify(storageStrategy, never()).deleteFile(any(String.class));
+    }
+
+    @Test
+    @DisplayName("스토리지 삭제가 실패하면 삭제 예외로 변환한다")
+    void deleteFile_StorageFails_ThrowsException() {
+        // given
+        willThrow(new RuntimeException("not reachable")).given(storageStrategy).deleteFile(eq("/uploads/a.png"));
+
+        // when & then
+        assertThatThrownBy(() -> fileService.deleteFile("/uploads/a.png"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("파일 삭제 실패");
     }

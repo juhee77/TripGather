@@ -122,7 +122,7 @@ class TripReviewControllerTest {
         // when & then
         mockMvc.perform(delete("/api/trips/1/reviews/10"))
                 .andExpect(status().isNoContent());
-        verify(tripReviewService).deleteReview(10L);
+        verify(tripReviewService).deleteReview(1L, 10L);
     }
 
     @Test

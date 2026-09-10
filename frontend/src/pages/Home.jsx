@@ -14,7 +14,6 @@ import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
 import { Search, Map as MapIcon, Plus, MessageCircle, Plane } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
-import JourneyRepository from '../repositories/JourneyRepository';
 import { authFetch } from '../api/client';
 
 const Home = () => {
@@ -26,7 +25,9 @@ const Home = () => {
     searchQuery,
     availableOnly,
     isLoading,
-    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, likeGathering }
+    isLoadingMore,
+    hasMore,
+    actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, likeGathering, loadMoreGatherings }
   } = useGatheringsViewModel();
 
   const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem('tg_activeTab') || '라운지');
@@ -37,7 +38,6 @@ const Home = () => {
 
   const [showOnlyHosted, setShowOnlyHosted] = useState(false);
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
-
   const [trips, setTrips] = useState([]);
 
   useEffect(() => {
@@ -62,10 +62,6 @@ const Home = () => {
     window.addEventListener('focus', refreshData);
     return () => window.removeEventListener('focus', refreshData);
   }, [currentUser?.email, refetchUser]);
-
-  const handleEditItinerary = (itinerary) => {
-    navigate(`/itinerary/edit/${itinerary.id}`);
-  };
 
   return (
     <div className="animate-fade" style={{ background: 'var(--bg-lite)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -332,7 +328,30 @@ const Home = () => {
 
                   </div>
                 ))}
-                
+
+                {/* 서버는 페이지 단위로 내려주므로, 그 이후 모임은 여기서 이어서 불러온다. */}
+                {gatherings.length > 0 && hasMore && (
+                  <button
+                    type="button"
+                    onClick={loadMoreGatherings}
+                    disabled={isLoadingMore}
+                    style={{
+                      alignSelf: 'center',
+                      margin: '4px auto 12px',
+                      padding: '10px 24px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      borderRadius: 'var(--radius-full)',
+                      border: '1px solid var(--border-color)',
+                      background: 'white',
+                      color: 'var(--text-secondary)',
+                      cursor: isLoadingMore ? 'default' : 'pointer'
+                    }}
+                  >
+                    {isLoadingMore ? '불러오는 중...' : '더 보기'}
+                  </button>
+                )}
+
                 {/* Empty State */}
                 {gatherings.filter(g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))).length === 0 && (
                   <Card 
@@ -416,7 +435,7 @@ const Home = () => {
         )}
 
         {activeTab === '여행 피드' && (
-          <ItineraryTab onEdit={handleEditItinerary} />
+          <ItineraryTab />
         )}
 
         {activeTab === '내 여권' && (

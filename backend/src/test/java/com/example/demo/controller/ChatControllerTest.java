@@ -136,7 +136,7 @@ class ChatControllerTest {
         // given
         Gathering gathering = Gathering.builder().id(1L).isChatPublic(true).build();
         given(gatheringService.getGathering(1L)).willReturn(gathering);
-        given(chatService.getChatHistory(1L)).willReturn(List.of(
+        given(chatService.getChatHistory(1L, null, 50)).willReturn(List.of(
                 ChatMessageResponse.builder().id(1L).content("안녕하세요").build()));
 
         // when & then
@@ -152,7 +152,7 @@ class ChatControllerTest {
         Gathering gathering = Gathering.builder().id(1L).isChatPublic(false).build();
         given(gatheringService.getGathering(1L)).willReturn(gathering);
         given(gatheringMemberService.isAuthorizedMember(1L, "member@test.com")).willReturn(true);
-        given(chatService.getChatHistory(1L)).willReturn(List.of(
+        given(chatService.getChatHistory(1L, null, 50)).willReturn(List.of(
                 ChatMessageResponse.builder().id(1L).content("비공개 대화").build()));
 
         // when & then
@@ -173,6 +173,6 @@ class ChatControllerTest {
         mockMvc.perform(get("/api/chat/1/history"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isEmpty());
-        verify(chatService, never()).getChatHistory(anyLong());
+        verify(chatService, never()).getChatHistory(anyLong(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt());
     }
 }

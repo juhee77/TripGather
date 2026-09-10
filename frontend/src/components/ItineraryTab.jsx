@@ -3,7 +3,6 @@ import TicketCard from './TicketCard';
 import { Plus, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
-import JourneyRepository from '../repositories/JourneyRepository';
 
 const ItineraryTab = () => {
     const navigate = useNavigate();

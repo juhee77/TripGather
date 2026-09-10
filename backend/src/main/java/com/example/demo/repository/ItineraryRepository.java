@@ -12,6 +12,8 @@ public interface ItineraryRepository extends JpaRepository<Itinerary, Long> {
     List<Itinerary> findByPublicStatusTrueAndDeletedFalseOrderByCreatedAtDesc();
     List<Itinerary> findByOwnerEmailAndDeletedFalseOrderByCreatedAtDesc(String ownerEmail);
 
+    List<Itinerary> findByPublicStatusTrueAndDeletedFalseAndLocationContainingOrderByCreatedAtDesc(String location);
+
     @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
     @org.springframework.data.jpa.repository.Query("UPDATE Itinerary i SET i.deleted = true WHERE i.id = :id")
     void softDeleteById(@org.springframework.data.repository.query.Param("id") Long id);

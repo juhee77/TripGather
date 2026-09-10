@@ -154,10 +154,9 @@ public class TripService {
         String destination = trip.getDestination();
         if (destination == null || destination.isBlank()) return List.of();
 
-        return itineraryRepository.findAll().stream()
-                .filter(it -> it.isPublicStatus()
-                        && it.getLocation() != null
-                        && it.getLocation().contains(destination))
+        return itineraryRepository
+                .findByPublicStatusTrueAndDeletedFalseAndLocationContainingOrderByCreatedAtDesc(destination)
+                .stream()
                 .map(ItineraryResponse::from)
                 .toList();
     }

@@ -10,7 +10,11 @@ const DMChatRoom = ({ otherUser, onBack }) => {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [stompClient, setStompClient] = useState(null);
+    const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+    const [hasMoreHistory, setHasMoreHistory] = useState(true);
     const scrollRef = useRef(null);
+    // 과거 메시지를 앞쪽에 붙이는 중에는 자동 하단 스크롤을 건너뛴다.
+    const isPrependingRef = useRef(false);
 
     const formatTime = (dateStr) => {
         if (!dateStr) return "";
@@ -28,7 +32,11 @@ const DMChatRoom = ({ otherUser, onBack }) => {
         // DM 내역 불러오기
         authFetch(`/api/dm/history/${otherUser.email}`)
             .then(res => res.json())
-            .then(data => setMessages(data))
+            .then(data => {
+                setMessages(data);
+                // 서버 기본 페이지(50건)를 꽉 채웠다면 더 과거 메시지가 있을 수 있다.
+                setHasMoreHistory(data.length >= 50);
+            })
             .catch(err => console.error("DM History fetch error:", err));
 
         // 읽음 처리 API 호출
@@ -84,10 +92,47 @@ const DMChatRoom = ({ otherUser, onBack }) => {
     }, [otherUser?.email, currentUser?.email]);
 
     useEffect(() => {
+        if (isPrependingRef.current) {
+            isPrependingRef.current = false;
+            return;
+        }
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
+
+    // 서버는 최신 50건만 내려주므로, 그 이전 대화는 커서로 이어서 불러온다.
+    const loadOlderMessages = async () => {
+        if (isLoadingOlder || !hasMoreHistory || messages.length === 0) return;
+        const oldestId = messages[0]?.id;
+        if (!oldestId) return;
+
+        setIsLoadingOlder(true);
+        const container = scrollRef.current;
+        const previousHeight = container ? container.scrollHeight : 0;
+
+        try {
+            const res = await authFetch(`/api/dm/history/${otherUser.email}?before=${oldestId}`);
+            const older = await res.json();
+            if (!older.length) {
+                setHasMoreHistory(false);
+                return;
+            }
+            isPrependingRef.current = true;
+            setMessages(prev => [...older, ...prev]);
+            setHasMoreHistory(older.length >= 50);
+
+            setTimeout(() => {
+                if (container) {
+                    container.scrollTop = container.scrollHeight - previousHeight;
+                }
+            }, 0);
+        } catch (err) {
+            console.error('Failed to load older DMs:', err);
+        } finally {
+            setIsLoadingOlder(false);
+        }
+    };
 
     const handleSend = (e) => {
         e.preventDefault();
@@ -157,6 +202,27 @@ const DMChatRoom = ({ otherUser, onBack }) => {
                 className="hide-scrollbar"
                 style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}
             >
+                {messages.length > 0 && hasMoreHistory && (
+                    <button
+                        type="button"
+                        onClick={loadOlderMessages}
+                        disabled={isLoadingOlder}
+                        style={{
+                            alignSelf: 'center',
+                            marginBottom: '8px',
+                            padding: '6px 16px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            borderRadius: 'var(--radius-full)',
+                            border: '1px solid var(--border-color)',
+                            background: 'white',
+                            color: 'var(--text-secondary)',
+                            cursor: isLoadingOlder ? 'default' : 'pointer'
+                        }}
+                    >
+                        {isLoadingOlder ? '불러오는 중...' : '이전 대화 더 보기'}
+                    </button>
+                )}
                 {messages.map((m, idx) => {
                     const isMe = m.senderEmail === currentUser.email;
                     return (

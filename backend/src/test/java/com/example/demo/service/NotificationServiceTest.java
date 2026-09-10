@@ -64,63 +64,55 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("구독 중인 사용자에게 알림 전송 성공")
-    void send_SubscribedUser_Success() throws Exception {
+    @DisplayName("구독 중인 사용자에게 알림을 전송한다")
+    void send_ToSubscribedUser() throws IOException {
         // given
         SseEmitter emitter = mock(SseEmitter.class);
         emitters().put("user@test.com", emitter);
 
         // when
-        notificationService.send("user@test.com", "notification", "새 알림");
+        notificationService.send("user@test.com", "dm-received", "hello");
 
         // then
         verify(emitter).send(any(SseEmitter.SseEventBuilder.class));
-        assertThat(emitters()).containsKey("user@test.com");
     }
 
     @Test
-    @DisplayName("구독하지 않은 사용자에게 알림 전송 시 아무 동작도 하지 않음")
-    void send_NotSubscribedUser_DoesNothing() {
-        // when & then
-        assertDoesNotThrow(() -> notificationService.send("ghost@test.com", "notification", "새 알림"));
-        assertThat(emitters()).doesNotContainKey("ghost@test.com");
+    @DisplayName("구독하지 않은 사용자에게 전송해도 예외가 발생하지 않는다")
+    void send_ToUnsubscribedUser_DoesNothing() {
+        assertDoesNotThrow(() -> notificationService.send("nobody@test.com", "dm-received", "hello"));
     }
 
     @Test
-    @DisplayName("알림 전송 중 IOException 발생 시 해당 emitter 제거")
-    void send_IOException_RemovesEmitter() throws Exception {
+    @DisplayName("전송 중 IOException 이 나면 해당 구독을 정리한다")
+    void send_IOException_RemovesEmitter() throws IOException {
         // given
         SseEmitter emitter = mock(SseEmitter.class);
-        willThrow(new IOException("연결 끊김")).given(emitter).send(any(SseEmitter.SseEventBuilder.class));
+        willThrow(new IOException("broken pipe")).given(emitter).send(any(SseEmitter.SseEventBuilder.class));
         emitters().put("user@test.com", emitter);
 
         // when
-        notificationService.send("user@test.com", "notification", "새 알림");
+        notificationService.send("user@test.com", "dm-received", "hello");
 
         // then
         assertThat(emitters()).doesNotContainKey("user@test.com");
     }
 
     @Test
-    @DisplayName("모임 전체 알림 전송 시 호스트와 승인된 멤버에게만 전송")
-    void sendToAllMembers_OnlyHostAndApprovedMembers() throws Exception {
+    @DisplayName("모임 알림은 호스트와 승인된 크루에게만 전송한다")
+    void sendToAllMembers_HostAndApprovedOnly() throws IOException {
         // given
-        Long gatheringId = 1L;
         User host = User.builder().id(1L).email("host@test.com").build();
         User approved = User.builder().id(2L).email("approved@test.com").build();
         User pending = User.builder().id(3L).email("pending@test.com").build();
-        Gathering gathering = Gathering.builder().id(gatheringId).host(host).build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
 
-        GatheringMember hostMember = GatheringMember.builder()
-                .id(gatheringId).gathering(gathering).user(host).status(MemberStatus.APPROVED).build();
-        GatheringMember approvedMember = GatheringMember.builder()
-                .id(11L).gathering(gathering).user(approved).status(MemberStatus.APPROVED).build();
-        GatheringMember pendingMember = GatheringMember.builder()
-                .id(12L).gathering(gathering).user(pending).status(MemberStatus.PENDING).build();
-
-        given(gatheringMemberRepository.findById(gatheringId)).willReturn(Optional.of(hostMember));
-        given(gatheringMemberRepository.findByGatheringId(gatheringId))
-                .willReturn(List.of(approvedMember, pendingMember));
+        given(gatheringMemberRepository.findById(10L))
+                .willReturn(Optional.of(GatheringMember.builder().gathering(gathering).user(approved).build()));
+        given(gatheringMemberRepository.findByGatheringId(10L)).willReturn(List.of(
+                GatheringMember.builder().gathering(gathering).user(approved).status(MemberStatus.APPROVED).build(),
+                GatheringMember.builder().gathering(gathering).user(pending).status(MemberStatus.PENDING).build()
+        ));
 
         SseEmitter hostEmitter = mock(SseEmitter.class);
         SseEmitter approvedEmitter = mock(SseEmitter.class);
@@ -130,7 +122,7 @@ class NotificationServiceTest {
         emitters().put("pending@test.com", pendingEmitter);
 
         // when
-        notificationService.sendToAllMembers(gatheringId, "gathering", "모임 공지");
+        notificationService.sendToAllMembers(10L, "chat-received", "hi");
 
         // then
         verify(hostEmitter).send(any(SseEmitter.SseEventBuilder.class));
@@ -139,14 +131,13 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 모임 ID로 전체 알림 전송 시 호스트 전송 없이 정상 종료")
-    void sendToAllMembers_GatheringNotFound_SkipsHostNotification() {
+    @DisplayName("존재하지 않는 모임에 대한 알림은 조용히 무시된다")
+    void sendToAllMembers_GatheringNotFound_DoesNothing() {
         // given
-        Long gatheringId = 99L;
-        given(gatheringMemberRepository.findById(gatheringId)).willReturn(Optional.empty());
-        given(gatheringMemberRepository.findByGatheringId(gatheringId)).willReturn(List.of());
+        given(gatheringMemberRepository.findById(999L)).willReturn(Optional.empty());
+        given(gatheringMemberRepository.findByGatheringId(999L)).willReturn(List.of());
 
         // when & then
-        assertDoesNotThrow(() -> notificationService.sendToAllMembers(gatheringId, "gathering", "모임 공지"));
+        assertDoesNotThrow(() -> notificationService.sendToAllMembers(999L, "chat-received", "hi"));
     }
 }

@@ -20,6 +20,9 @@ public class UserServiceImpl implements UserUseCase {
 
     @Transactional(readOnly = true)
     public User getById(Long id) {
+        if (id == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "유저 ID가 올바르지 않습니다.");
+        }
         return userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
@@ -47,13 +50,20 @@ public class UserServiceImpl implements UserUseCase {
 
     @Transactional
     public User updateProfile(Long id, User update) {
+        if (id == null || update == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "유저 ID 또는 프로필 정보가 올바르지 않습니다.");
+        }
         User user = getById(id);
         if (update.getName() != null) {
-            if (update.getName().trim().isEmpty()) {
+            String trimmedName = update.getName().trim();
+            if (trimmedName.isEmpty()) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "닉네임은 공백일 수 없습니다.");
             }
-            profanityFilterService.validateText(update.getName());
-            user.setName(update.getName().trim());
+            if (trimmedName.length() > 20) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "닉네임은 최대 20자까지 설정 가능합니다.");
+            }
+            profanityFilterService.validateText(trimmedName);
+            user.setName(trimmedName);
         }
         if (update.getBio() != null) {
             profanityFilterService.validateText(update.getBio());

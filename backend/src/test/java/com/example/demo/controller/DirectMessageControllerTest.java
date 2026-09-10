@@ -124,7 +124,7 @@ class DirectMessageControllerTest {
         DirectMessage dm = DirectMessage.builder()
                 .id(1L).sender(me).receiver(other).content("안녕하세요")
                 .sentAt(LocalDateTime.now()).build();
-        given(dmService.getChatHistory("me@test.com", "other@test.com")).willReturn(List.of(dm));
+        given(dmService.getChatHistory("me@test.com", "other@test.com", null, 50)).willReturn(List.of(dm));
 
         // when & then
         mockMvc.perform(get("/api/dm/history/other@test.com").principal(principal))

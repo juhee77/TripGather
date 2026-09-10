@@ -31,6 +31,7 @@ export default defineConfig([globalIgnores(['dist']), {
   // 위 블록의 globals.browser 만 적용하면 process, require, __dirname 이 no-undef 로 잡힌다.
   files: ['*.{js,cjs,mjs}'],
   languageOptions: {
-    globals: globals.node,
+    globals: { ...globals.node },
+    sourceType: 'module',
   },
 }, ...storybook.configs["flat/recommended"]])

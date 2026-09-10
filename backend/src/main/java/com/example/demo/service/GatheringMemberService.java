@@ -41,6 +41,9 @@ public class GatheringMemberService implements GatheringMemberUseCase {
 
     @Transactional
     public Gathering joinGathering(Long id) {
+        if (id == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
         Gathering gathering = getGatheringById(id);
         User user = securityService.getCurrentUser();
 
@@ -82,6 +85,9 @@ public class GatheringMemberService implements GatheringMemberUseCase {
 
     @Transactional
     public void approveMember(Long gatheringId, Long userId) {
+        if (gatheringId == null || userId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "승인 처리 정보(모임 ID/유저 ID)가 올바르지 않습니다.");
+        }
         validateHost(gatheringId);
         
         GatheringMember member = gatheringMemberRepository.findByGatheringIdAndUserId(gatheringId, userId)
@@ -127,6 +133,9 @@ public class GatheringMemberService implements GatheringMemberUseCase {
 
     @Transactional
     public void rejectMember(Long gatheringId, Long userId) {
+        if (gatheringId == null || userId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "거절 처리 정보(모임 ID/유저 ID)가 올바르지 않습니다.");
+        }
         validateHost(gatheringId);
         GatheringMember member = gatheringMemberRepository.findByGatheringIdAndUserId(gatheringId, userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_REQUEST_NOT_FOUND));
@@ -157,6 +166,9 @@ public class GatheringMemberService implements GatheringMemberUseCase {
 
     @Transactional
     public void leaveGathering(Long id) {
+        if (id == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
         User user = securityService.getCurrentUser();
         GatheringMember member = gatheringMemberRepository.findByGatheringIdAndUserId(id, user.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.FORBIDDEN_ACTION, "해당 모임의 멤버가 아닙니다."));
@@ -183,6 +195,9 @@ public class GatheringMemberService implements GatheringMemberUseCase {
 
     @Transactional
     public void inviteMember(Long gatheringId, Long userId) {
+        if (gatheringId == null || userId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "초대 정보(모임 ID/유저 ID)가 올바르지 않습니다.");
+        }
         validateHost(gatheringId);
         
         Gathering gathering = getGatheringById(gatheringId);

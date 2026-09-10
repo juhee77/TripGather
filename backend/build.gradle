@@ -178,7 +178,8 @@ tasks.named('test') {
 	finalizedBy jacocoTestReport // 테스트 완료 후 리포트 생성
 }
 
-// check/build 수명주기에 커버리지 검증 연결 (CI에서 기준 미달 시 빌드 실패)
+// check(= build) 에 연결해야 CI 에서 커버리지 규칙이 실제로 강제된다.
+// (test 의존은 위 jacocoTestCoverageVerification 블록에 이미 선언되어 있다)
 tasks.named('check') {
 	dependsOn jacocoTestCoverageVerification
 }

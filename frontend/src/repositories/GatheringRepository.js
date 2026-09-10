@@ -27,15 +27,17 @@ class GatheringRepository {
     return response.json();
   }
 
-  async search(filters = {}) {
+  // page 는 0부터 시작. 응답 건수가 size 보다 적으면 더 이상 페이지가 없다는 뜻이다.
+  async search(filters = {}, page = 0, size = 20) {
     const params = new URLSearchParams();
     if (filters.location && filters.location !== '전체') params.append('location', filters.location);
     if (filters.query) params.append('query', filters.query);
     if (filters.availableOnly) params.append('availableOnly', 'true');
-    
-    const queryString = params.toString();
-    const path = `/api/gatherings/search${queryString ? `?${queryString}` : ''}`;
-    
+    params.append('page', page);
+    params.append('size', size);
+
+    const path = `/api/gatherings/search?${params.toString()}`;
+
     const response = await fetch(apiUrl(path));
     if (!response.ok) throw new Error('Failed to search gatherings');
     return response.json();

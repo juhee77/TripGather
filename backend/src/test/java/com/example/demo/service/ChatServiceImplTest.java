@@ -77,15 +77,69 @@ class ChatServiceImplTest {
     void getChatHistory_Success() {
         // given
         User sender = User.builder().name("tester").email("test@example.com").build();
-        ChatMessage msg1 = ChatMessage.builder().content("msg1").sender(sender).build();
-        ChatMessage msg2 = ChatMessage.builder().content("msg2").sender(sender).build();
-        given(chatMessageRepository.findByGatheringIdOrderBySentAtAsc(1L)).willReturn(List.of(msg1, msg2));
+        // 저장소는 최신순으로 내려주고, 서비스가 화면 표시 순서(오래된 -> 최신)로 뒤집는다.
+        ChatMessage newer = ChatMessage.builder().id(2L).content("msg2").sender(sender).build();
+        ChatMessage older = ChatMessage.builder().id(1L).content("msg1").sender(sender).build();
+        given(chatMessageRepository.findLatestByGatheringId(
+                org.mockito.ArgumentMatchers.eq(1L),
+                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of(newer, older));
 
         // when
         List<com.example.demo.dto.ChatMessageResponse> history = chatService.getChatHistory(1L);
 
         // then
         assertThat(history).hasSize(2);
-        verify(chatMessageRepository).findByGatheringIdOrderBySentAtAsc(1L);
+        assertThat(history.get(0).getContent()).isEqualTo("msg1");
+        assertThat(history.get(1).getContent()).isEqualTo("msg2");
+    }
+
+    @Test
+    @DisplayName("before 커서를 주면 해당 메시지 이전 구간을 조회한다")
+    void getChatHistory_WithBeforeCursor() {
+        // given
+        User sender = User.builder().name("tester").email("test@example.com").build();
+        ChatMessage older = ChatMessage.builder().id(5L).content("old").sender(sender).build();
+        given(chatMessageRepository.findOlderByGatheringId(
+                org.mockito.ArgumentMatchers.eq(1L),
+                org.mockito.ArgumentMatchers.eq(10L),
+                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(List.of(older));
+
+        // when
+        List<com.example.demo.dto.ChatMessageResponse> history = chatService.getChatHistory(1L, 10L, 50);
+
+        // then
+        assertThat(history).hasSize(1);
+        verify(chatMessageRepository).findOlderByGatheringId(
+                org.mockito.ArgumentMatchers.eq(1L),
+                org.mockito.ArgumentMatchers.eq(10L),
+                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class));
+    }
+
+    @Test
+    @DisplayName("요청 size 가 상한을 넘으면 최대치로 제한된다")
+    void getChatHistory_SizeCappedAtMax() {
+        // given
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        given(chatMessageRepository.findLatestByGatheringId(
+                org.mockito.ArgumentMatchers.eq(1L), captor.capture()))
+                .willReturn(List.of());
+
+        // when
+        chatService.getChatHistory(1L, null, 100000);
+
+        // then
+        assertThat(captor.getValue().getPageSize())
+                .isEqualTo(com.example.demo.usecase.ChatUseCase.MAX_PAGE_SIZE);
+    }
+
+    @Test
+    @DisplayName("모임 ID 가 null 이면 예외가 발생한다")
+    void getChatHistory_NullGatheringId_ThrowsException() {
+        assertThatThrownBy(() -> chatService.getChatHistory(null, null, 50))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
     }
 }

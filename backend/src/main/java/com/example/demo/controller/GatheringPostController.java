@@ -34,6 +34,7 @@ public class GatheringPostController {
 
     @GetMapping("/{gatheringId}/posts")
     public ResponseEntity<List<PostResponse>> getPosts(@PathVariable Long gatheringId, Principal principal) {
+        if (gatheringId == null) throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
         Gathering gathering = gatheringService.getGathering(gatheringId);
         
         String email = (principal != null) ? principal.getName() : null;
@@ -60,6 +61,7 @@ public class GatheringPostController {
             @RequestBody PostRequest request,
             Principal principal) {
         
+        if (gatheringId == null) throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
         if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
 
         if (request.getContent() == null || request.getContent().trim().isEmpty()) {
@@ -94,10 +96,15 @@ public class GatheringPostController {
             @PathVariable Long postId,
             Principal principal) {
         
+        if (gatheringId == null || postId == null) throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID 또는 게시글 ID가 올바르지 않습니다.");
         if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
 
         GatheringPost post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "게시글을 찾을 수 없습니다."));
+
+        if (post.getGathering() != null && !post.getGathering().getId().equals(gatheringId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "해당 모임의 게시글이 아닙니다.");
+        }
 
         if (!post.getAuthor().getEmail().equals(principal.getName())) {
             throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "본인의 게시글만 삭제할 수 있습니다.");

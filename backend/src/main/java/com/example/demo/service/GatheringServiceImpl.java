@@ -60,8 +60,32 @@ public class GatheringServiceImpl implements GatheringUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<Gathering> searchGatherings(String query, String category, String location, Boolean availableOnly,
+                                            String sortBy, int page, int size) {
+        String filterLocation = (location != null && !location.trim().isEmpty() && !location.equals("전체")) ? location.trim() : null;
+        int safePage = Math.max(page, 0);
+        int safeSize = (size <= 0) ? DEFAULT_PAGE_SIZE : Math.min(size, MAX_PAGE_SIZE);
+
+        List<Gathering> rows = gatheringRepository.searchGatherings(
+                query, category, filterLocation, availableOnly, sortBy, safePage, safeSize);
+
+        // 리포지토리가 hasNext 판단을 위해 size+1 건을 읽어 왔다면 마지막 한 건을 잘라낸다.
+        return rows.size() > safeSize ? rows.subList(0, safeSize) : rows;
+    }
+
+    @Override
     @Transactional
     public Gathering createGathering(Gathering gathering) {
+        if (gathering == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 정보가 올바르지 않습니다.");
+        }
+        if (gathering.getTitle() != null && gathering.getTitle().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 제목을 입력해주세요.");
+        }
+        if (gathering.getLocation() != null && gathering.getLocation().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "만나는 장소를 입력해주세요.");
+        }
         if (gathering.getMaxJoining() < 2) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 인원은 최소 2명 이상이어야 합니다.");
         }
@@ -100,7 +124,22 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Override
     @Transactional
     public Gathering updateGathering(Long id, Gathering updateData) {
+        if (id == null || updateData == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID 또는 수정 정보가 올바르지 않습니다.");
+        }
         validateHost(id);
+
+        Gathering gathering = getGathering(id);
+
+        if (updateData.getMaxJoining() > 0) {
+            if (updateData.getMaxJoining() < 2 || updateData.getMaxJoining() > 100) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 인원은 최소 2명 이상 최대 100명 이하이어야 합니다.");
+            }
+            if (updateData.getMaxJoining() < gathering.getCurrentJoining()) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "최대 모집 인원은 현재 참여 인원 이상이어야 합니다.");
+            }
+        }
+
         if (updateData.getStartDate() != null && updateData.getEndDate() != null) {
             if (updateData.getEndDate().isBefore(updateData.getStartDate())) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
@@ -109,7 +148,6 @@ public class GatheringServiceImpl implements GatheringUseCase {
         if (updateData.getTitle() != null) profanityFilterService.validateText(updateData.getTitle());
         if (updateData.getLocation() != null) profanityFilterService.validateText(updateData.getLocation());
 
-        Gathering gathering = getGathering(id);
         gathering.setTitle(updateData.getTitle());
         gathering.setLocation(updateData.getLocation());
         gathering.setStartDate(updateData.getStartDate());
@@ -135,6 +173,9 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Override
     @Transactional
     public void deleteGathering(Long id) {
+        if (id == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
         validateHost(id);
         gatheringRepository.softDeleteById(id);
     }
@@ -149,6 +190,9 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Override
     @Transactional(readOnly = true)
     public Gathering getGathering(Long id) {
+        if (id == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
         return gatheringRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND, "Invalid gathering ID"));
     }
@@ -156,6 +200,9 @@ public class GatheringServiceImpl implements GatheringUseCase {
     @Override
     @Transactional
     public void likeGathering(Long id) {
+        if (id == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
         User user = securityService.getCurrentUser();
         Gathering gathering = getGathering(id);
         

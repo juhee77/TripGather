@@ -70,14 +70,29 @@ const CreateGatheringPage = () => {
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (isSubmitting) return;
+
+    if (!formData.title.trim()) {
+      alert("모임 제목을 입력해주세요.");
+      return;
+    }
+    if (!formData.location.trim()) {
+      alert("만나는 장소를 입력해주세요.");
+      return;
+    }
+
     const maxJoiningNum = parseInt(formData.maxJoining, 10);
     if (isNaN(maxJoiningNum) || maxJoiningNum < 2 || maxJoiningNum > 100) {
       alert("모집 인원은 최소 2명 이상, 최대 100명 이하로 설정해야 합니다.");
       return;
     }
+
+    setIsSubmitting(true);
     
     let finalBgImageUrl = null;
 
@@ -102,6 +117,8 @@ const CreateGatheringPage = () => {
 
     const newGathering = {
       ...formData,
+      title: formData.title.trim(),
+      location: formData.location.trim(),
       startDate: formData.date,
       endDate: formData.date,
       maxJoining: parseInt(formData.maxJoining, 10),
@@ -128,6 +145,8 @@ const CreateGatheringPage = () => {
     } catch (error) {
       console.error("Error creating gathering:", error);
       alert(`네트워크 오류가 발생했습니다: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -297,7 +316,7 @@ const CreateGatheringPage = () => {
               <div style={{ position: 'relative' }}>
                 <Users size={18} color="var(--text-sub)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
                 <input 
-                  required type="number" min="2" max="20" name="maxJoining" value={formData.maxJoining} onChange={handleChange}
+                  required type="number" min="2" max="100" name="maxJoining" value={formData.maxJoining} onChange={handleChange}
                   style={{ ...inputStyle, paddingLeft: '44px' }}
                   onFocus={(e) => e.target.style.border = '1px solid var(--primary-orange)'}
                   onBlur={(e) => e.target.style.border = '1px solid var(--border-color)'}
@@ -383,19 +402,23 @@ const CreateGatheringPage = () => {
             </div>
           </div>
 
-          <button type="submit" style={{ 
-            background: 'var(--primary-gradient)', color: 'white',
-            border: 'none', cursor: 'pointer',
-            height: '60px', borderRadius: '20px', fontSize: '18px', fontWeight: 800, 
-            marginTop: '16px', boxShadow: '0 8px 24px rgba(255, 92, 0, 0.3)',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}
-          onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
-          onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            style={{ 
+              background: isSubmitting ? '#CCC' : 'var(--primary-gradient)', 
+              color: 'white',
+              border: 'none', cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              height: '60px', borderRadius: '20px', fontSize: '18px', fontWeight: 800, 
+              marginTop: '16px', boxShadow: isSubmitting ? 'none' : '0 8px 24px rgba(255, 92, 0, 0.3)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+            onMouseDown={e => !isSubmitting && (e.currentTarget.style.transform = 'scale(0.98)')}
+            onMouseUp={e => !isSubmitting && (e.currentTarget.style.transform = 'scale(1)')}
+            onMouseLeave={e => !isSubmitting && (e.currentTarget.style.transform = 'scale(1)')}
           >
-            모집 시작하기
+            {isSubmitting ? '모임 생성 중...' : '모집 시작하기'}
           </button>
         </form>
       </div>

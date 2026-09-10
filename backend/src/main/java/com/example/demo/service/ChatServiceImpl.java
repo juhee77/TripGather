@@ -13,6 +13,10 @@ import com.example.demo.exception.CustomException;
 import com.example.demo.exception.ErrorCode;
 import com.example.demo.usecase.ChatUseCase;
 
+import org.springframework.data.domain.PageRequest;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -38,8 +42,26 @@ public class ChatServiceImpl implements ChatUseCase {
 
     @Transactional(readOnly = true)
     public List<com.example.demo.dto.ChatMessageResponse> getChatHistory(Long gatheringId) {
-        return chatMessageRepository.findByGatheringIdOrderBySentAtAsc(gatheringId)
-                .stream()
+        return getChatHistory(gatheringId, null, DEFAULT_PAGE_SIZE);
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.example.demo.dto.ChatMessageResponse> getChatHistory(Long gatheringId, Long beforeId, int size) {
+        if (gatheringId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
+        int pageSize = Math.min(size <= 0 ? DEFAULT_PAGE_SIZE : size, MAX_PAGE_SIZE);
+        PageRequest page = PageRequest.of(0, pageSize);
+
+        // 최신순으로 한 페이지를 읽은 뒤, 화면 표시 순서(오래된 -> 최신)로 뒤집어 반환한다.
+        List<ChatMessage> messages = (beforeId == null)
+                ? chatMessageRepository.findLatestByGatheringId(gatheringId, page)
+                : chatMessageRepository.findOlderByGatheringId(gatheringId, beforeId, page);
+
+        List<ChatMessage> ascending = new ArrayList<>(messages);
+        Collections.reverse(ascending);
+
+        return ascending.stream()
                 .map(com.example.demo.dto.ChatMessageResponse::from)
                 .toList();
     }

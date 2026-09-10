@@ -16,8 +16,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -49,6 +51,9 @@ class GatheringControllerTest {
     @MockBean
     private com.example.demo.repository.StampRepository stampRepository;
 
+    @MockBean
+    private com.example.demo.repository.GatheringLikeRepository gatheringLikeRepository;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -58,7 +63,8 @@ class GatheringControllerTest {
     void getAllGatherings_Success() throws Exception {
         // given
         Gathering g1 = Gathering.builder().id(1L).title("Gathering 1").build();
-        given(gatheringService.getAllGatherings(any())).willReturn(List.of(g1));
+        given(gatheringService.searchGatherings(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                .willReturn(List.of(g1));
 
         // when & then
         mockMvc.perform(get("/api/gatherings"))
@@ -69,12 +75,90 @@ class GatheringControllerTest {
     }
 
     @Test
+    @WithMockUser(username = "viewer@test.com")
+    @DisplayName("목록 조회 시 좋아요/체크인 상태를 행마다 조회하지 않는다 (N+1 방지)")
+    void getAllGatherings_DoesNotQueryPerRow() throws Exception {
+        // given: 모임 3건
+        List<Gathering> gatherings = List.of(
+                Gathering.builder().id(1L).title("G1").build(),
+                Gathering.builder().id(2L).title("G2").build(),
+                Gathering.builder().id(3L).title("G3").build());
+        given(gatheringService.searchGatherings(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                .willReturn(gatherings);
+
+        com.example.demo.domain.User viewer =
+                com.example.demo.domain.User.builder().id(9L).email("viewer@test.com").build();
+        given(userRepository.findByEmail("viewer@test.com")).willReturn(java.util.Optional.of(viewer));
+        given(gatheringLikeRepository.findLikedGatheringIdsByUserId(9L)).willReturn(List.of(2L));
+        given(stampRepository.findStampedGatheringIdsByUserId(9L)).willReturn(List.of(3L));
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[0].likedByCurrentUser").value(false))
+                .andExpect(jsonPath("$[1].likedByCurrentUser").value(true))
+                .andExpect(jsonPath("$[2].hasCheckedIn").value(true));
+
+        // 뷰어 상태는 요청당 한 번씩만 조회되어야 한다.
+        org.mockito.Mockito.verify(gatheringLikeRepository, org.mockito.Mockito.times(1))
+                .findLikedGatheringIdsByUserId(9L);
+        org.mockito.Mockito.verify(stampRepository, org.mockito.Mockito.times(1))
+                .findStampedGatheringIdsByUserId(9L);
+
+        // 행 단위 조회 경로는 더 이상 사용되지 않는다.
+        org.mockito.Mockito.verify(gatheringService, org.mockito.Mockito.never())
+                .isLikedByUser(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyString());
+        org.mockito.Mockito.verify(stampRepository, org.mockito.Mockito.never())
+                .existsByUserIdAndGatheringId(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.anyLong());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("page/size 파라미터가 서비스로 그대로 전달된다")
+    void getAllGatherings_PassesPageAndSizeToService() throws Exception {
+        // given
+        given(gatheringService.searchGatherings(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                .willReturn(List.of());
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings").param("page", "2").param("size", "10"))
+                .andExpect(status().isOk());
+
+        verify(gatheringService).searchGatherings(
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.eq("LATEST"),
+                org.mockito.ArgumentMatchers.eq(2), org.mockito.ArgumentMatchers.eq(10));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("page/size 파라미터 생략 시 첫 페이지 기본 크기로 조회한다")
+    void getAllGatherings_DefaultsToFirstPage() throws Exception {
+        // given
+        given(gatheringService.searchGatherings(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                .willReturn(List.of());
+
+        // when & then
+        mockMvc.perform(get("/api/gatherings"))
+                .andExpect(status().isOk());
+
+        verify(gatheringService).searchGatherings(
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.eq("LATEST"),
+                org.mockito.ArgumentMatchers.eq(0), org.mockito.ArgumentMatchers.eq(20));
+    }
+
+    @Test
     @WithMockUser
     @DisplayName("모임 검색 성공")
     void searchGatherings_Success() throws Exception {
         // given
         Gathering g1 = Gathering.builder().id(1L).title("Search Result").build();
-        given(gatheringService.searchGatherings(any(), any(), any(), any(), any())).willReturn(List.of(g1));
+        given(gatheringService.searchGatherings(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                .willReturn(List.of(g1));
 
         // when & then
         mockMvc.perform(get("/api/gatherings/search")

@@ -59,7 +59,7 @@ class GatheringControllerAnonymousTest {
     @DisplayName("비로그인 사용자의 전체 모임 조회는 찜/체크인 조회 없이 반환")
     void getAllGatherings_Anonymous_SkipsPersonalizedLookups() throws Exception {
         // given
-        given(gatheringService.getAllGatherings(null)).willReturn(List.of(
+        given(gatheringService.searchGatherings(null, null, null, null, "LATEST", 0, 20)).willReturn(List.of(
                 Gathering.builder().id(1L).title("공개 모임").build()));
 
         // when & then

@@ -697,6 +697,51 @@ class GatheringMemberServiceTest {
     }
 
     @Test
+    @DisplayName("null 모임 ID로 모임 탈퇴 시도 시 예외 발생")
+    void leaveGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.leaveGathering(null))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID 또는 유저 ID로 멤버 초대 시 예외 발생")
+    void inviteMember_NullGatheringIdOrUserId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.inviteMember(null, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("초대 정보(모임 ID/유저 ID)가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID 또는 유저 ID로 멤버 거절 시 예외 발생")
+    void rejectMember_NullGatheringIdOrUserId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.rejectMember(null, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("거절 처리 정보(모임 ID/유저 ID)가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID 또는 유저 ID로 멤버 승인 시 예외 발생")
+    void approveMember_NullGatheringIdOrUserId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.approveMember(null, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("승인 처리 정보(모임 ID/유저 ID)가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID로 참여 신청 시 예외 발생")
+    void joinGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.joinGathering(null))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
+
+    @Test
     @DisplayName("스탠바이 체크인 성공 - 호스트에게 50포인트와 스탬프 지급")
     void checkinStandbyGathering_Host_Success() {
         // given
