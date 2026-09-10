@@ -274,4 +274,27 @@ class UserServiceImplTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("닉네임은 공백일 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("null 유저 ID로 조회 시 예외 발생")
+    void getById_NullId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> userService.getById(null))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("유저 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("프로필 수정 시 닉네임 20자 초과 설정 시 예외 발생")
+    void updateProfile_ExceedMaxNameLength_ThrowsException() {
+        // given
+        String longName = "a".repeat(21);
+        User updateInfo = User.builder().name(longName).build();
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateProfile(1L, updateInfo))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("닉네임은 최대 20자까지 설정 가능합니다.");
+    }
 }
