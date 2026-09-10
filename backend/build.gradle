@@ -146,13 +146,13 @@ jacocoTestCoverageVerification {
 		// [규칙 3] 분기(BRANCH) 커버리지 하한선 - 후퇴 방지용 래칫
 		// 라인 커버리지는 메서드를 한 번만 호출해도 채워지지만, 조건문의 반대 경로는
 		// 검증되지 않은 채 남는다. 전체 기준으로 분기 커버리지 바닥을 고정해 두고
-		// 개선될 때마다 이 수치를 올린다. (현재 77.4%)
+		// 개선될 때마다 이 수치를 올린다. (현재 82.7%)
 		rule {
 			element = 'BUNDLE'
 			limit {
 				counter = 'BRANCH'
 				value = 'COVEREDRATIO'
-				minimum = 0.75
+				minimum = 0.80
 			}
 		}
 	}

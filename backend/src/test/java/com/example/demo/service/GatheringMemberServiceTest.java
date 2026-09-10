@@ -42,6 +42,10 @@ class GatheringMemberServiceTest {
     private UserRepository userRepository;
     @Mock
     private NotificationService notificationService;
+    @Mock
+    private com.example.demo.repository.StampRepository stampRepository;
+    @Mock
+    private PointService pointService;
 
     @InjectMocks
     private GatheringMemberService gatheringMemberService;
@@ -690,5 +694,198 @@ class GatheringMemberServiceTest {
         assertThatThrownBy(() -> gatheringMemberService.inviteMember(99L, 2L))
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("Invalid gathering ID");
+    }
+
+    @Test
+    @DisplayName("스탠바이 체크인 성공 - 호스트에게 50포인트와 스탬프 지급")
+    void checkinStandbyGathering_Host_Success() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).title("한강 모임").host(host)
+                .lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(stampRepository.existsByUserIdAndGatheringId(1L, 10L)).willReturn(false);
+
+        // when
+        gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false);
+
+        // then
+        verify(pointService).addPoints(1L, 50, 1, "[한강 모임] 스탠바이 체크인", 10L,
+                "/src/assets/stamp-placeholder.png");
+    }
+
+    @Test
+    @DisplayName("스탠바이 체크인 시 승인된 멤버도 체크인 가능")
+    void checkinStandbyGathering_ApprovedMember_Success() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User member = User.builder().id(2L).email("member@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).title("한강 모임").host(host)
+                .lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(member);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(
+                10L, "member@test.com", MemberStatus.APPROVED)).willReturn(true);
+        given(stampRepository.existsByUserIdAndGatheringId(2L, 10L)).willReturn(false);
+
+        // when
+        gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false);
+
+        // then
+        verify(pointService).addPoints(eq(2L), eq(50), eq(1), any(), eq(10L), any());
+    }
+
+    @Test
+    @DisplayName("승인되지 않은 유저의 스탠바이 체크인 시 예외 발생")
+    void checkinStandbyGathering_NotApproved_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User stranger = User.builder().id(3L).email("stranger@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(stranger);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(
+                10L, "stranger@test.com", MemberStatus.APPROVED)).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임에 승인된 멤버만 체크인할 수 있습니다.");
+        verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("일정이 연결된 모임은 스탠바이 체크인 불가")
+    void checkinStandbyGathering_LinkedItinerary_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host)
+                .linkedItinerary(Itinerary.builder().id(1L).build()).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("일정이 연결된 모임은 여정 완료로 처리해야 합니다.");
+    }
+
+    @Test
+    @DisplayName("만남 장소에서 100m 넘게 떨어져 있으면 체크인 불가")
+    void checkinStandbyGathering_TooFar_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+
+        // when & then (약 1.1km 떨어진 좌표)
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.51, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("만남 장소와 거리가 너무 멉니다");
+    }
+
+    @Test
+    @DisplayName("force 옵션이 켜져 있으면 위치 검증을 건너뛰고 체크인")
+    void checkinStandbyGathering_Force_SkipsLocationCheck() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).title("한강 모임").host(host).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(stampRepository.existsByUserIdAndGatheringId(1L, 10L)).willReturn(false);
+
+        // when
+        gatheringMemberService.checkinStandbyGathering(10L, null, null, true);
+
+        // then
+        verify(pointService).addPoints(eq(1L), eq(50), eq(1), any(), eq(10L), any());
+    }
+
+    @Test
+    @DisplayName("위경도를 보내지 않으면 거리 검증 없이 체크인")
+    void checkinStandbyGathering_NoCoordinates_SkipsDistanceCheck() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).title("한강 모임").host(host)
+                .lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(stampRepository.existsByUserIdAndGatheringId(1L, 10L)).willReturn(false);
+
+        // when
+        gatheringMemberService.checkinStandbyGathering(10L, null, null, false);
+
+        // then
+        verify(pointService).addPoints(eq(1L), eq(50), eq(1), any(), eq(10L), any());
+    }
+
+    @Test
+    @DisplayName("이미 체크인한 모임에 다시 체크인 시 예외 발생")
+    void checkinStandbyGathering_AlreadyCheckedIn_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(stampRepository.existsByUserIdAndGatheringId(1L, 10L)).willReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("이미 체크인을 완료하여 보상을 받았습니다.");
+        verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("참가 신청 알림은 모임 제목과 신청자 이름이 비어 있어도 대체 문구로 전송")
+    void joinGathering_NullTitleAndName_UsesFallbackInNotification() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email(null).name(null).build();
+        Gathering gathering = Gathering.builder().id(10L).title(null).host(host)
+                .maxJoining(5).members(new ArrayList<>()).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUser()).willReturn(guest);
+
+        // when
+        gatheringMemberService.joinGathering(10L);
+
+        // then
+        org.mockito.ArgumentCaptor<Object> dataCaptor = org.mockito.ArgumentCaptor.forClass(Object.class);
+        verify(notificationService).send(eq("host@test.com"), eq("gathering-requested"), dataCaptor.capture());
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> data = (java.util.Map<String, Object>) dataCaptor.getValue();
+        assertThat(data.get("gatheringTitle")).isEqualTo("제목 없음");
+        assertThat(data.get("applicantName")).isEqualTo("알 수 없음");
+    }
+
+    @Test
+    @DisplayName("호스트에게 이메일이 없으면 참가 신청 알림을 보내지 않음")
+    void joinGathering_HostWithoutEmail_SkipsNotification() {
+        // given
+        User host = User.builder().id(1L).email(null).build();
+        User guest = User.builder().id(2L).email("guest@test.com").name("게스트").build();
+        Gathering gathering = Gathering.builder().id(10L).title("한강 모임").host(host)
+                .maxJoining(5).members(new ArrayList<>()).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUser()).willReturn(guest);
+
+        // when
+        gatheringMemberService.joinGathering(10L);
+
+        // then
+        verify(notificationService, never()).send(any(), any(), any());
     }
 }

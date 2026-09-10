@@ -15,9 +15,11 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -492,5 +494,140 @@ class ItineraryServiceImplTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.togglePublicStatus(1L, "   ", true))
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("유저 이메일 정보가 올바르지 않습니다.");
+    }
+
+    private com.example.demo.domain.RoutePoint point(Long id, String label, int day, int seq) {
+        return com.example.demo.domain.RoutePoint.builder()
+                .id(id).label(label).dayNumber(day).sequenceOrder(seq).build();
+    }
+
+    @Test
+    @DisplayName("여정 생성 시 제목/설명이 없으면 비속어 검사를 건너뜀")
+    void createItinerary_NullTitleAndDescription_SkipsProfanityCheck() {
+        // given
+        Itinerary itinerary = Itinerary.builder().authorEmail("author@test.com").build();
+        given(itineraryRepository.save(any(Itinerary.class))).willAnswer(inv -> inv.getArgument(0));
+
+        // when
+        Itinerary saved = itineraryService.createItinerary(itinerary);
+
+        // then
+        assertThat(saved.getOwnerEmail()).isEqualTo("author@test.com");
+        verify(profanityFilterService, never()).validateText(any());
+    }
+
+    @Test
+    @DisplayName("여정 생성 시 소유자가 이미 지정되어 있으면 작성자 이메일로 덮어쓰지 않음")
+    void createItinerary_OwnerAlreadySet_KeepsOwner() {
+        // given
+        Itinerary itinerary = Itinerary.builder()
+                .authorEmail("author@test.com").ownerEmail("owner@test.com").build();
+        given(itineraryRepository.save(any(Itinerary.class))).willAnswer(inv -> inv.getArgument(0));
+
+        // when
+        Itinerary saved = itineraryService.createItinerary(itinerary);
+
+        // then
+        assertThat(saved.getOwnerEmail()).isEqualTo("owner@test.com");
+    }
+
+    @Test
+    @DisplayName("여정 병합 시 여정 ID가 null이면 예외 발생")
+    void mergeItinerary_NullIds_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> itineraryService.mergeItinerary(null, 2L, 1, "owner@test.com"))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("병합할 여정 ID가 올바르지 않습니다.");
+        assertThatThrownBy(() -> itineraryService.mergeItinerary(1L, null, 1, "owner@test.com"))
+                .isInstanceOf(CustomException.class);
+    }
+
+    @Test
+    @DisplayName("여정 병합 시 요청자 이메일이 없거나 공백이면 예외 발생")
+    void mergeItinerary_NullOrBlankEmail_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> itineraryService.mergeItinerary(1L, 2L, 1, null))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("유저 이메일 정보가 올바르지 않습니다.");
+        assertThatThrownBy(() -> itineraryService.mergeItinerary(1L, 2L, 1, "   "))
+                .isInstanceOf(CustomException.class);
+    }
+
+    @Test
+    @DisplayName("경로 지점 체크인 해제 시에는 포인트를 적립하지 않음")
+    void toggleRoutePointCompletion_Uncompleted_NoPoints() {
+        // given
+        com.example.demo.domain.RoutePoint rp = point(7L, "성산일출봉", 1, 1);
+        rp.setCompleted(true);
+        Itinerary itinerary = Itinerary.builder().id(1L)
+                .routePoints(new ArrayList<>(java.util.List.of(rp))).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(itinerary));
+
+        // when
+        com.example.demo.domain.RoutePoint result =
+                itineraryService.toggleRoutePointCompletion(1L, 7L, "user@test.com");
+
+        // then
+        assertThat(result.isCompleted()).isFalse();
+        verify(pointService, never()).addPoints(any(), org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyInt(), any());
+        verify(profanityFilterService, never()).validateText(any());
+    }
+
+    @Test
+    @DisplayName("비인증 사용자의 경로 지점 체크인은 포인트 적립 없이 상태만 변경")
+    void toggleRoutePointCompletion_NullEmail_NoPoints() {
+        // given
+        com.example.demo.domain.RoutePoint rp = point(7L, "성산일출봉", 1, 1);
+        Itinerary itinerary = Itinerary.builder().id(1L)
+                .routePoints(new ArrayList<>(java.util.List.of(rp))).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(itinerary));
+
+        // when
+        com.example.demo.domain.RoutePoint result =
+                itineraryService.toggleRoutePointCompletion(1L, 7L, null);
+
+        // then
+        assertThat(result.isCompleted()).isTrue();
+        verify(userRepository, never()).findByEmail(any());
+    }
+
+    @Test
+    @DisplayName("체크인한 사용자를 찾을 수 없으면 포인트 적립 없이 상태만 변경")
+    void toggleRoutePointCompletion_UserNotFound_NoPoints() {
+        // given
+        com.example.demo.domain.RoutePoint rp = point(7L, "성산일출봉", 1, 1);
+        Itinerary itinerary = Itinerary.builder().id(1L)
+                .routePoints(new ArrayList<>(java.util.List.of(rp))).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(itinerary));
+        given(userRepository.findByEmail("ghost@test.com")).willReturn(Optional.empty());
+
+        // when
+        com.example.demo.domain.RoutePoint result =
+                itineraryService.toggleRoutePointCompletion(1L, 7L, "ghost@test.com");
+
+        // then
+        assertThat(result.isCompleted()).isTrue();
+        verify(pointService, never()).addPoints(any(), org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyInt(), any());
+    }
+
+    @Test
+    @DisplayName("경로 지점 장소명이 없으면 체크인 시 비속어 검사를 건너뜀")
+    void toggleRoutePointCompletion_NullLabel_SkipsProfanityCheck() {
+        // given
+        com.example.demo.domain.RoutePoint rp = point(7L, null, 1, 1);
+        Itinerary itinerary = Itinerary.builder().id(1L)
+                .routePoints(new ArrayList<>(java.util.List.of(rp))).build();
+        User user = User.builder().id(5L).email("user@test.com").build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(itinerary));
+        given(userRepository.findByEmail("user@test.com")).willReturn(Optional.of(user));
+
+        // when
+        itineraryService.toggleRoutePointCompletion(1L, 7L, "user@test.com");
+
+        // then
+        verify(profanityFilterService, never()).validateText(any());
+        verify(pointService).addPoints(5L, 20, 0, "'경로 지점' 체크인 완료");
     }
 }
