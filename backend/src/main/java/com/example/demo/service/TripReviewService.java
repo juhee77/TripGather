@@ -57,6 +57,9 @@ public class TripReviewService {
 
     @Transactional(readOnly = true)
     public List<TripReviewResponse> getReviews(Long tripId, String category) {
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
         if (!tripRepository.existsById(tripId)) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다.");
         }
@@ -95,6 +98,9 @@ public class TripReviewService {
 
     @Transactional
     public TripReviewResponse updateReview(Long reviewId, String content, int rating, String category, String imageUrls) {
+        if (reviewId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 ID가 올바르지 않습니다.");
+        }
         TripReview review = tripReviewRepository.findById(reviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰를 찾을 수 없습니다."));
 
@@ -124,6 +130,9 @@ public class TripReviewService {
 
     @Transactional(readOnly = true)
     public com.example.demo.dto.TripReviewSummaryResponse getReviewSummary(Long tripId) {
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
         if (!tripRepository.existsById(tripId)) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다.");
         }

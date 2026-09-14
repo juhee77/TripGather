@@ -297,4 +297,26 @@ class UserServiceImplTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("닉네임은 최대 20자까지 설정 가능합니다.");
     }
+
+    @Test
+    @DisplayName("프로필 수정 시 자기소개가 200자를 초과하면 예외가 발생한다")
+    void updateProfile_ExceedBioLength_ThrowsException() {
+        // given
+        String longBio = "A".repeat(201);
+        User updateInfo = User.builder().bio(longBio).build();
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateProfile(1L, updateInfo))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("자기소개는 200자 이내여야 합니다.");
+    }
+
+    @Test
+    @DisplayName("null 유저 객체로 생성 시 예외가 발생한다")
+    void createUser_NullUser_ThrowsException() {
+        assertThatThrownBy(() -> userService.createUser(null))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("사용자 정보가 올바르지 않습니다.");
+    }
 }

@@ -343,4 +343,14 @@ class DirectMessageServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("자기 자신과의 채팅 내역은 조회할 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("메시지 내용이 1000자를 초과하는 경우 예외가 발생한다")
+    void sendDM_ExceedContentLength_ThrowsException() {
+        String longContent = "A".repeat(1001);
+
+        assertThatThrownBy(() -> dmService.sendDM("sender@example.com", "receiver@example.com", longContent))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("메시지 내용은 1000자 이내여야 합니다.");
+    }
 }

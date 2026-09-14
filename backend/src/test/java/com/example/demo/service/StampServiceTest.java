@@ -91,4 +91,14 @@ class StampServiceTest {
         // then
         verify(pointService).addPoints(1L, 0, 1, "모임 참여 스탬프", 10L, "stamp.png");
     }
+
+    @Test
+    @DisplayName("스탬프 부여 시 title이 100자를 초과하는 경우 예외 발생")
+    void awardStamp_ExceedTitleLength_ThrowsException() {
+        String longTitle = "A".repeat(101);
+
+        assertThatThrownBy(() -> stampService.awardStamp(1L, 10L, longTitle, "stamp.png"))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("스탬프 제목은 100자 이내여야 합니다.");
+    }
 }

@@ -40,6 +40,9 @@ public class StampService implements StampUseCase {
         if (userId == null) {
             throw new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.USER_NOT_FOUND, "스탬프를 부여할 유저 ID가 올바르지 않습니다.");
         }
+        if (title != null && title.trim().length() > 100) {
+            throw new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "스탬프 제목은 100자 이내여야 합니다.");
+        }
         String stampTitle = (title != null && !title.isBlank()) ? title.trim() : "모임 참여 스탬프";
         // Delegate to pointService to ensure user's stampsCount is atomically updated via pessimistic lock
         pointService.addPoints(userId, 0, 1, stampTitle, gatheringId, stampImageUrl);

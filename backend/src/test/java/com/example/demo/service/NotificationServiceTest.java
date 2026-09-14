@@ -107,8 +107,6 @@ class NotificationServiceTest {
         User pending = User.builder().id(3L).email("pending@test.com").build();
         Gathering gathering = Gathering.builder().id(10L).host(host).build();
 
-        given(gatheringMemberRepository.findById(10L))
-                .willReturn(Optional.of(GatheringMember.builder().gathering(gathering).user(approved).build()));
         given(gatheringMemberRepository.findByGatheringId(10L)).willReturn(List.of(
                 GatheringMember.builder().gathering(gathering).user(approved).status(MemberStatus.APPROVED).build(),
                 GatheringMember.builder().gathering(gathering).user(pending).status(MemberStatus.PENDING).build()
@@ -134,10 +132,22 @@ class NotificationServiceTest {
     @DisplayName("존재하지 않는 모임에 대한 알림은 조용히 무시된다")
     void sendToAllMembers_GatheringNotFound_DoesNothing() {
         // given
-        given(gatheringMemberRepository.findById(999L)).willReturn(Optional.empty());
         given(gatheringMemberRepository.findByGatheringId(999L)).willReturn(List.of());
 
         // when & then
         assertDoesNotThrow(() -> notificationService.sendToAllMembers(999L, "chat-received", "hi"));
+    }
+
+    @Test
+    @DisplayName("null 또는 공백 수신자 이메일로 알림 전송 시 아무 작업도 수행하지 않는다")
+    void send_NullOrBlankReceiverEmail_DoesNothing() {
+        assertDoesNotThrow(() -> notificationService.send(null, "test", "data"));
+        assertDoesNotThrow(() -> notificationService.send("  ", "test", "data"));
+    }
+
+    @Test
+    @DisplayName("null 모임 ID로 모임 멤버 전송 시 아무 작업도 수행하지 않는다")
+    void sendToAllMembers_NullGatheringId_DoesNothing() {
+        assertDoesNotThrow(() -> notificationService.sendToAllMembers(null, "test", "data"));
     }
 }

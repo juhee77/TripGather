@@ -34,6 +34,9 @@ public class DirectMessageServiceImpl implements DirectMessageUseCase {
         if (content == null || content.trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "메시지 내용을 입력해주세요.");
         }
+        if (content.trim().length() > 1000) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "메시지 내용은 1000자 이내여야 합니다.");
+        }
 
         profanityFilterService.validateText(content);
         User sender = userRepository.findByEmail(senderEmail)

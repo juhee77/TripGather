@@ -364,4 +364,31 @@ class TripReviewServiceTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("해당 여행의 리뷰가 아닙니다.");
     }
+
+    @Test
+    @DisplayName("null 여행 ID로 리뷰 목록 조회 시 예외 발생")
+    void getReviews_NullTripId_ThrowsException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.getReviews(null, "전체"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 리뷰 ID로 리뷰 수정 시 예외 발생")
+    void updateReview_NullReviewId_ThrowsException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.updateReview(null, "수정된 내용", 5, "숙소", null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("리뷰 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 여행 ID로 리뷰 요약 조회 시 예외 발생")
+    void getReviewSummary_NullTripId_ThrowsException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripReviewService.getReviewSummary(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행 ID가 올바르지 않습니다.");
+    }
 }

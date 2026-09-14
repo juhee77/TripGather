@@ -234,4 +234,43 @@ class PackingServiceTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("준비물 ID가 올바르지 않습니다.");
     }
+
+    @Test
+    @DisplayName("null 여행 ID로 준비물 목록 조회 시 예외 발생")
+    void getItems_NullTripId_ThrowsException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.getItems(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 여행 ID로 준비물 목록 조회 시 예외 발생")
+    void getItems_TripNotFound_ThrowsException() {
+        given(tripRepository.existsById(99L)).willReturn(false);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.getItems(99L))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("준비물 항목명이 100자를 초과하는 경우 예외 발생")
+    void addItem_ExceedNameLength_ThrowsException() {
+        String longName = "A".repeat(101);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.addItem(1L, longName, "기타"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("준비물 항목명은 100자 이내여야 합니다.");
+    }
+
+    @Test
+    @DisplayName("카테고리명이 50자를 초과하는 경우 예외 발생")
+    void addItem_ExceedCategoryLength_ThrowsException() {
+        String longCat = "C".repeat(51);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> packingService.addItem(1L, "Towel", longCat))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("카테고리명은 50자 이내여야 합니다.");
+    }
 }
+

@@ -66,8 +66,12 @@ public class UserServiceImpl implements UserUseCase {
             user.setName(trimmedName);
         }
         if (update.getBio() != null) {
-            profanityFilterService.validateText(update.getBio());
-            user.setBio(update.getBio());
+            String trimmedBio = update.getBio().trim();
+            if (trimmedBio.length() > 200) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기소개는 200자 이내여야 합니다.");
+            }
+            profanityFilterService.validateText(trimmedBio);
+            user.setBio(trimmedBio);
         }
         if (update.getProfileImageUrl() != null) {
             user.setProfileImageUrl(update.getProfileImageUrl());
@@ -77,6 +81,9 @@ public class UserServiceImpl implements UserUseCase {
 
     @Transactional
     public User createUser(User user) {
+        if (user == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "사용자 정보가 올바르지 않습니다.");
+        }
         if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일은 필수 입력값입니다.");
         }

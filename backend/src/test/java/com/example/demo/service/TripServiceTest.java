@@ -386,4 +386,41 @@ class TripServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("여행을 찾을 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("여행 생성 시 제목 100자 초과 시 예외 발생")
+    void createTrip_TitleExceedsLimit_ThrowsException() {
+        // given
+        TripRequest request = TripRequest.builder().title("a".repeat(101)).build();
+
+        // when & then
+        assertThatThrownBy(() -> tripService.createTrip(request))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여행 제목은 100자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여행 생성 시 목적지 100자 초과 시 예외 발생")
+    void createTrip_DestinationExceedsLimit_ThrowsException() {
+        // given
+        TripRequest request = TripRequest.builder().title("정상 제목").destination("d".repeat(101)).build();
+
+        // when & then
+        assertThatThrownBy(() -> tripService.createTrip(request))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여행 목적지는 100자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여행 생성 시 국가명 50자 초과 시 예외 발생")
+    void createTrip_CountryExceedsLimit_ThrowsException() {
+        // given
+        TripRequest request = TripRequest.builder().title("정상 제목").country("c".repeat(51)).build();
+
+        // when & then
+        assertThatThrownBy(() -> tripService.createTrip(request))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("국가명은 50자 이하이어야 합니다.");
+    }
 }
+

@@ -528,4 +528,47 @@ class ItineraryServiceImplTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("종료일은 시작일보다 빠를 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("여정 생성 시 제목 100자 초과 시 예외 발생")
+    void createItinerary_TitleExceedsLimit_ThrowsException() {
+        // given
+        String longTitle = "a".repeat(101);
+        Itinerary itinerary = Itinerary.builder().title(longTitle).build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여정 제목은 100자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여정 생성 시 설명 1000자 초과 시 예외 발생")
+    void createItinerary_DescriptionExceedsLimit_ThrowsException() {
+        // given
+        String longDesc = "b".repeat(1001);
+        Itinerary itinerary = Itinerary.builder().title("정상 제목").description(longDesc).build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여정 설명은 1000자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여정 수정 시 제목 100자 초과 시 예외 발생")
+    void updateItinerary_TitleExceedsLimit_ThrowsException() {
+        // given
+        Itinerary existing = Itinerary.builder().id(1L).title("Old Title").routePoints(new ArrayList<>()).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        String longTitle = "c".repeat(101);
+        Itinerary updateInfo = Itinerary.builder().title(longTitle).build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.updateItinerary(1L, updateInfo))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여정 제목은 100자 이하이어야 합니다.");
+    }
 }
+

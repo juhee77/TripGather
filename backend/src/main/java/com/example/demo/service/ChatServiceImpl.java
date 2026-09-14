@@ -29,12 +29,25 @@ public class ChatServiceImpl implements ChatUseCase {
 
     @Transactional
     public com.example.demo.dto.ChatMessageResponse saveMessage(Long gatheringId, String email, String content) {
+        if (gatheringId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
+        if (email == null || email.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "발신자 이메일이 올바르지 않습니다.");
+        }
+        if (content == null || content.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "채팅 내용을 입력해주세요.");
+        }
+        if (content.trim().length() > 1000) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "채팅 내용은 1000자 이내여야 합니다.");
+        }
+
         Gathering gathering = gatheringRepository.findById(gatheringId)
                 .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        ChatMessage message = ChatMessage.of(content, user, gathering);
+        ChatMessage message = ChatMessage.of(content.trim(), user, gathering);
 
         com.example.demo.domain.ChatMessage saved = chatMessageRepository.save(message);
         return com.example.demo.dto.ChatMessageResponse.from(saved);

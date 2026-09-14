@@ -42,12 +42,15 @@ public class NotificationService {
     }
 
     public void send(String receiverEmail, String name, Object data) {
+        if (receiverEmail == null || receiverEmail.trim().isEmpty()) {
+            return;
+        }
         SseEmitter emitter = emitters.get(receiverEmail);
         if (emitter != null) {
             try {
                 emitter.send(SseEmitter.event()
-                        .name(name)
-                        .data(data));
+                        .name(name != null ? name : "notification")
+                        .data(data != null ? data : ""));
             } catch (IOException e) {
                 emitters.remove(receiverEmail);
             }
@@ -55,16 +58,26 @@ public class NotificationService {
     }
 
     public void sendToAllMembers(Long gatheringId, String name, Object data) {
-        com.example.demo.domain.Gathering gathering = gatheringMemberRepository.findById(gatheringId)
-                .map(com.example.demo.domain.GatheringMember::getGathering)
-                .orElse(null);
-        
-        if (gathering != null && gathering.getHost() != null) {
-            send(gathering.getHost().getEmail(), name, data);
+        if (gatheringId == null) {
+            return;
+        }
+        java.util.List<com.example.demo.domain.GatheringMember> members = gatheringMemberRepository.findByGatheringId(gatheringId);
+        if (members == null || members.isEmpty()) {
+            return;
         }
 
-        gatheringMemberRepository.findByGatheringId(gatheringId).stream()
-                .filter(m -> m.getStatus() == com.example.demo.domain.MemberStatus.APPROVED)
-                .forEach(m -> send(m.getUser().getEmail(), name, data));
+        java.util.Set<String> recipientEmails = new java.util.HashSet<>();
+
+        members.stream()
+                .map(com.example.demo.domain.GatheringMember::getGathering)
+                .filter(g -> g != null && g.getHost() != null && g.getHost().getEmail() != null)
+                .findFirst()
+                .ifPresent(g -> recipientEmails.add(g.getHost().getEmail()));
+
+        members.stream()
+                .filter(m -> m.getStatus() == com.example.demo.domain.MemberStatus.APPROVED && m.getUser() != null && m.getUser().getEmail() != null)
+                .forEach(m -> recipientEmails.add(m.getUser().getEmail()));
+
+        recipientEmails.forEach(email -> send(email, name, data));
     }
 }

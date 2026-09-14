@@ -698,4 +698,41 @@ class GatheringServiceImplTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("최대 모집 인원은 현재 참여 인원 이상이어야 합니다.");
     }
+
+    @Test
+    @DisplayName("모임 생성 시 제목 100자 초과 시 예외 발생")
+    void createGathering_TitleExceedsLimit_ThrowsException() {
+        // given
+        Gathering gathering = Gathering.builder().title("T".repeat(101)).location("서울").maxJoining(5).build();
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.createGathering(gathering))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 제목은 100자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("모임 생성 시 장소 100자 초과 시 예외 발생")
+    void createGathering_LocationExceedsLimit_ThrowsException() {
+        // given
+        Gathering gathering = Gathering.builder().title("정상 제목").location("L".repeat(101)).maxJoining(5).build();
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.createGathering(gathering))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("만나는 장소는 100자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("모임 생성 시 카테고리 50자 초과 시 예외 발생")
+    void createGathering_CategoryExceedsLimit_ThrowsException() {
+        // given
+        Gathering gathering = Gathering.builder().title("정상 제목").location("서울").category("C".repeat(51)).maxJoining(5).build();
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.createGathering(gathering))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("카테고리명은 50자 이하이어야 합니다.");
+    }
 }
+

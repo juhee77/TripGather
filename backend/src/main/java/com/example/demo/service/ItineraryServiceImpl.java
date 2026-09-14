@@ -47,6 +47,15 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         if (itinerary == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 정보가 올바르지 않습니다.");
         }
+        if (itinerary.getTitle() != null && itinerary.getTitle().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 제목은 100자 이하이어야 합니다.");
+        }
+        if (itinerary.getDescription() != null && itinerary.getDescription().length() > 1000) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 설명은 1000자 이하이어야 합니다.");
+        }
+        if (itinerary.getLocation() != null && itinerary.getLocation().length() > 200) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 위치/장소는 200자 이하이어야 합니다.");
+        }
         if (itinerary.getStartDate() != null && itinerary.getEndDate() != null) {
             if (itinerary.getEndDate().isBefore(itinerary.getStartDate())) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
@@ -68,6 +77,9 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     private void validateRoutePoint(com.example.demo.domain.RoutePoint rp, Itinerary itinerary) {
         if (rp.getLabel() == null || rp.getLabel().trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "경로 포인트 장소명을 입력해주세요.");
+        }
+        if (rp.getLabel().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "경로 포인트 장소명은 100자 이하이어야 합니다.");
         }
         if (rp.getDayNumber() <= 0) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "일차 번호는 1 이상이어야 합니다.");
@@ -170,12 +182,21 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
             if (update.getTitle().trim().isEmpty()) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 제목을 입력해주세요.");
             }
+            if (update.getTitle().length() > 100) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 제목은 100자 이하이어야 합니다.");
+            }
             profanityFilterService.validateText(update.getTitle());
             itinerary.setTitle(update.getTitle().trim());
         }
         if (update.getDescription() != null) {
+            if (update.getDescription().length() > 1000) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 설명은 1000자 이하이어야 합니다.");
+            }
             profanityFilterService.validateText(update.getDescription());
             itinerary.setDescription(update.getDescription());
+        }
+        if (update.getLocation() != null && update.getLocation().length() > 200) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 위치/장소는 200자 이하이어야 합니다.");
         }
         itinerary.setStampImageUrl(update.getStampImageUrl());
         itinerary.setStartDate(update.getStartDate());

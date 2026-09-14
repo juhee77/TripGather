@@ -83,8 +83,17 @@ public class GatheringServiceImpl implements GatheringUseCase {
         if (gathering.getTitle() != null && gathering.getTitle().trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 제목을 입력해주세요.");
         }
+        if (gathering.getTitle() != null && gathering.getTitle().trim().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 제목은 100자 이하이어야 합니다.");
+        }
         if (gathering.getLocation() != null && gathering.getLocation().trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "만나는 장소를 입력해주세요.");
+        }
+        if (gathering.getLocation() != null && gathering.getLocation().trim().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "만나는 장소는 100자 이하이어야 합니다.");
+        }
+        if (gathering.getCategory() != null && gathering.getCategory().trim().length() > 50) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "카테고리명은 50자 이하이어야 합니다.");
         }
         if (gathering.getMaxJoining() < 2) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 인원은 최소 2명 이상이어야 합니다.");
@@ -144,6 +153,15 @@ public class GatheringServiceImpl implements GatheringUseCase {
             if (updateData.getEndDate().isBefore(updateData.getStartDate())) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
             }
+        }
+        if (updateData.getTitle() != null && updateData.getTitle().trim().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 제목은 100자 이하이어야 합니다.");
+        }
+        if (updateData.getLocation() != null && updateData.getLocation().trim().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "만나는 장소는 100자 이하이어야 합니다.");
+        }
+        if (updateData.getCategory() != null && updateData.getCategory().trim().length() > 50) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "카테고리명은 50자 이하이어야 합니다.");
         }
         if (updateData.getTitle() != null) profanityFilterService.validateText(updateData.getTitle());
         if (updateData.getLocation() != null) profanityFilterService.validateText(updateData.getLocation());

@@ -142,4 +142,30 @@ class ChatServiceImplTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("모임 ID가 올바르지 않습니다.");
     }
+
+    @Test
+    @DisplayName("메시지 저장 시 null 또는 빈 파라미터 전달 시 예외 발생")
+    void saveMessage_InvalidParameters_ThrowsException() {
+        assertThatThrownBy(() -> chatService.saveMessage(null, "user@test.com", "hello"))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+
+        assertThatThrownBy(() -> chatService.saveMessage(1L, "  ", "hello"))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("발신자 이메일이 올바르지 않습니다.");
+
+        assertThatThrownBy(() -> chatService.saveMessage(1L, "user@test.com", "   "))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("채팅 내용을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("메시지 저장 시 채팅 내용이 1000자를 초과하면 예외 발생")
+    void saveMessage_ExceedContentLength_ThrowsException() {
+        String longContent = "A".repeat(1001);
+
+        assertThatThrownBy(() -> chatService.saveMessage(1L, "user@test.com", longContent))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("채팅 내용은 1000자 이내여야 합니다.");
+    }
 }
