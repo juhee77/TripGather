@@ -42,6 +42,19 @@
   /* Special UI Elements */
   --ticket-dashed: 2px dashed var(--border-color);
 
+  /* ------------------------------------------------------------------
+     별칭 토큰
+     코드베이스에 두 가지 이름이 섞여 쓰이고 있었는데, 아래 이름들은 정의가 없어
+     var() 가 무효값이 되면서 색이 상속값으로 떨어졌다.
+     (예: background: var(--primary) 인 버튼이 투명해져 흰 글자만 남는 문제)
+     장기적으로는 사용처를 정식 토큰명으로 통일하는 편이 낫다.
+     ------------------------------------------------------------------ */
+  --text-sub: var(--text-secondary);
+  --primary: var(--primary-orange);
+  --border: var(--border-color);
+  --shadow-sm: var(--shadow-premium);
+  --shadow-lg: var(--shadow-hover);
+
   /* Night Flight Theme Tokens */
   --night-bg: #0B0B15;
   --night-surface: rgba(255, 255, 255, 0.03);

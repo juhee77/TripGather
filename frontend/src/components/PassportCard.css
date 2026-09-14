@@ -1,16 +1,4 @@
-.passport-card-container {
-  display: flex;
-  justify-content: center;
-  perspective: 1000px;
-  margin-bottom: 32px;
-}
 
-.passport-card {
-  width: 100%;
-  max-width: 360px;
-  background: linear-gradient(135deg, #1A1C29 0%, #0F111A 100%);
-  margin-bottom: 24px;
-}
 
 .passport-card-light {
   background: linear-gradient(135deg, #FFFCF9 0%, #F5F1ED 100%);
@@ -113,59 +101,10 @@
   gap: 12px;
 }
 
-.info-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+/*
+ * .info-value 규칙 제거됨.
+ * PassportCard 는 이 클래스를 쓰지 않는데(실제로는 .detail-value 사용),
+ * CSS import 는 전역이라 color:#fff 가 index.css 의 .info-value 를 덮어써
+ * 라운지 카드/티켓 카드의 호스트명·날짜·장소가 흰 배경에 흰 글자가 되고 있었다.
+ */
 
-.info-group label {
-  font-size: 10px;
-  text-transform: uppercase;
-  color: #8A8D9A;
-  letter-spacing: 1px;
-}
-
-.info-value {
-  font-size: 15px;
-  font-weight: 500;
-  color: #fff;
-}
-
-.name-value {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--primary-orange);
-}
-
-.stats-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.stat-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.passport-footer {
-  border-top: 1px dashed rgba(255, 255, 255, 0.2);
-  padding-top: 16px;
-}
-
-.mrz-code {
-  font-family: monospace;
-  font-size: 10px;
-  color: #8A8D9A;
-  line-height: 1.4;
-  letter-spacing: 2px;
-  word-break: break-all;
-}
