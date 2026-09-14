@@ -47,8 +47,14 @@ public class ChatController {
 
         ChatMessageResponse response = chatService.saveMessage(gatheringId, email, request.getContent());
         
-        // 실시간 알림 전송 (참여자들에게 개별 SSE 알림 - 배경 알림용)
-        notificationService.sendToAllMembers(gatheringId, "chat-received", response);
+        // 실시간 알림 전송 (참여자들에게 개별 SSE 알림 - 배경 알림용).
+        // 알림은 부가 기능이므로, 여기서 실패하더라도 아래 @SendTo 브로드캐스트는 반드시 수행되어야 한다.
+        // (과거 이 호출에서 예외가 새어 메시지가 저장만 되고 화면에 안 뜨는 문제가 있었다)
+        try {
+            notificationService.sendToAllMembers(gatheringId, "chat-received", response);
+        } catch (Exception e) {
+            log.warn("[Chat] 알림 전송 실패 (브로드캐스트는 계속): gatheringId={}", gatheringId, e);
+        }
 
         return response;
     }
