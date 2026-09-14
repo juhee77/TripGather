@@ -23,9 +23,10 @@ public class ItineraryController {
                 .toList());
     }
 
+    /** 단건 조회. 비공개 여정은 소유자/모임 참여자만 열람할 수 있다. */
     @GetMapping("/{id}")
     public ResponseEntity<ItineraryResponse> getItinerary(@PathVariable Long id) {
-        return ResponseEntity.ok(ItineraryResponse.from(itineraryService.getById(id)));
+        return ResponseEntity.ok(ItineraryResponse.from(itineraryService.getByIdForViewer(id)));
     }
 
     @PostMapping

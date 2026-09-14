@@ -27,6 +27,12 @@ class ItineraryServiceImplTest {
     private ItineraryRepository itineraryRepository;
 
     @Mock
+    private com.example.demo.repository.GatheringRepository gatheringRepository;
+
+    @Mock
+    private com.example.demo.security.SecurityService securityService;
+
+    @Mock
     private com.example.demo.repository.UserRepository userRepository;
 
     @Mock
@@ -570,5 +576,131 @@ class ItineraryServiceImplTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("여정 제목은 100자 이하이어야 합니다.");
     }
-}
 
+    @Test
+    @DisplayName("경로 포인트 메모가 500자를 넘으면 예외가 발생한다")
+    void createItinerary_MemoTooLong_ThrowsException() {
+        // given
+        com.example.demo.domain.RoutePoint point = com.example.demo.domain.RoutePoint.builder()
+                .label("경복궁").dayNumber(1).sequenceOrder(0)
+                .memo("메".repeat(501))
+                .build();
+        Itinerary itinerary = Itinerary.builder()
+                .title("서울 여행")
+                .routePoints(new ArrayList<>(java.util.List.of(point)))
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("경로 포인트 메모는 500자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여정 복제 시 메모와 좌표가 함께 복사된다")
+    void cloneItinerary_CopiesMemoAndCoordinates() {
+        // given
+        Long originalId = 1L;
+        com.example.demo.domain.RoutePoint point = com.example.demo.domain.RoutePoint.builder()
+                .label("경복궁").dayNumber(1).sequenceOrder(0)
+                .lat(37.5796).lng(126.9770)
+                .memo("한복 입으면 무료입장")
+                .build();
+        Itinerary original = Itinerary.builder()
+                .id(originalId).title("서울 여행")
+                .routePoints(new ArrayList<>(java.util.List.of(point)))
+                .build();
+
+        given(itineraryRepository.findById(originalId)).willReturn(Optional.of(original));
+        given(itineraryRepository.save(any(Itinerary.class))).willAnswer(i -> i.getArgument(0));
+
+        // when
+        Itinerary clone = itineraryService.cloneItinerary(originalId, "me@test.com");
+
+        // then
+        com.example.demo.domain.RoutePoint copied = clone.getRoutePoints().get(0);
+        assertThat(copied.getMemo()).isEqualTo("한복 입으면 무료입장");
+        assertThat(copied.getLat()).isEqualTo(37.5796);
+        assertThat(copied.getLng()).isEqualTo(126.9770);
+    }
+
+    @Test
+    @DisplayName("공개 여정은 비로그인 사용자도 열람할 수 있다")
+    void getByIdForViewer_PublicItinerary_AllowsAnonymous() {
+        // given
+        Itinerary pub = Itinerary.builder().id(1L).title("공개").publicStatus(true).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(pub));
+
+        // when
+        Itinerary result = itineraryService.getByIdForViewer(1L);
+
+        // then
+        assertThat(result.getTitle()).isEqualTo("공개");
+    }
+
+    @Test
+    @DisplayName("비공개 여정은 비로그인 사용자에게 차단된다")
+    void getByIdForViewer_PrivateItinerary_BlocksAnonymous() {
+        // given
+        Itinerary priv = Itinerary.builder().id(1L).title("비공개").publicStatus(false)
+                .ownerEmail("owner@test.com").build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(priv));
+        given(securityService.isAnonymous()).willReturn(true);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.getByIdForViewer(1L))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("비공개 여정입니다.");
+    }
+
+    @Test
+    @DisplayName("비공개 여정은 소유자 본인은 열람할 수 있다")
+    void getByIdForViewer_PrivateItinerary_AllowsOwner() {
+        // given
+        Itinerary priv = Itinerary.builder().id(1L).title("비공개").publicStatus(false)
+                .ownerEmail("owner@test.com").build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(priv));
+        given(securityService.isAnonymous()).willReturn(false);
+        given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
+
+        // when
+        Itinerary result = itineraryService.getByIdForViewer(1L);
+
+        // then
+        assertThat(result.getTitle()).isEqualTo("비공개");
+    }
+
+    @Test
+    @DisplayName("비공개 여정은 남이 직접 ID로 조회하면 차단된다")
+    void getByIdForViewer_PrivateItinerary_BlocksOtherUser() {
+        // given
+        Itinerary priv = Itinerary.builder().id(1L).title("비공개").publicStatus(false)
+                .ownerEmail("owner@test.com").build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(priv));
+        given(securityService.isAnonymous()).willReturn(false);
+        given(securityService.getCurrentUserEmail()).willReturn("stranger@test.com");
+        given(gatheringRepository.isVisibleThroughGathering(1L, "stranger@test.com")).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.getByIdForViewer(1L))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("비공개 여정이라도 참여 중인 모임에 걸려 있으면 크루는 열람할 수 있다")
+    void getByIdForViewer_PrivateItinerary_AllowsGatheringCrew() {
+        // given
+        Itinerary priv = Itinerary.builder().id(1L).title("모임 여정").publicStatus(false)
+                .ownerEmail("host@test.com").build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(priv));
+        given(securityService.isAnonymous()).willReturn(false);
+        given(securityService.getCurrentUserEmail()).willReturn("crew@test.com");
+        given(gatheringRepository.isVisibleThroughGathering(1L, "crew@test.com")).willReturn(true);
+
+        // when
+        Itinerary result = itineraryService.getByIdForViewer(1L);
+
+        // then
+        assertThat(result.getTitle()).isEqualTo("모임 여정");
+    }
+}
