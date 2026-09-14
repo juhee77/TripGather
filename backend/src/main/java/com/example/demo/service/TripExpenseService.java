@@ -31,6 +31,7 @@ public class TripExpenseService {
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
     private final ProfanityFilterService profanityFilterService;
+    private final TripAccessGuard tripAccessGuard;
 
     @Transactional
     public TripExpenseResponse addExpense(String userEmail, TripExpenseRequest request) {
@@ -137,6 +138,7 @@ public class TripExpenseService {
     }
 
     public List<TripExpenseResponse> getExpensesByTrip(Long tripId) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null || !tripRepository.existsById(tripId)) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다: " + tripId);
         }
@@ -146,6 +148,7 @@ public class TripExpenseService {
     }
 
     public TripSettlementResponse calculateSettlement(Long tripId, int memberCount) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null || !tripRepository.existsById(tripId)) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다: " + tripId);
         }

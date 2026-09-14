@@ -190,6 +190,7 @@ class TripServiceTest {
         trip.setId(tripId);
 
         given(tripRepository.findById(tripId)).willReturn(java.util.Optional.of(trip));
+        given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
 
         // when
         java.util.List<com.example.demo.dto.ItineraryResponse> responses = tripService.getRecommendedItineraries(tripId);
@@ -276,6 +277,7 @@ class TripServiceTest {
         Trip trip = Trip.of("Busan Trip", "Busan", "Korea", owner);
         trip.setId(1L);
         given(tripRepository.findById(1L)).willReturn(java.util.Optional.of(trip));
+        given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
 
         // when
         TripResponse response = tripService.getTrip(1L);
@@ -359,6 +361,7 @@ class TripServiceTest {
         Trip trip = Trip.of("Busan Trip", "부산", "Korea", owner);
         trip.setId(1L);
         given(tripRepository.findById(1L)).willReturn(java.util.Optional.of(trip));
+        given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
         // 공개 여부/삭제 여부/목적지 매칭은 모두 DB 쿼리로 위임되었다.
         given(itineraryRepository
                 .findByPublicStatusTrueAndDeletedFalseAndLocationContainingOrderByCreatedAtDesc("부산"))

@@ -40,6 +40,9 @@ class TripExpenseServiceTest {
     @Mock
     private ProfanityFilterService profanityFilterService;
 
+    @Mock
+    private TripAccessGuard tripAccessGuard;
+
     @InjectMocks
     private TripExpenseService tripExpenseService;
 

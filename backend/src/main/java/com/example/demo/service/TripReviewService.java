@@ -24,9 +24,11 @@ public class TripReviewService {
     private final SecurityService securityService;
     private final PointService pointService;
     private final ProfanityFilterService profanityFilterService;
+    private final TripAccessGuard tripAccessGuard;
 
     @Transactional
     public TripReviewResponse createReview(Long tripId, String content, int rating, String category, String imageUrls) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
         }
@@ -57,6 +59,7 @@ public class TripReviewService {
 
     @Transactional(readOnly = true)
     public List<TripReviewResponse> getReviews(Long tripId, String category) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
         }
@@ -79,6 +82,7 @@ public class TripReviewService {
 
     @Transactional
     public void deleteReview(Long tripId, Long reviewId) {
+        tripAccessGuard.requireOwner(tripId);
         if (reviewId == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 ID가 올바르지 않습니다.");
         }
@@ -130,6 +134,7 @@ public class TripReviewService {
 
     @Transactional(readOnly = true)
     public com.example.demo.dto.TripReviewSummaryResponse getReviewSummary(Long tripId) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
         }

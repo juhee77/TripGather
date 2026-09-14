@@ -21,6 +21,7 @@ public class PackingService {
     private final PackingItemRepository packingItemRepository;
     private final TripRepository tripRepository;
     private final ProfanityFilterService profanityFilterService;
+    private final TripAccessGuard tripAccessGuard;
 
     private static final Map<String, List<String[]>> DEFAULT_ITEMS = Map.of(
             "필수", List.of(
@@ -43,6 +44,7 @@ public class PackingService {
 
     @Transactional
     public List<PackingItemResponse> initDefaultItems(Long tripId) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
         }
@@ -58,6 +60,7 @@ public class PackingService {
 
     @Transactional(readOnly = true)
     public List<PackingItemResponse> getItems(Long tripId) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
         }
@@ -72,6 +75,7 @@ public class PackingService {
 
     @Transactional
     public PackingItemResponse addItem(Long tripId, String name, String category) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
         }
@@ -119,6 +123,7 @@ public class PackingService {
 
     @Transactional(readOnly = true)
     public com.example.demo.dto.PackingProgressResponse getPackingProgress(Long tripId) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
         }

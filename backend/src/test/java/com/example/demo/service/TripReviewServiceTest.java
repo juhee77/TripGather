@@ -33,6 +33,9 @@ class TripReviewServiceTest {
     @Mock
     private ProfanityFilterService profanityFilterService;
 
+    @Mock
+    private TripAccessGuard tripAccessGuard;
+
     @InjectMocks
     private TripReviewService tripReviewService;
 

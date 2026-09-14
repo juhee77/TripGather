@@ -29,6 +29,9 @@ class PackingServiceTest {
     @Mock
     private ProfanityFilterService profanityFilterService;
 
+    @Mock
+    private TripAccessGuard tripAccessGuard;
+
     @InjectMocks
     private PackingService packingService;
 

@@ -101,7 +101,8 @@ public class TripService {
 
     @Transactional(readOnly = true)
     public TripResponse getTrip(Long tripId) {
-        Trip trip = findTripById(tripId);
+        // Trip 은 공유 개념이 없는 개인 자원이므로 조회도 소유자만 가능하다.
+        Trip trip = findOwnedTrip(tripId);
         return TripResponse.from(trip);
     }
 
@@ -168,7 +169,7 @@ public class TripService {
 
     @Transactional(readOnly = true)
     public List<ItineraryResponse> getRecommendedItineraries(Long tripId) {
-        Trip trip = findTripById(tripId);
+        Trip trip = findOwnedTrip(tripId);
         String destination = trip.getDestination();
         if (destination == null || destination.isBlank()) return List.of();
 
