@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Edit3, Plane, Check } from 'lucide-react';
+import { MapPin, Edit3, Plane, Check, FileText } from 'lucide-react';
 import { Map as KakaoMap, MapMarker, Polyline } from 'react-kakao-maps-sdk';
 import { useUser } from '../contexts/UserContext';
 import { authFetch } from '../api/client';
@@ -519,6 +519,23 @@ const ItineraryDetailPage = () => {
                                                                     <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>{point.endTime}</span>
                                                                 </div>
                                                             )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* 지점별 메모 */}
+                                                    {point.memo && (
+                                                        <div style={{
+                                                            marginTop: '8px', padding: '10px 14px',
+                                                            background: 'var(--highlight-muted)', borderRadius: '12px',
+                                                            display: 'flex', gap: '8px', alignItems: 'flex-start'
+                                                        }}>
+                                                            <FileText size={13} color="var(--primary-orange)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                                                            <p style={{
+                                                                margin: 0, fontSize: '13px', lineHeight: 1.6,
+                                                                color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word'
+                                                            }}>
+                                                                {point.memo}
+                                                            </p>
                                                         </div>
                                                     )}
                                                 </div>

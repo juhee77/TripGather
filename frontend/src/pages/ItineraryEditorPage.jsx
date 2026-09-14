@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { X, Type, FileText, Send, Plus, Trash2, MapPin, Clock, ChevronLeft, Plane } from 'lucide-react';
+import { X, Type, FileText, Send, Plus, Trash2, MapPin, Clock, ChevronLeft, Plane, GripVertical } from 'lucide-react';
 import { authFetch } from '../api/client';
 import { useUser } from '../contexts/UserContext';
 import FormInput from '../components/UI/FormInput';
@@ -29,6 +29,8 @@ const ItineraryEditorPage = () => {
     });
     const [saving, setSaving] = useState(false);
     const [stampPreview, setStampPreview] = useState(null);
+    // 네이티브 드래그는 입력창 위에서 시작되지 않으므로, 핸들을 눌렀을 때만 해당 행을 draggable 로 만든다.
+    const [dragArmedIndex, setDragArmedIndex] = useState(null);
     const stampInputRef = React.useRef(null);
 
     // 마운트 시 임시 저장 데이터 확인 및 복구
@@ -183,6 +185,7 @@ const ItineraryEditorPage = () => {
 
     const handleDragEnd = (e) => {
         e.currentTarget.style.opacity = '1';
+        setDragArmedIndex(null);
     };
 
     const handleDrop = (e, toIndex, targetDayNum) => {
@@ -192,11 +195,13 @@ const ItineraryEditorPage = () => {
 
         const newPoints = [...formData.routePoints];
         const [movedItem] = newPoints.splice(fromIndex, 1);
-        
+
         // 날짜가 다를 경우 dayNumber와 dayLabel 동기화
         movedItem.dayNumber = targetDayNum;
         movedItem.dayLabel = `Day ${targetDayNum}`;
 
+        // 대상 행 위에 떨어뜨리면 그 자리를 차지한다.
+        // (앞 항목을 들어낸 뒤 원래 toIndex 에 넣으면 아래로 끌 때 대상 뒤에 놓인다 - 의도된 동작)
         newPoints.splice(toIndex, 0, movedItem);
 
         // Day별 sequenceOrder 재조정
@@ -457,21 +462,35 @@ const ItineraryEditorPage = () => {
                                         if ((point.dayNumber || 1) !== dayNum) return null;
                                         return (
                                             <div key={globalIndex} className="animate-fade" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                {/* 순서 변경 전용 핸들. 입력창 위에서는 네이티브 드래그가 시작되지 않는다. */}
+                                                <div
+                                                    onMouseDown={() => setDragArmedIndex(globalIndex)}
+                                                    onMouseUp={() => setDragArmedIndex(null)}
+                                                    title="드래그해서 순서 변경"
+                                                    aria-label="순서 변경 핸들"
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        alignSelf: 'stretch', padding: '0 2px',
+                                                        color: 'var(--text-muted)', cursor: 'grab', touchAction: 'none'
+                                                    }}
+                                                >
+                                                    <GripVertical size={18} />
+                                                </div>
                                                 <div 
                                                     style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}
-                                                    draggable
+                                                    draggable={dragArmedIndex === globalIndex}
                                                     onDragStart={(e) => handleDragStart(e, globalIndex)}
                                                     onDragEnd={handleDragEnd}
                                                     onDragOver={(e) => e.preventDefault()}
                                                     onDrop={(e) => handleDrop(e, globalIndex, dayNum)}
                                                 >
-                                                    <div style={{ position: 'relative', cursor: 'grab' }}>
+                                                    <div style={{ position: 'relative' }}>
                                                         <MapPin size={16} color="var(--primary-orange)" style={{ position: 'absolute', top: '13px', left: '14px' }} />
                                                         <input 
                                                             required 
                                                             value={point.label} 
                                                             onChange={(e) => updatePoint(globalIndex, 'label', e.target.value)} 
-                                                            placeholder="Drag to reorder or type location..." 
+                                                            placeholder="장소를 입력하세요" 
                                                             className="glass"
                                                             style={{ 
                                                                 width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px', border: '1px solid var(--border-color)',
@@ -595,6 +614,36 @@ const ItineraryEditorPage = () => {
                                                                 No specific flight schedule set for this stop.
                                                             </div>
                                                         )}
+                                                    </div>
+
+                                                    {/* 지점별 메모 (준비물, 예약 정보, 주의사항 등) */}
+                                                    <div style={{
+                                                        padding: '12px 14px', background: 'white', borderRadius: '14px',
+                                                        border: '1px solid var(--border-color)', display: 'flex',
+                                                        flexDirection: 'column', gap: '8px'
+                                                    }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)' }}>
+                                                                <FileText size={14} color="var(--primary-orange)" /> MEMO
+                                                            </div>
+                                                            <span style={{ fontSize: '11px', fontWeight: 700, color: (point.memo?.length || 0) > 500 ? '#EF4444' : 'var(--text-muted)' }}>
+                                                                {point.memo?.length || 0}/500
+                                                            </span>
+                                                        </div>
+                                                        <textarea
+                                                            value={point.memo || ''}
+                                                            onChange={(e) => updatePoint(globalIndex, 'memo', e.target.value)}
+                                                            maxLength={500}
+                                                            rows={2}
+                                                            placeholder="예: 오픈런 필요, 주차 어려움, 예약번호 1234"
+                                                            style={{
+                                                                width: '100%', boxSizing: 'border-box', padding: '10px 12px',
+                                                                borderRadius: '10px', border: '1px solid var(--border-color)',
+                                                                background: 'var(--bg-lite)', color: 'var(--text-primary)',
+                                                                fontSize: '13px', fontWeight: 500, lineHeight: 1.5,
+                                                                outline: 'none', resize: 'vertical', fontFamily: 'inherit'
+                                                            }}
+                                                        />
                                                     </div>
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
