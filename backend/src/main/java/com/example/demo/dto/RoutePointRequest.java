@@ -21,6 +21,7 @@ public class RoutePointRequest {
     private Boolean isCompleted;
     private Double lat;
     private Double lng;
+    private String memo;
 
     public RoutePoint toEntity(Itinerary itinerary) {
         return RoutePoint.builder()
@@ -33,6 +34,7 @@ public class RoutePointRequest {
                 .isCompleted(this.isCompleted != null && this.isCompleted)
                 .lat(this.lat)
                 .lng(this.lng)
+                .memo(this.memo)
                 .itinerary(itinerary)
                 .build();
     }
