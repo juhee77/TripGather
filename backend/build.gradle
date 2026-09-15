@@ -132,6 +132,18 @@ clean {
 	delete file(generated)
 }
 
+// `./gradlew bootRun -Dstorage.type=local` 처럼 -D 로 넘긴 값을 실행되는 앱 JVM 으로 전달한다.
+// Gradle 은 기본적으로 -D 를 자기 JVM 에만 적용하고 fork 되는 애플리케이션에는 넘기지 않아,
+// README 대로 실행해도 설정이 반영되지 않았다.
+// JVM/OS 내장 프로퍼티까지 통째로 넘기면 fork 된 JVM 환경을 덮어쓸 수 있으므로 그것들만 걸러낸다.
+tasks.named('bootRun') {
+	def jvmInternalPrefixes = ['java.', 'javax.', 'sun.', 'jdk.', 'os.', 'user.', 'file.',
+							   'path.', 'line.', 'native.', 'awt.', 'http.', 'ftp.', 'socks']
+	systemProperties System.getProperties().findAll { key, value ->
+		!jvmInternalPrefixes.any { prefix -> key.toString().startsWith(prefix) }
+	}
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 	finalizedBy jacocoTestReport // 테스트 완료 후 리포트 생성
