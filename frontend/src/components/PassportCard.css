@@ -1,5 +1,9 @@
 
 
+.passport-card-wrapper {
+  padding: 4px 0 24px;
+}
+
 .passport-card-light {
   background: linear-gradient(135deg, #FFFCF9 0%, #F5F1ED 100%);
   border-radius: 24px;
@@ -68,10 +72,10 @@
   justify-content: center;
 }
 
-.photo-placeholder {
+.passport-card-light .photo-placeholder {
   font-size: 48px;
   font-weight: 900;
-  color: white;
+  color: #94A3B8;
 }
 
 .passport-stamp-seal {
@@ -99,12 +103,122 @@
   flex-direction: column;
   justify-content: flex-end;
   gap: 12px;
+  /* flex 항목의 기본 min-width:auto 는 내용(nowrap 칩)보다 좁아지지 못해
+     카드 밖으로 넘친다. 0 으로 풀어 줄어들 수 있게 한다. */
+  min-width: 0;
 }
 
 /*
- * .info-value 규칙 제거됨.
- * PassportCard 는 이 클래스를 쓰지 않는데(실제로는 .detail-value 사용),
- * CSS import 는 전역이라 color:#fff 가 index.css 의 .info-value 를 덮어써
- * 라운지 카드/티켓 카드의 호스트명·날짜·장소가 흰 배경에 흰 글자가 되고 있었다.
+ * 아래 규칙은 모두 .passport-card-light 하위로 스코프한다.
+ *
+ * CSS import 는 컴포넌트 스코프가 아니라 전역이다. 과거 이 파일의 .info-value 가
+ * 전역으로 새어 나가 라운지/티켓 카드의 텍스트를 흰 글자로 만든 적이 있다.
+ * detail-item, highlight 같은 흔한 이름은 다른 컴포넌트도 쓰므로 반드시 스코프한다.
  */
+
+.passport-card-light .detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.passport-card-light label {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  color: #A1887F;
+  text-transform: uppercase;
+}
+
+.passport-card-light .detail-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.passport-card-light .detail-value.highlight {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--primary-orange);
+  letter-spacing: -0.3px;
+}
+
+.passport-card-light .detail-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+}
+
+.passport-card-light .detail-row > div {
+  /* 좁은 폭에서 두 칩이 맞닿아 구분이 어려워지므로,
+     최소 너비를 주어 들어가지 않으면 아래 줄로 내려가게 한다. */
+  min-width: 120px;
+}
+
+.passport-card-light .detail-value-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 92, 0, 0.09);
+  color: var(--primary-orange);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.passport-card-light .detail-value-pill.rank {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--secondary-purple);
+}
+
+/* 여권 하단 기계판독영역(MRZ) */
+.passport-card-light .passport-mrz-zone {
+  margin: 0 -32px -32px;
+  padding: 14px 24px;
+  background: rgba(139, 115, 91, 0.06);
+  border-top: 1px dashed rgba(139, 115, 91, 0.3);
+  overflow-x: auto;
+}
+
+.passport-card-light .mrz-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #8B735B;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+
+/* 모바일(최대 480px 뷰포트)에서는 사진과 정보가 나란히 들어가지 않아
+   라벨/값이 줄바꿈되며 뭉개졌다. 사진을 줄이고 간격을 좁힌다. */
+@media (max-width: 420px) {
+  .passport-card-light {
+    padding: 24px 20px;
+  }
+
+  .passport-card-light .passport-main-body {
+    gap: 16px;
+  }
+
+  .passport-card-light .passport-photo-frame {
+    width: 104px;
+    height: 136px;
+  }
+
+  .passport-card-light .passport-title {
+    font-size: 26px;
+  }
+
+  .passport-card-light .passport-mrz-zone {
+    margin: 0 -20px -24px;
+    padding: 12px 20px;
+  }
+}
 
