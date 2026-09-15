@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +34,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         if (oAuth2UserInfo == null) {
-            throw new OAuth2AuthenticationException("Unsupported provider: " + registrationId);
+            // OAuth2AuthenticationException(String) 은 인자를 에러 코드로만 취급해 getMessage() 가 null 이 된다.
+            // 어떤 제공자로 시도했는지 로그에 남기려면 error 와 message 를 분리해 전달해야 한다.
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("unsupported_provider"),
+                    "Unsupported provider: " + registrationId);
         }
 
         String provider = oAuth2UserInfo.getProvider();

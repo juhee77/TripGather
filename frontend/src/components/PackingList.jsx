@@ -85,6 +85,13 @@ const PackingList = ({ tripId }) => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h3 style={{ fontSize: '18px', fontWeight: 900 }}>준비물 체크리스트</h3>
+        <button onClick={initDefaultItems} style={{
+          padding: '8px 14px', borderRadius: 'var(--radius-full)', background: 'white',
+          border: '1px solid var(--border-color)', color: 'var(--text-secondary)',
+          fontSize: '11px', fontWeight: 700, cursor: 'pointer'
+        }}>
+          기본 준비물 불러오기
+        </button>
       </div>
 
       <form onSubmit={addItem} style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>

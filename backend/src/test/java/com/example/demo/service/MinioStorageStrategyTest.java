@@ -2,6 +2,8 @@ package com.example.demo.service;
 
 import com.example.demo.service.storage.MinioStorageStrategy;
 import io.minio.BucketExistsArgs;
+import io.minio.MakeBucketArgs;
+import io.minio.SetBucketPolicyArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
@@ -77,5 +79,31 @@ class MinioStorageStrategyTest {
         // when & then
         assertDoesNotThrow(() -> minioStorageStrategy.deleteFile(fileUrl));
         verify(minioClient, times(1)).removeObject(any(RemoveObjectArgs.class));
+    }
+
+    @Test
+    @DisplayName("Minio 초기화 시 버킷이 없으면 생성하고 Public Read 정책 설정")
+    void init_BucketMissing_CreatesBucketAndPolicy() throws Exception {
+        // given
+        given(minioClient.bucketExists(any(BucketExistsArgs.class))).willReturn(false);
+
+        // when
+        minioStorageStrategy.init();
+
+        // then
+        verify(minioClient, times(1)).makeBucket(any(MakeBucketArgs.class));
+        verify(minioClient, times(1)).setBucketPolicy(any(SetBucketPolicyArgs.class));
+    }
+
+    @Test
+    @DisplayName("Minio 초기화 중 오류가 나도 예외를 전파하지 않음")
+    void init_ClientFails_DoesNotThrow() throws Exception {
+        // given
+        given(minioClient.bucketExists(any(BucketExistsArgs.class)))
+                .willThrow(new RuntimeException("MinIO 연결 실패"));
+
+        // when & then
+        assertDoesNotThrow(() -> minioStorageStrategy.init());
+        verify(minioClient, org.mockito.Mockito.never()).makeBucket(any(MakeBucketArgs.class));
     }
 }

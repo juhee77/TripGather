@@ -8,9 +8,9 @@
     <img src="https://img.shields.io/badge/Spring%20Boot-3.3.4-brightgreen?logo=springboot" alt="Spring Boot" />
     <img src="https://img.shields.io/badge/React-19.0-blue?logo=react" alt="React" />
     <img src="https://img.shields.io/badge/Vite-7.3-646CFF?logo=vite" alt="Vite" />
-    <img src="https://img.shields.io/badge/Tests-439%20PASS-success?logo=junit5" alt="Tests" />
-    <img src="https://img.shields.io/badge/Line%20Coverage-93%25-brightgreen?logo=jacoco" alt="Line Coverage" />
-    <img src="https://img.shields.io/badge/Branch%20Coverage-73%25-yellow?logo=jacoco" alt="Branch Coverage" />
+    <img src="https://img.shields.io/badge/Tests-611%20PASS-success?logo=junit5" alt="Tests" />
+    <img src="https://img.shields.io/badge/Line%20Coverage-96%25-brightgreen?logo=jacoco" alt="Line Coverage" />
+    <img src="https://img.shields.io/badge/Branch%20Coverage-80%25-brightgreen?logo=jacoco" alt="Branch Coverage" />
   </p>
 </div>
 
@@ -171,10 +171,22 @@ graph TD
 
 ## 🛡️ 품질 지표
 
-- **테스트 439개 전수 통과** — 서비스 · 컨트롤러 · 리포지토리 · 통합 테스트
-- **라인 커버리지 93.4% / 브랜치 73.1%** — DTO·도메인·설정을 제외한 비즈니스 로직 기준
-- **커버리지 게이트 강제** — 클래스별 최소 80% 규칙이 `check` 태스크에 연결되어 `./gradlew build`와 CI에서 실제로 검증됩니다
-- **스키마 드리프트 방지** — `SchemaValidationTest`가 운영과 동일한 `ddl-auto=validate` 모드로 컨텍스트를 띄워, 엔티티에만 추가되고 마이그레이션에 빠진 컬럼을 배포 전에 잡아냅니다
+프로젝트의 지속 가능성과 견고한 비즈니스 로직을 보장하기 위해 높은 수준의 테스트 표준을 유지합니다.
+
+- **[JaCoCo 기반 커버리지 관리]**: 로직을 담는 전 계층(`service`, `controller`, `security`, `exception`)에 두 가지 기준을 강제합니다 — **클래스당 라인 80% 이상**, 그리고 **전체 분기(branch) 80% 이상**. 이 검증(`jacocoTestCoverageVerification`)은 `check`/`build` 수명주기에 연결되어 기준 미달 시 빌드가 실패합니다. (2026-09-16 기준 라인 **96.1%** (2,091/2,175), 분기 **80.6%** (946/1,174), 테스트 611개 전부 통과)
+
+| 계층 | 라인 커버리지 | 분기 커버리지 |
+|:--|--:|--:|
+| `controller` | 100% (276/276) | 81.7% (85/104) |
+| `exception` | 100% (49/49) | 100% (4/4) |
+| `security` (oauth 포함) | 96.6% (143/148) | 96.3% (52/54) |
+| `service` (storage 포함) | 95.7% (1,327/1,387) | 79.5% (628/790) |
+
+  분기 기준을 함께 두는 이유는, 라인 커버리지는 메서드를 한 번만 호출해도 채워지지만 조건문의 반대 경로는 검증되지 않은 채 남기 때문입니다. 측정 대상에서 빠지는 것은 QueryDSL 생성 클래스, 부트스트랩 클래스, 그리고 자체 로직이 없는 `dto`/`domain`/`config`/`repository`뿐입니다.
+- **[인증 경로 중점 검증]**: 회귀 시 영향 범위가 가장 넓은 인증 경로를 우선 보강했습니다. 소셜 로그인(카카오/네이버), JWT 필터, STOMP 연결 인증을 0%~66% 구간에서 **전부 100%**로 끌어올렸으며, 특히 채팅/DM은 클라이언트가 보낸 `senderEmail`을 신뢰하지 않고 인증 주체만 사용하는지(타인 사칭 방지)를 명시적으로 검증합니다.
+- **[엣지 케이스 검증]**: 포인트 잔액 부족 시 결제 차단 로직, 중복 가입 방지, 호스트 권한 우회 시도 등 발생 가능한 다양한 예외 상황에 대해 촘촘한 테스트 스위트를 구축했습니다.
+- **[레이어드 아키텍처 테스트]**: Controller, Service, Repository 각 계층에 대해 Mockito를 활용한 정교한 유닛 테스트 및 통합 테스트를 수행합니다.
+- **[스키마 드리프트 방지]**: `SchemaValidationTest`가 운영과 동일한 `ddl-auto=validate` 모드로 컨텍스트를 띄워, 엔티티에만 추가되고 마이그레이션에 빠진 컬럼을 배포 전에 잡아냅니다.
 
 ---
 

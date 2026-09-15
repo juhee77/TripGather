@@ -7,6 +7,7 @@
  * 상용 배포 시 환경 변수 설정에 따라 실제 분석 툴 SDK로 쉽게 스위칭할 수 있습니다.
  */
 
+// Vite 환경에서는 브라우저에 process 가 없다. import.meta.env 를 사용한다.
 const IS_PROD = import.meta.env.PROD;
 
 // 실제 Mixpanel / GA4 SDK가 로드되어 있는 경우를 대비한 헬퍼
