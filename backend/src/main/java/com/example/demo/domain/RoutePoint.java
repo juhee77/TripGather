@@ -42,6 +42,10 @@ public class RoutePoint {
 
     private Double lng;
 
+    /** 지점별 자유 메모 (준비물, 예약 정보, 주의사항 등) */
+    @Column(length = 500)
+    private String memo;
+
     @Column(name = "is_completed")
     @Builder.Default
     private Boolean isCompleted = false;

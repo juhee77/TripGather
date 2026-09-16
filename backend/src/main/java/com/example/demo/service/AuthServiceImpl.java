@@ -28,6 +28,12 @@ public class AuthServiceImpl implements AuthUseCase {
      * 회원가입
      */
     public AuthResponse signup(SignupRequest request) {
+        if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 올바르지 않습니다.");
+        }
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호를 입력해주세요.");
+        }
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
@@ -60,6 +66,12 @@ public class AuthServiceImpl implements AuthUseCase {
      * 로그인
      */
     public AuthResponse login(LoginRequest request) {
+        if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 올바르지 않습니다.");
+        }
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호를 입력해주세요.");
+        }
         if (loginAttemptService.isBlocked(request.getEmail())) {
             throw new IllegalStateException("보안을 위해 계정이 잠시 잠겼습니다. 나중에 다시 시도해주세요.");
         }
@@ -92,6 +104,9 @@ public class AuthServiceImpl implements AuthUseCase {
     @Override
     @Transactional
     public void verifyEmail(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "인증 토큰이 올바르지 않습니다.");
+        }
         User user = userRepository.findByVerificationToken(token)
                 .orElseThrow(() -> new CustomException(ErrorCode.UNAUTHORIZED_ACCESS));
 

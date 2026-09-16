@@ -30,6 +30,15 @@ public class TripService {
         if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 제목을 입력해주세요.");
         }
+        if (request.getTitle().trim().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 제목은 100자 이하이어야 합니다.");
+        }
+        if (request.getDestination() != null && request.getDestination().trim().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 목적지는 100자 이하이어야 합니다.");
+        }
+        if (request.getCountry() != null && request.getCountry().trim().length() > 50) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "국가명은 50자 이하이어야 합니다.");
+        }
         profanityFilterService.validateText(request.getTitle());
 
         User owner = securityService.getCurrentUser();
@@ -92,7 +101,8 @@ public class TripService {
 
     @Transactional(readOnly = true)
     public TripResponse getTrip(Long tripId) {
-        Trip trip = findTripById(tripId);
+        // Trip 은 공유 개념이 없는 개인 자원이므로 조회도 소유자만 가능하다.
+        Trip trip = findOwnedTrip(tripId);
         return TripResponse.from(trip);
     }
 
@@ -103,6 +113,9 @@ public class TripService {
             if (request.getTitle().trim().isEmpty()) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 제목은 공백일 수 없습니다.");
             }
+            if (request.getTitle().trim().length() > 100) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 제목은 100자 이하이어야 합니다.");
+            }
             profanityFilterService.validateText(request.getTitle());
             trip.setTitle(request.getTitle().trim());
             if (trip.getItinerary() != null) {
@@ -110,12 +123,18 @@ public class TripService {
             }
         }
         if (request.getDestination() != null) {
+            if (request.getDestination().trim().length() > 100) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 목적지는 100자 이하이어야 합니다.");
+            }
             trip.setDestination(request.getDestination());
             if (trip.getItinerary() != null) {
                 trip.getItinerary().setLocation(request.getDestination());
             }
         }
         if (request.getCountry() != null) {
+            if (request.getCountry().trim().length() > 50) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "국가명은 50자 이하이어야 합니다.");
+            }
             trip.setCountry(request.getCountry());
         }
         java.time.LocalDate newStart = request.getStartDate() != null ? request.getStartDate() : trip.getStartDate();
@@ -150,7 +169,7 @@ public class TripService {
 
     @Transactional(readOnly = true)
     public List<ItineraryResponse> getRecommendedItineraries(Long tripId) {
-        Trip trip = findTripById(tripId);
+        Trip trip = findOwnedTrip(tripId);
         String destination = trip.getDestination();
         if (destination == null || destination.isBlank()) return List.of();
 

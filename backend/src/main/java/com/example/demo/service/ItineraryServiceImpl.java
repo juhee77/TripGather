@@ -19,6 +19,8 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     private final com.example.demo.repository.UserRepository userRepository;
     private final PointService pointService;
     private final ProfanityFilterService profanityFilterService;
+    private final com.example.demo.repository.GatheringRepository gatheringRepository;
+    private final com.example.demo.security.SecurityService securityService;
 
     @Transactional(readOnly = true)
     public List<Itinerary> getAllItineraries() {
@@ -36,6 +38,28 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         return itineraryRepository.findByOwnerEmailAndDeletedFalseOrderByCreatedAtDesc(email);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Itinerary getByIdForViewer(Long id) {
+        Itinerary itinerary = getById(id);
+
+        // 공개 여정은 비로그인 사용자도 볼 수 있다. (라운지/여행 피드는 로그인 없이 탐색 가능)
+        if (itinerary.isPublicStatus()) {
+            return itinerary;
+        }
+
+        // 비공개 여정은 소유자, 또는 이 여정이 걸린 모임의 호스트/승인 크루만 볼 수 있다.
+        if (securityService.isAnonymous()) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "비공개 여정입니다.");
+        }
+        String email = securityService.getCurrentUserEmail();
+        boolean isOwner = email.equals(itinerary.getOwnerEmail()) || email.equals(itinerary.getAuthorEmail());
+        if (isOwner || gatheringRepository.isVisibleThroughGathering(id, email)) {
+            return itinerary;
+        }
+        throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "비공개 여정입니다.");
+    }
+
     @Transactional(readOnly = true)
     public Itinerary getById(Long id) {
         return itineraryRepository.findById(id)
@@ -46,6 +70,15 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     public Itinerary createItinerary(Itinerary itinerary) {
         if (itinerary == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 정보가 올바르지 않습니다.");
+        }
+        if (itinerary.getTitle() != null && itinerary.getTitle().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 제목은 100자 이하이어야 합니다.");
+        }
+        if (itinerary.getDescription() != null && itinerary.getDescription().length() > 1000) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 설명은 1000자 이하이어야 합니다.");
+        }
+        if (itinerary.getLocation() != null && itinerary.getLocation().length() > 200) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 위치/장소는 200자 이하이어야 합니다.");
         }
         if (itinerary.getStartDate() != null && itinerary.getEndDate() != null) {
             if (itinerary.getEndDate().isBefore(itinerary.getStartDate())) {
@@ -58,8 +91,16 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         if (itinerary.getRoutePoints() != null) {
             itinerary.getRoutePoints().forEach(rp -> validateRoutePoint(rp, itinerary));
         }
-        // Initially, the author is the owner
-        if (itinerary.getOwnerEmail() == null) {
+        // 소유자는 인증 주체에서 채운다.
+        // 클라이언트가 보낸 authorEmail 에만 의존하면 (1) 값을 빼먹었을 때 주인 없는 여정이 만들어져
+        // 비공개 여정을 아무도 열람할 수 없게 되고, (2) 타인 이메일을 넣어 소유자를 위조할 수도 있다.
+        if (!securityService.isAnonymous()) {
+            String currentEmail = securityService.getCurrentUserEmail();
+            itinerary.setOwnerEmail(currentEmail);
+            if (itinerary.getAuthorEmail() == null) {
+                itinerary.setAuthorEmail(currentEmail);
+            }
+        } else if (itinerary.getOwnerEmail() == null) {
             itinerary.setOwnerEmail(itinerary.getAuthorEmail());
         }
         return itineraryRepository.save(itinerary);
@@ -69,11 +110,21 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         if (rp.getLabel() == null || rp.getLabel().trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "경로 포인트 장소명을 입력해주세요.");
         }
+        if (rp.getLabel().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "경로 포인트 장소명은 100자 이하이어야 합니다.");
+        }
         if (rp.getDayNumber() <= 0) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "일차 번호는 1 이상이어야 합니다.");
         }
         if (rp.getSequenceOrder() < 0) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "경로 순서는 0 이상이어야 합니다.");
+        }
+        if (rp.getMemo() != null) {
+            if (rp.getMemo().length() > 500) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "경로 포인트 메모는 500자 이하이어야 합니다.");
+            }
+            profanityFilterService.validateText(rp.getMemo());
+            rp.setMemo(rp.getMemo().trim());
         }
         profanityFilterService.validateText(rp.getLabel());
         rp.setLabel(rp.getLabel().trim());
@@ -123,6 +174,9 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
                         .sequenceOrder(originalPoint.getSequenceOrder())
                         .startTime(originalPoint.getStartTime())
                         .endTime(originalPoint.getEndTime())
+                        .lat(originalPoint.getLat())
+                        .lng(originalPoint.getLng())
+                        .memo(originalPoint.getMemo())
                         .isCompleted(false)
                         .itinerary(clone)
                         .build();
@@ -170,12 +224,21 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
             if (update.getTitle().trim().isEmpty()) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 제목을 입력해주세요.");
             }
+            if (update.getTitle().length() > 100) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 제목은 100자 이하이어야 합니다.");
+            }
             profanityFilterService.validateText(update.getTitle());
             itinerary.setTitle(update.getTitle().trim());
         }
         if (update.getDescription() != null) {
+            if (update.getDescription().length() > 1000) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 설명은 1000자 이하이어야 합니다.");
+            }
             profanityFilterService.validateText(update.getDescription());
             itinerary.setDescription(update.getDescription());
+        }
+        if (update.getLocation() != null && update.getLocation().length() > 200) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 위치/장소는 200자 이하이어야 합니다.");
         }
         itinerary.setStampImageUrl(update.getStampImageUrl());
         itinerary.setStartDate(update.getStartDate());
@@ -277,6 +340,9 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
                     .sequenceOrder(startSeq + count)
                     .startTime(sourcePoint.getStartTime())
                     .endTime(sourcePoint.getEndTime())
+                    .lat(sourcePoint.getLat())
+                    .lng(sourcePoint.getLng())
+                    .memo(sourcePoint.getMemo())
                     .isCompleted(false)
                     .itinerary(target)
                     .build();

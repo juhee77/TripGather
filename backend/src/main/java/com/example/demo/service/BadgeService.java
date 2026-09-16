@@ -22,8 +22,11 @@ public class BadgeService {
     private final StampRepository stampRepository;
 
     public List<BadgeDto> getUserBadges(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 올바르지 않습니다.");
+        }
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + email));
+                .orElseThrow(() -> new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.USER_NOT_FOUND));
 
         List<BadgeDto> badges = new ArrayList<>();
 

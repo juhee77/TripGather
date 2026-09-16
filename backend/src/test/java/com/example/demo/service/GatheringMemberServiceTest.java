@@ -742,6 +742,24 @@ class GatheringMemberServiceTest {
     }
 
     @Test
+    @DisplayName("null 모임 ID로 스탠바이 체크인 시도 시 예외 발생")
+    void checkinStandbyGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(null, 37.5, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID로 멤버 권한 확인 시 false 반환")
+    void isAuthorizedMember_NullGatheringId_ReturnsFalse() {
+        // when
+        boolean result = gatheringMemberService.isAuthorizedMember(null, "user@test.com");
+
+        // then
+        assertThat(result).isFalse();
+    }
+
     @DisplayName("스탠바이 체크인 성공 - 호스트에게 50포인트와 스탬프 지급")
     void checkinStandbyGathering_Host_Success() {
         // given

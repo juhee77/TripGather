@@ -16,9 +16,15 @@ public class FileService {
     private final StorageStrategy storageStrategy;
 
     public String storeFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "업로드할 파일이 올바르지 않거나 비어 있습니다.");
+        }
+        if (file.getOriginalFilename() == null || file.getOriginalFilename().trim().isEmpty()) {
+            throw new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "업로드할 파일명이 올바르지 않습니다.");
+        }
         try {
             // 공통 비즈니스: 파일명 정제 및 UUID 고유 파일명 생성
-            String originalFileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+            String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
             String extension = "";
             int i = originalFileName.lastIndexOf('.');
             if (i > 0) {
@@ -29,20 +35,24 @@ public class FileService {
             // 저장소 전략 실행 (MinIO, S3 or Local)
             return storageStrategy.storeFile(file, uniqueFileName);
 
+        } catch (com.example.demo.exception.CustomException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("파일 업로드 실패: " + e.getMessage(), e);
+            throw new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INTERNAL_SERVER_ERROR, "파일 업로드 실패: " + e.getMessage());
         }
     }
 
     public void deleteFile(String fileUrl) {
         try {
-            if (fileUrl == null || fileUrl.isEmpty()) {
+            if (fileUrl == null || fileUrl.trim().isEmpty()) {
                 return;
             }
             // 저장소 전략 삭제 위임
             storageStrategy.deleteFile(fileUrl);
+        } catch (com.example.demo.exception.CustomException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("파일 삭제 실패: " + e.getMessage(), e);
+            throw new com.example.demo.exception.CustomException(com.example.demo.exception.ErrorCode.INTERNAL_SERVER_ERROR, "파일 삭제 실패: " + e.getMessage());
         }
     }
 }

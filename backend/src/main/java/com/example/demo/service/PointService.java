@@ -27,6 +27,9 @@ public class PointService {
 
     @Transactional
     public void addPoints(Long userId, int amount, int stampsToAdd, String description, Long gatheringId, String stampImageUrl) {
+        if (userId == null) {
+            throw new CustomException(ErrorCode.USER_NOT_FOUND, "사용자 ID가 올바르지 않습니다.");
+        }
         User user = userRepository.findByIdWithPessimisticLock(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
@@ -36,6 +39,8 @@ public class PointService {
         if (user.getPoints() + amount < 0) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "잔액이 부족합니다.");
         }
+        String txDescription = (description != null && !description.isBlank()) ? description.trim() : "포인트 내역";
+
         user.setPoints(user.getPoints() + amount);
         if (stampsToAdd > 0) {
             user.setStampsCount(user.getStampsCount() + stampsToAdd);
@@ -43,13 +48,13 @@ public class PointService {
             Stamp stamp = Stamp.builder()
                     .user(user)
                     .gatheringId(gatheringId)
-                    .title(description)
+                    .title(txDescription)
                     .stampImageUrl(stampImageUrl)
                     .build();
             stampRepository.save(stamp);
         }
 
-        PointTransaction tx = PointTransaction.of(user, amount, description);
+        PointTransaction tx = PointTransaction.of(user, amount, txDescription);
 
         pointTransactionRepository.save(tx);
     }
@@ -61,6 +66,9 @@ public class PointService {
 
     @Transactional(readOnly = true)
     public java.util.List<com.example.demo.dto.PointTransactionResponse> getUserPointTransactions(String userEmail, String type) {
+        if (userEmail == null || userEmail.isBlank()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "유저 이메일 정보가 올바르지 않습니다.");
+        }
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 

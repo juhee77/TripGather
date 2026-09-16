@@ -190,6 +190,7 @@ class TripServiceTest {
         trip.setId(tripId);
 
         given(tripRepository.findById(tripId)).willReturn(java.util.Optional.of(trip));
+        given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
 
         // when
         java.util.List<com.example.demo.dto.ItineraryResponse> responses = tripService.getRecommendedItineraries(tripId);
@@ -276,6 +277,7 @@ class TripServiceTest {
         Trip trip = Trip.of("Busan Trip", "Busan", "Korea", owner);
         trip.setId(1L);
         given(tripRepository.findById(1L)).willReturn(java.util.Optional.of(trip));
+        given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
 
         // when
         TripResponse response = tripService.getTrip(1L);
@@ -359,6 +361,7 @@ class TripServiceTest {
         Trip trip = Trip.of("Busan Trip", "부산", "Korea", owner);
         trip.setId(1L);
         given(tripRepository.findById(1L)).willReturn(java.util.Optional.of(trip));
+        given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
         // 공개 여부/삭제 여부/목적지 매칭은 모두 DB 쿼리로 위임되었다.
         given(itineraryRepository
                 .findByPublicStatusTrueAndDeletedFalseAndLocationContainingOrderByCreatedAtDesc("부산"))
@@ -386,4 +389,41 @@ class TripServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("여행을 찾을 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("여행 생성 시 제목 100자 초과 시 예외 발생")
+    void createTrip_TitleExceedsLimit_ThrowsException() {
+        // given
+        TripRequest request = TripRequest.builder().title("a".repeat(101)).build();
+
+        // when & then
+        assertThatThrownBy(() -> tripService.createTrip(request))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여행 제목은 100자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여행 생성 시 목적지 100자 초과 시 예외 발생")
+    void createTrip_DestinationExceedsLimit_ThrowsException() {
+        // given
+        TripRequest request = TripRequest.builder().title("정상 제목").destination("d".repeat(101)).build();
+
+        // when & then
+        assertThatThrownBy(() -> tripService.createTrip(request))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여행 목적지는 100자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여행 생성 시 국가명 50자 초과 시 예외 발생")
+    void createTrip_CountryExceedsLimit_ThrowsException() {
+        // given
+        TripRequest request = TripRequest.builder().title("정상 제목").country("c".repeat(51)).build();
+
+        // when & then
+        assertThatThrownBy(() -> tripService.createTrip(request))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("국가명은 50자 이하이어야 합니다.");
+    }
 }
+

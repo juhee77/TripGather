@@ -31,30 +31,45 @@ public class TripExpenseService {
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
     private final ProfanityFilterService profanityFilterService;
+    private final TripAccessGuard tripAccessGuard;
 
     @Transactional
     public TripExpenseResponse addExpense(String userEmail, TripExpenseRequest request) {
+        if (userEmail == null || userEmail.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "유저 이메일 정보가 올바르지 않습니다.");
+        }
+        if (request == null || request.getTripId() == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 정보 및 지출 내역을 확인해주세요.");
+        }
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지출 제목을 입력해주세요.");
+        }
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지출 금액은 0원보다 커야 합니다.");
         }
 
-        if (request.getTitle() != null) {
-            profanityFilterService.validateText(request.getTitle());
+        if (request.getTitle().trim().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지출 제목은 100자 이내여야 합니다.");
         }
+        if (request.getMemo() != null && request.getMemo().trim().length() > 500) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지출 메모는 500자 이내여야 합니다.");
+        }
+
+        profanityFilterService.validateText(request.getTitle());
         if (request.getMemo() != null) {
             profanityFilterService.validateText(request.getMemo());
         }
 
         User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userEmail));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         Trip trip = tripRepository.findById(request.getTripId())
-                .orElseThrow(() -> new IllegalArgumentException("여행을 찾을 수 없습니다: " + request.getTripId()));
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다: " + request.getTripId()));
 
         TripExpense expense = TripExpense.builder()
                 .trip(trip)
                 .payer(user)
-                .title(request.getTitle())
+                .title(request.getTitle().trim())
                 .amount(request.getAmount())
                 .category(request.getCategory() != null ? request.getCategory() : "기타")
                 .expenseDate(request.getExpenseDate())
@@ -92,15 +107,21 @@ public class TripExpenseService {
             throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "지출 등록자만 수정할 수 있습니다.");
         }
 
-        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+        if (request == null || request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지출 금액은 0원보다 커야 합니다.");
         }
 
         if (request.getTitle() != null) {
+            if (request.getTitle().trim().length() > 100) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지출 제목은 100자 이내여야 합니다.");
+            }
             profanityFilterService.validateText(request.getTitle());
             expense.setTitle(request.getTitle().trim());
         }
         if (request.getMemo() != null) {
+            if (request.getMemo().trim().length() > 500) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지출 메모는 500자 이내여야 합니다.");
+            }
             profanityFilterService.validateText(request.getMemo());
             expense.setMemo(request.getMemo());
         }
@@ -117,7 +138,8 @@ public class TripExpenseService {
     }
 
     public List<TripExpenseResponse> getExpensesByTrip(Long tripId) {
-        if (!tripRepository.existsById(tripId)) {
+        tripAccessGuard.requireOwner(tripId);
+        if (tripId == null || !tripRepository.existsById(tripId)) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다: " + tripId);
         }
         return tripExpenseRepository.findByTripIdOrderByExpenseDateDesc(tripId).stream()
@@ -126,7 +148,8 @@ public class TripExpenseService {
     }
 
     public TripSettlementResponse calculateSettlement(Long tripId, int memberCount) {
-        if (!tripRepository.existsById(tripId)) {
+        tripAccessGuard.requireOwner(tripId);
+        if (tripId == null || !tripRepository.existsById(tripId)) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다: " + tripId);
         }
         if (memberCount <= 0) {

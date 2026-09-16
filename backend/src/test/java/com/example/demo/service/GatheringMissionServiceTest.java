@@ -709,5 +709,20 @@ class GatheringMissionServiceTest {
                     .isInstanceOf(CustomException.class)
                     .hasMessageContaining("모임 ID 또는 미션 ID가 올바르지 않습니다.");
         }
+
+        @Test
+        @DisplayName("인증 제출 시 메모가 500자를 초과하면 예외가 발생한다")
+        void submitCompletion_ExceedMemoLength_ThrowsException() {
+            given(gatheringRepository.findById(GATHERING_ID)).willReturn(Optional.of(gathering));
+            loginAsApprovedCrew();
+            given(missionRepository.findById(MISSION_ID)).willReturn(Optional.of(mission(false, 50)));
+
+            String longMemo = "A".repeat(501);
+
+            assertThatThrownBy(() -> missionService.submitCompletion(
+                    GATHERING_ID, MISSION_ID, com.example.demo.dto.MissionSubmitRequest.builder().memo(longMemo).build()))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("인증 메모는 500자를 초과할 수 없습니다.");
+        }
     }
 }

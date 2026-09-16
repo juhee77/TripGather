@@ -26,7 +26,11 @@ const CreateGatheringPage = () => {
     category: '밥/카페',
     isGalleryPublic: false,
     isChatPublic: false,
-    isCommentPublic: true
+    isCommentPublic: true,
+    // 정기편: 매주 같은 요일에 반복되는 모임
+    recurrenceRule: 'NONE',
+    recurrenceDayOfWeek: '',
+    recurrenceUntil: ''
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -86,6 +90,11 @@ const CreateGatheringPage = () => {
       return;
     }
 
+    if (formData.recurrenceRule === 'WEEKLY' && !formData.recurrenceDayOfWeek) {
+      alert('정기 모임은 반복 요일을 선택해 주세요.');
+      return;
+    }
+
     const maxJoiningNum = parseInt(formData.maxJoining, 10);
     if (isNaN(maxJoiningNum) || maxJoiningNum < 2 || maxJoiningNum > 100) {
       alert("모집 인원은 최소 2명 이상, 최대 100명 이하로 설정해야 합니다.");
@@ -124,7 +133,12 @@ const CreateGatheringPage = () => {
       maxJoining: parseInt(formData.maxJoining, 10),
       currentJoining: 1,
       bgImageUrl: finalBgImageUrl || DEFAULT_BG,
-      linkedItinerary: selectedItineraryId ? { id: parseInt(selectedItineraryId, 10) } : null
+      linkedItinerary: selectedItineraryId ? { id: parseInt(selectedItineraryId, 10) } : null,
+      recurrenceRule: formData.recurrenceRule,
+      // 일회성이면 반복 관련 값은 보내지 않는다.
+      recurrenceDayOfWeek: formData.recurrenceRule === 'WEEKLY' ? formData.recurrenceDayOfWeek : null,
+      recurrenceUntil: formData.recurrenceRule === 'WEEKLY' && formData.recurrenceUntil
+        ? formData.recurrenceUntil : null
     };
 
     try {
@@ -310,7 +324,77 @@ const CreateGatheringPage = () => {
                 />
               </div>
             </div>
-            
+
+            {/* 정기편 — 매주 반복되는 동네 모임 */}
+            <div style={{
+              padding: '14px 16px', borderRadius: '16px',
+              border: '1px solid var(--border-color)', background: 'white',
+              display: 'flex', flexDirection: 'column', gap: '12px'
+            }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[
+                  { v: 'NONE', label: '🎫 한 번만', desc: '전세기' },
+                  { v: 'WEEKLY', label: '🔁 매주 반복', desc: '정기편' },
+                ].map(({ v, label, desc }) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, recurrenceRule: v }))}
+                    style={{
+                      flex: 1, padding: '10px 8px', borderRadius: '12px', cursor: 'pointer',
+                      border: '1px solid var(--border-color)',
+                      background: formData.recurrenceRule === v ? 'var(--primary-gradient)' : 'var(--bg-lite)',
+                      color: formData.recurrenceRule === v ? 'white' : 'var(--text-secondary)',
+                      fontWeight: 800, fontSize: '13px',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px'
+                    }}
+                  >
+                    <span>{label}</span>
+                    <span style={{ fontSize: '10px', fontWeight: 700, opacity: 0.8 }}>{desc}</span>
+                  </button>
+                ))}
+              </div>
+
+              {formData.recurrenceRule === 'WEEKLY' && (
+                <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {[
+                      ['MONDAY', '월'], ['TUESDAY', '화'], ['WEDNESDAY', '수'], ['THURSDAY', '목'],
+                      ['FRIDAY', '금'], ['SATURDAY', '토'], ['SUNDAY', '일'],
+                    ].map(([value, ko]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, recurrenceDayOfWeek: value }))}
+                        style={{
+                          width: '38px', height: '38px', borderRadius: '50%', cursor: 'pointer',
+                          border: '1px solid var(--border-color)',
+                          background: formData.recurrenceDayOfWeek === value ? 'var(--text-primary)' : 'white',
+                          color: formData.recurrenceDayOfWeek === value ? 'white' : 'var(--text-secondary)',
+                          fontWeight: 800, fontSize: '13px'
+                        }}
+                      >
+                        {ko}
+                      </button>
+                    ))}
+                  </div>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                    반복 종료일 (비우면 계속 반복)
+                    <input
+                      type="date"
+                      name="recurrenceUntil"
+                      value={formData.recurrenceUntil}
+                      onChange={handleChange}
+                      style={{ ...inputStyle, marginTop: '6px' }}
+                    />
+                  </label>
+                  <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                    크루는 한 번만 승인하면 이후 회차에 계속 함께합니다.
+                  </p>
+                </div>
+              )}
+            </div>
+
             <div style={{ width: '120px' }}>
               <label style={{ display: 'block', fontSize: '15px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>최대 인원</label>
               <div style={{ position: 'relative' }}>

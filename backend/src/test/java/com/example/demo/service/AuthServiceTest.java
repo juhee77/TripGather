@@ -77,6 +77,7 @@ class AuthServiceTest {
         // given
         SignupRequest request = new SignupRequest();
         request.setEmail("duplicate@test.com");
+        request.setPassword("password");
 
         given(userRepository.existsByEmail(request.getEmail())).willReturn(true);
 
@@ -250,5 +251,39 @@ class AuthServiceTest {
         // then
         assertThat(response.getAccessToken()).isEqualTo("mock_token");
         verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("회원가입 시 null 또는 공백 이메일/비밀번호 전달 시 예외 발생")
+    void signup_NullOrBlankEmail_ThrowsException() {
+        assertThrows(CustomException.class, () -> authService.signup(null));
+
+        SignupRequest req1 = new SignupRequest();
+        req1.setEmail("   ");
+        req1.setPassword("pwd");
+        assertThrows(CustomException.class, () -> authService.signup(req1));
+
+        SignupRequest req2 = new SignupRequest();
+        req2.setEmail("valid@test.com");
+        req2.setPassword("   ");
+        assertThrows(CustomException.class, () -> authService.signup(req2));
+    }
+
+    @Test
+    @DisplayName("로그인 시 null 또는 공백 이메일/비밀번호 전달 시 예외 발생")
+    void login_NullOrBlankEmail_ThrowsException() {
+        assertThrows(CustomException.class, () -> authService.login(null));
+
+        LoginRequest req1 = new LoginRequest();
+        req1.setEmail("   ");
+        req1.setPassword("pwd");
+        assertThrows(CustomException.class, () -> authService.login(req1));
+    }
+
+    @Test
+    @DisplayName("이메일 인증 시 null 또는 공백 토큰 전달 시 예외 발생")
+    void verifyEmail_NullOrBlankToken_ThrowsException() {
+        assertThrows(CustomException.class, () -> authService.verifyEmail(null));
+        assertThrows(CustomException.class, () -> authService.verifyEmail("   "));
     }
 }

@@ -73,4 +73,21 @@ class BadgeServiceTest {
         assertThat(badges.get(1).isUnlocked()).isTrue();  // 열정적인 호스트
         assertThat(badges.get(2).isUnlocked()).isFalse(); // 스탬프 수집가 (0개)
     }
+
+    @Test
+    @DisplayName("null 또는 공백 이메일로 뱃지 조회 시 예외 발생")
+    void getUserBadges_NullOrBlankEmail_ThrowsException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> badgeService.getUserBadges("   "))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("이메일 정보가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 유저 이메일로 뱃지 조회 시 예외 발생")
+    void getUserBadges_UserNotFound_ThrowsException() {
+        given(userRepository.findByEmail("unknown@example.com")).willReturn(Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> badgeService.getUserBadges("unknown@example.com"))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
 }

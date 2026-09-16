@@ -29,6 +29,12 @@ class ItineraryServiceImplTest {
     private ItineraryRepository itineraryRepository;
 
     @Mock
+    private com.example.demo.repository.GatheringRepository gatheringRepository;
+
+    @Mock
+    private com.example.demo.security.SecurityService securityService;
+
+    @Mock
     private com.example.demo.repository.UserRepository userRepository;
 
     @Mock
@@ -531,6 +537,175 @@ class ItineraryServiceImplTest {
                 .hasMessageContaining("종료일은 시작일보다 빠를 수 없습니다.");
     }
 
+    @Test
+    @DisplayName("여정 생성 시 제목 100자 초과 시 예외 발생")
+    void createItinerary_TitleExceedsLimit_ThrowsException() {
+        // given
+        String longTitle = "a".repeat(101);
+        Itinerary itinerary = Itinerary.builder().title(longTitle).build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여정 제목은 100자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여정 생성 시 설명 1000자 초과 시 예외 발생")
+    void createItinerary_DescriptionExceedsLimit_ThrowsException() {
+        // given
+        String longDesc = "b".repeat(1001);
+        Itinerary itinerary = Itinerary.builder().title("정상 제목").description(longDesc).build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여정 설명은 1000자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여정 수정 시 제목 100자 초과 시 예외 발생")
+    void updateItinerary_TitleExceedsLimit_ThrowsException() {
+        // given
+        Itinerary existing = Itinerary.builder().id(1L).title("Old Title").routePoints(new ArrayList<>()).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        String longTitle = "c".repeat(101);
+        Itinerary updateInfo = Itinerary.builder().title(longTitle).build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.updateItinerary(1L, updateInfo))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여정 제목은 100자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("경로 포인트 메모가 500자를 넘으면 예외가 발생한다")
+    void createItinerary_MemoTooLong_ThrowsException() {
+        // given
+        com.example.demo.domain.RoutePoint point = com.example.demo.domain.RoutePoint.builder()
+                .label("경복궁").dayNumber(1).sequenceOrder(0)
+                .memo("메".repeat(501))
+                .build();
+        Itinerary itinerary = Itinerary.builder()
+                .title("서울 여행")
+                .routePoints(new ArrayList<>(java.util.List.of(point)))
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("경로 포인트 메모는 500자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여정 복제 시 메모와 좌표가 함께 복사된다")
+    void cloneItinerary_CopiesMemoAndCoordinates() {
+        // given
+        Long originalId = 1L;
+        com.example.demo.domain.RoutePoint point = com.example.demo.domain.RoutePoint.builder()
+                .label("경복궁").dayNumber(1).sequenceOrder(0)
+                .lat(37.5796).lng(126.9770)
+                .memo("한복 입으면 무료입장")
+                .build();
+        Itinerary original = Itinerary.builder()
+                .id(originalId).title("서울 여행")
+                .routePoints(new ArrayList<>(java.util.List.of(point)))
+                .build();
+
+        given(itineraryRepository.findById(originalId)).willReturn(Optional.of(original));
+        given(itineraryRepository.save(any(Itinerary.class))).willAnswer(i -> i.getArgument(0));
+
+        // when
+        Itinerary clone = itineraryService.cloneItinerary(originalId, "me@test.com");
+
+        // then
+        com.example.demo.domain.RoutePoint copied = clone.getRoutePoints().get(0);
+        assertThat(copied.getMemo()).isEqualTo("한복 입으면 무료입장");
+        assertThat(copied.getLat()).isEqualTo(37.5796);
+        assertThat(copied.getLng()).isEqualTo(126.9770);
+    }
+
+    @Test
+    @DisplayName("공개 여정은 비로그인 사용자도 열람할 수 있다")
+    void getByIdForViewer_PublicItinerary_AllowsAnonymous() {
+        // given
+        Itinerary pub = Itinerary.builder().id(1L).title("공개").publicStatus(true).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(pub));
+
+        // when
+        Itinerary result = itineraryService.getByIdForViewer(1L);
+
+        // then
+        assertThat(result.getTitle()).isEqualTo("공개");
+    }
+
+    @Test
+    @DisplayName("비공개 여정은 비로그인 사용자에게 차단된다")
+    void getByIdForViewer_PrivateItinerary_BlocksAnonymous() {
+        // given
+        Itinerary priv = Itinerary.builder().id(1L).title("비공개").publicStatus(false)
+                .ownerEmail("owner@test.com").build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(priv));
+        given(securityService.isAnonymous()).willReturn(true);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.getByIdForViewer(1L))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("비공개 여정입니다.");
+    }
+
+    @Test
+    @DisplayName("비공개 여정은 소유자 본인은 열람할 수 있다")
+    void getByIdForViewer_PrivateItinerary_AllowsOwner() {
+        // given
+        Itinerary priv = Itinerary.builder().id(1L).title("비공개").publicStatus(false)
+                .ownerEmail("owner@test.com").build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(priv));
+        given(securityService.isAnonymous()).willReturn(false);
+        given(securityService.getCurrentUserEmail()).willReturn("owner@test.com");
+
+        // when
+        Itinerary result = itineraryService.getByIdForViewer(1L);
+
+        // then
+        assertThat(result.getTitle()).isEqualTo("비공개");
+    }
+
+    @Test
+    @DisplayName("비공개 여정은 남이 직접 ID로 조회하면 차단된다")
+    void getByIdForViewer_PrivateItinerary_BlocksOtherUser() {
+        // given
+        Itinerary priv = Itinerary.builder().id(1L).title("비공개").publicStatus(false)
+                .ownerEmail("owner@test.com").build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(priv));
+        given(securityService.isAnonymous()).willReturn(false);
+        given(securityService.getCurrentUserEmail()).willReturn("stranger@test.com");
+        given(gatheringRepository.isVisibleThroughGathering(1L, "stranger@test.com")).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.getByIdForViewer(1L))
+                .isInstanceOf(com.example.demo.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("비공개 여정이라도 참여 중인 모임에 걸려 있으면 크루는 열람할 수 있다")
+    void getByIdForViewer_PrivateItinerary_AllowsGatheringCrew() {
+        // given
+        Itinerary priv = Itinerary.builder().id(1L).title("모임 여정").publicStatus(false)
+                .ownerEmail("host@test.com").build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(priv));
+        given(securityService.isAnonymous()).willReturn(false);
+        given(securityService.getCurrentUserEmail()).willReturn("crew@test.com");
+        given(gatheringRepository.isVisibleThroughGathering(1L, "crew@test.com")).willReturn(true);
+
+        // when
+        Itinerary result = itineraryService.getByIdForViewer(1L);
+
+        // then
+        assertThat(result.getTitle()).isEqualTo("모임 여정");
+    }
+
     private com.example.demo.domain.RoutePoint point(Long id, String label, int day, int seq) {
         return com.example.demo.domain.RoutePoint.builder()
                 .id(id).label(label).dayNumber(day).sequenceOrder(seq).build();
@@ -542,6 +717,9 @@ class ItineraryServiceImplTest {
         // given
         Itinerary itinerary = Itinerary.builder().authorEmail("author@test.com").build();
         given(itineraryRepository.save(any(Itinerary.class))).willAnswer(inv -> inv.getArgument(0));
+        // 소유자는 요청 본문이 아니라 인증 주체에서 정해진다.
+        given(securityService.isAnonymous()).willReturn(false);
+        given(securityService.getCurrentUserEmail()).willReturn("author@test.com");
 
         // when
         Itinerary saved = itineraryService.createItinerary(itinerary);
@@ -552,18 +730,20 @@ class ItineraryServiceImplTest {
     }
 
     @Test
-    @DisplayName("여정 생성 시 소유자가 이미 지정되어 있으면 작성자 이메일로 덮어쓰지 않음")
-    void createItinerary_OwnerAlreadySet_KeepsOwner() {
-        // given
+    @DisplayName("여정 생성 시 요청 본문의 소유자는 무시되고 인증 주체가 소유자가 된다")
+    void createItinerary_IgnoresClientSuppliedOwner() {
+        // given: 클라이언트가 남의 이메일을 소유자로 끼워 넣어 보냈다
         Itinerary itinerary = Itinerary.builder()
-                .authorEmail("author@test.com").ownerEmail("owner@test.com").build();
+                .authorEmail("victim@test.com").ownerEmail("victim@test.com").build();
         given(itineraryRepository.save(any(Itinerary.class))).willAnswer(inv -> inv.getArgument(0));
+        given(securityService.isAnonymous()).willReturn(false);
+        given(securityService.getCurrentUserEmail()).willReturn("attacker@test.com");
 
         // when
         Itinerary saved = itineraryService.createItinerary(itinerary);
 
-        // then
-        assertThat(saved.getOwnerEmail()).isEqualTo("owner@test.com");
+        // then: 본문 값이 아니라 실제 로그인한 사용자가 소유자여야 한다 (소유자 위조 방지)
+        assertThat(saved.getOwnerEmail()).isEqualTo("attacker@test.com");
     }
 
     @Test
@@ -664,5 +844,116 @@ class ItineraryServiceImplTest {
         // then
         verify(profanityFilterService, never()).validateText(any());
         verify(pointService).addPoints(5L, 20, 0, "'경로 지점' 체크인 완료");
+    }
+
+    @Test
+    @DisplayName("비공개 여정은 ownerEmail 이 아니어도 authorEmail 이 일치하면 열람할 수 있다")
+    void getByIdForViewer_MatchesAuthorEmail_Allows() {
+        Itinerary priv = Itinerary.builder().id(1L).title("작성자 소유").publicStatus(false)
+                .ownerEmail(null).authorEmail("author@test.com").build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(priv));
+        given(securityService.isAnonymous()).willReturn(false);
+        given(securityService.getCurrentUserEmail()).willReturn("author@test.com");
+
+        assertThat(itineraryService.getByIdForViewer(1L).getTitle()).isEqualTo("작성자 소유");
+    }
+
+    @Test
+    @DisplayName("비로그인 상태로 생성하면 요청 본문의 작성자 이메일이 소유자가 된다")
+    void createItinerary_Anonymous_FallsBackToAuthorEmail() {
+        Itinerary itinerary = Itinerary.builder().title("익명 생성").authorEmail("author@test.com").build();
+        given(securityService.isAnonymous()).willReturn(true);
+        given(itineraryRepository.save(any(Itinerary.class))).willAnswer(inv -> inv.getArgument(0));
+
+        Itinerary saved = itineraryService.createItinerary(itinerary);
+
+        assertThat(saved.getOwnerEmail()).isEqualTo("author@test.com");
+    }
+
+    @Test
+    @DisplayName("생성 시 authorEmail 이 비어 있으면 인증 주체로 채운다")
+    void createItinerary_FillsAuthorEmailFromPrincipal() {
+        Itinerary itinerary = Itinerary.builder().title("작성자 미지정").build();
+        given(securityService.isAnonymous()).willReturn(false);
+        given(securityService.getCurrentUserEmail()).willReturn("me@test.com");
+        given(itineraryRepository.save(any(Itinerary.class))).willAnswer(inv -> inv.getArgument(0));
+
+        Itinerary saved = itineraryService.createItinerary(itinerary);
+
+        assertThat(saved.getAuthorEmail()).isEqualTo("me@test.com");
+        assertThat(saved.getOwnerEmail()).isEqualTo("me@test.com");
+    }
+
+    @Test
+    @DisplayName("여정 생성 시 위치가 200자를 초과하면 예외 발생")
+    void createItinerary_LocationTooLong_ThrowsException() {
+        Itinerary itinerary = Itinerary.builder().title("제목").location("a".repeat(201)).build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여행 위치/장소는 200자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여정 생성 시 종료일이 시작일보다 빠르면 예외 발생")
+    void createItinerary_EndBeforeStart_ThrowsException() {
+        Itinerary itinerary = Itinerary.builder()
+                .title("제목")
+                .startDate(java.time.LocalDate.of(2026, 5, 10))
+                .endDate(java.time.LocalDate.of(2026, 5, 1))
+                .build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("종료일은 시작일보다 빠를 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("경로 지점 장소명이 100자를 초과하면 예외 발생")
+    void createItinerary_RoutePointLabelTooLong_ThrowsException() {
+        com.example.demo.domain.RoutePoint rp = com.example.demo.domain.RoutePoint.builder()
+                .label("a".repeat(101)).dayNumber(1).sequenceOrder(0).build();
+        Itinerary itinerary = Itinerary.builder().title("제목")
+                .routePoints(new ArrayList<>(java.util.List.of(rp))).build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.createItinerary(itinerary))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("경로 포인트 장소명은 100자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여정 수정 시 종료일이 시작일보다 빠르면 예외 발생")
+    void updateItinerary_EndBeforeStart_ThrowsException() {
+        Itinerary existing = Itinerary.builder().id(1L).title("원본").routePoints(new ArrayList<>()).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(existing));
+        Itinerary update = Itinerary.builder()
+                .startDate(java.time.LocalDate.of(2026, 5, 10))
+                .endDate(java.time.LocalDate.of(2026, 5, 1))
+                .build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.updateItinerary(1L, update))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("종료일은 시작일보다 빠를 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("여정 수정 시 위치가 200자를 초과하면 예외 발생")
+    void updateItinerary_LocationTooLong_ThrowsException() {
+        Itinerary existing = Itinerary.builder().id(1L).title("원본").routePoints(new ArrayList<>()).build();
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(existing));
+        Itinerary update = Itinerary.builder().location("a".repeat(201)).build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.updateItinerary(1L, update))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("여행 위치/장소는 200자 이하이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여정 수정 시 id 또는 수정 내용이 null 이면 예외 발생")
+    void updateItinerary_NullArgs_ThrowsException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.updateItinerary(null, Itinerary.builder().build()))
+                .isInstanceOf(CustomException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.updateItinerary(1L, null))
+                .isInstanceOf(CustomException.class);
     }
 }

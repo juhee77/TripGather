@@ -75,9 +75,12 @@ class ItineraryIntegrationTest {
     @DisplayName("일정 상세 조회, 수정, 삭제의 전체 CRUD 흐름을 검증한다.")
     void itineraryFullCrudFlowTest() throws Exception {
         // given: 일정 하나 생성
+        // 생성자가 곧 소유자가 되도록 authorEmail 을 인증 주체(@WithMockUser 기본값 "user")와 맞춘다.
+        // 비공개 여정은 소유자만 열람할 수 있으므로, 소유권이 없으면 단건 조회가 403 이 된다.
         Itinerary initialData = Itinerary.builder()
                 .title("Initial Trip")
                 .author("Tester")
+                .authorEmail("user")
                 .description("Initial Description")
                 .build();
 

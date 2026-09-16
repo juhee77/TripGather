@@ -21,6 +21,7 @@ public class PackingService {
     private final PackingItemRepository packingItemRepository;
     private final TripRepository tripRepository;
     private final ProfanityFilterService profanityFilterService;
+    private final TripAccessGuard tripAccessGuard;
 
     private static final Map<String, List<String[]>> DEFAULT_ITEMS = Map.of(
             "필수", List.of(
@@ -43,6 +44,7 @@ public class PackingService {
 
     @Transactional
     public List<PackingItemResponse> initDefaultItems(Long tripId) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
         }
@@ -58,6 +60,13 @@ public class PackingService {
 
     @Transactional(readOnly = true)
     public List<PackingItemResponse> getItems(Long tripId) {
+        tripAccessGuard.requireOwner(tripId);
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
+        if (!tripRepository.existsById(tripId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다.");
+        }
         return packingItemRepository.findByTripIdOrderByCategoryAscNameAsc(tripId)
                 .stream()
                 .map(PackingItemResponse::from)
@@ -66,11 +75,18 @@ public class PackingService {
 
     @Transactional
     public PackingItemResponse addItem(Long tripId, String name, String category) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
         }
         if (name == null || name.trim().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "준비물 항목명을 입력해주세요.");
+        }
+        if (name.trim().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "준비물 항목명은 100자 이내여야 합니다.");
+        }
+        if (category != null && category.trim().length() > 50) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "카테고리명은 50자 이내여야 합니다.");
         }
         profanityFilterService.validateText(name);
 
@@ -107,6 +123,7 @@ public class PackingService {
 
     @Transactional(readOnly = true)
     public com.example.demo.dto.PackingProgressResponse getPackingProgress(Long tripId) {
+        tripAccessGuard.requireOwner(tripId);
         if (tripId == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
         }

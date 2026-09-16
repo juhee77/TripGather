@@ -21,6 +21,7 @@ public class RoutePointResponse {
     private Double lat;
     private Double lng;
     private Boolean isCompleted;
+    private String memo;
 
     public static RoutePointResponse from(RoutePoint routePoint) {
         if (routePoint == null) return null;
@@ -35,6 +36,7 @@ public class RoutePointResponse {
                 .lat(routePoint.getLat())
                 .lng(routePoint.getLng())
                 .isCompleted(routePoint.getIsCompleted())
+                .memo(routePoint.getMemo())
                 .build();
     }
 }

@@ -43,6 +43,9 @@ class TripExpenseServiceTest {
     @Mock
     private ProfanityFilterService profanityFilterService;
 
+    @Mock
+    private TripAccessGuard tripAccessGuard;
+
     @InjectMocks
     private TripExpenseService tripExpenseService;
 
@@ -198,6 +201,7 @@ class TripExpenseServiceTest {
         // given
         TripExpenseRequest request = TripExpenseRequest.builder()
                 .tripId(1L)
+                .title("테스트 지출")
                 .amount(java.math.BigDecimal.ZERO)
                 .build();
 
@@ -349,6 +353,47 @@ class TripExpenseServiceTest {
     }
 
     @Test
+    @DisplayName("지출 내역 등록 시 null 또는 공백 유저 이메일 전달 시 예외 발생")
+    void addExpense_NullUserEmail_ThrowsException() {
+        // given
+        TripExpenseRequest request = TripExpenseRequest.builder().tripId(10L).title("저녁").amount(new BigDecimal("10000")).build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense("   ", request))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("유저 이메일 정보가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("지출 내역 등록 시 지출 제목이 null 또는 공백인 경우 예외 발생")
+    void addExpense_NullTitle_ThrowsException() {
+        // given
+        TripExpenseRequest request = TripExpenseRequest.builder().tripId(10L).title("   ").amount(new BigDecimal("10000")).build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense("user@test.com", request))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("지출 제목을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("지출 등록 시 제목 100자 또는 메모 500자 초과 시 예외 발생")
+    void addExpense_ExceedTitleOrMemoLength_ThrowsException() {
+        String longTitle = "A".repeat(101);
+        TripExpenseRequest reqTitle = TripExpenseRequest.builder().tripId(10L).title(longTitle).amount(new BigDecimal("10000")).build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense("user@test.com", reqTitle))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("지출 제목은 100자 이내여야 합니다.");
+
+        String longMemo = "B".repeat(501);
+        TripExpenseRequest reqMemo = TripExpenseRequest.builder().tripId(10L).title("식사").memo(longMemo).amount(new BigDecimal("10000")).build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense("user@test.com", reqMemo))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("지출 메모는 500자 이내여야 합니다.");
+    }
+
     @DisplayName("지출 등록 시 금액이 null이면 예외 발생")
     void addExpense_NullAmount_ThrowsException() {
         // given
@@ -366,8 +411,10 @@ class TripExpenseServiceTest {
         // given
         User user = User.builder().id(1L).email("user@test.com").build();
         Trip trip = Trip.builder().id(1L).title("제주 여행").build();
+        // 지출 제목은 필수 검증이 추가되어 없으면 먼저 막힌다. 이 테스트의 관심사는
+        // '메모가 없을 때 비속어 검사를 건너뛰고 카테고리 기본값이 들어가는가' 이므로 제목만 채운다.
         TripExpenseRequest request = TripExpenseRequest.builder()
-                .tripId(1L).amount(new BigDecimal("10000")).build();
+                .tripId(1L).title("저녁 식사").amount(new BigDecimal("10000")).build();
 
         given(userRepository.findByEmail("user@test.com")).willReturn(Optional.of(user));
         given(tripRepository.findById(1L)).willReturn(Optional.of(trip));
@@ -382,7 +429,8 @@ class TripExpenseServiceTest {
         // then
         verify(tripExpenseRepository).save(captor.capture());
         assertThat(captor.getValue().getCategory()).isEqualTo("기타");
-        verify(profanityFilterService, never()).validateText(any());
+        // 메모는 비어 있으므로 메모에 대한 비속어 검사는 일어나지 않는다.
+        verify(profanityFilterService, never()).validateText(org.mockito.ArgumentMatchers.isNull());
     }
 
     @Test
@@ -390,7 +438,9 @@ class TripExpenseServiceTest {
     void addExpense_ProfanityMemo_ThrowsException() {
         // given
         TripExpenseRequest request = TripExpenseRequest.builder()
-                .tripId(1L).amount(new BigDecimal("10000")).memo("개새끼 바가지").build();
+                .tripId(1L).title("저녁 식사").amount(new BigDecimal("10000")).memo("개새끼 바가지").build();
+        // 제목도 비속어 검사를 거치므로(메모보다 먼저) 함께 스텁해 둔다.
+        org.mockito.BDDMockito.willDoNothing().given(profanityFilterService).validateText("저녁 식사");
         org.mockito.BDDMockito.willThrow(new com.example.demo.exception.CustomException(
                         com.example.demo.exception.ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
                 .given(profanityFilterService).validateText("개새끼 바가지");

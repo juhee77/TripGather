@@ -180,4 +180,22 @@ class PointServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("사용자를 찾을 수 없습니다.");
     }
+
+    @Test
+    @DisplayName("null 유저 ID 전달 시 포인트 적립 예외 발생")
+    void addPoints_NullUserId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> pointService.addPoints(null, 100, 0, "포인트 지급"))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("사용자 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("공백 또는 null 이메일 전달 시 포인트 내역 조회 예외 발생")
+    void getUserPointTransactions_EmptyEmail_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> pointService.getUserPointTransactions("   "))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("유저 이메일 정보가 올바르지 않습니다.");
+    }
 }

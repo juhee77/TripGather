@@ -73,7 +73,7 @@ class FileServiceTest {
     }
 
     @Test
-    @DisplayName("원본 파일명이 없으면 업로드 예외로 변환한다")
+    @DisplayName("원본 파일명이 없으면 CustomException 예외를 발생시킨다")
     void storeFile_NullOriginalFilename_ThrowsException() {
         // given
         MultipartFile file = org.mockito.Mockito.mock(MultipartFile.class);
@@ -81,8 +81,8 @@ class FileServiceTest {
 
         // when & then
         assertThatThrownBy(() -> fileService.storeFile(file))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("파일 업로드 실패");
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("업로드할 파일명이 올바르지 않습니다.");
     }
 
     @Test
@@ -120,5 +120,19 @@ class FileServiceTest {
         assertThatThrownBy(() -> fileService.deleteFile("/uploads/a.png"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("파일 삭제 실패");
+    }
+
+    @Test
+    @DisplayName("null 또는 빈 파일 업로드 시 CustomException 발생")
+    void storeFile_NullOrEmptyFile_ThrowsCustomException() {
+        MultipartFile emptyFile = new MockMultipartFile("file", "empty.txt", "text/plain", new byte[0]);
+
+        assertThatThrownBy(() -> fileService.storeFile(null))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("업로드할 파일이 올바르지 않거나 비어 있습니다.");
+
+        assertThatThrownBy(() -> fileService.storeFile(emptyFile))
+                .isInstanceOf(com.example.demo.exception.CustomException.class)
+                .hasMessageContaining("업로드할 파일이 올바르지 않거나 비어 있습니다.");
     }
 }

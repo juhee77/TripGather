@@ -27,6 +27,13 @@ public class GatheringRequest {
     private boolean isCommentPublic;
     private Long linkedItineraryId;
 
+    /** 반복 규칙. 생략하면 일회성(NONE). */
+    private com.example.demo.domain.RecurrenceRule recurrenceRule;
+    /** WEEKLY 일 때 반복 요일 (MONDAY ~ SUNDAY) */
+    private java.time.DayOfWeek recurrenceDayOfWeek;
+    /** 반복 종료일(포함). 생략하면 기한 없음. */
+    private LocalDate recurrenceUntil;
+
     public Gathering toEntity() {
         Gathering gathering = Gathering.builder()
                 .title(this.title)
@@ -41,6 +48,10 @@ public class GatheringRequest {
                 .isGalleryPublic(this.isGalleryPublic)
                 .isChatPublic(this.isChatPublic)
                 .isCommentPublic(this.isCommentPublic)
+                .recurrenceRule(this.recurrenceRule != null
+                        ? this.recurrenceRule : com.example.demo.domain.RecurrenceRule.NONE)
+                .recurrenceDayOfWeek(this.recurrenceDayOfWeek)
+                .recurrenceUntil(this.recurrenceUntil)
                 .build();
         
         if (this.linkedItineraryId != null) {

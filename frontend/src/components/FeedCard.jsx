@@ -3,7 +3,13 @@ import { MapPin, Users, Calendar, MessageCircle, ArrowRight, Share2, Heart } fro
 import TicketContainer from './UI/TicketContainer';
 import './FeedCard.css';
 
-const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount = 0, pendingCount = 0, likedByCurrentUser = false, onLike, onClick, isStandby = false }) => {
+const DAY_KO = {
+  MONDAY: '월', TUESDAY: '화', WEDNESDAY: '수', THURSDAY: '목',
+  FRIDAY: '금', SATURDAY: '토', SUNDAY: '일',
+};
+
+const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount = 0, pendingCount = 0, likedByCurrentUser = false, onLike, onClick, isStandby = false, recurrenceRule = 'NONE', recurrenceDayOfWeek = null, nextOccurrence = null }) => {
+  const isRecurring = recurrenceRule === 'WEEKLY' && !!recurrenceDayOfWeek;
   const handleLikeClick = (e) => {
     e.stopPropagation();
     if (onLike) onLike();
@@ -23,6 +29,15 @@ const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount 
       <div className="feed-header-content">
         <div className="flex-between w-full">
           <span className="label-orange" style={{ color: isStandby ? '#f59f00' : 'var(--primary-orange)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {isRecurring && (
+              <span style={{
+                background: 'var(--secondary-purple)', color: 'white',
+                padding: '2px 8px', borderRadius: 'var(--radius-full)',
+                fontSize: '10px', fontWeight: 900, marginRight: '2px'
+              }}>
+                🔁 매주 {DAY_KO[recurrenceDayOfWeek] || ''}
+              </span>
+            )}
             {isStandby ? '🎫 STANDBY BAGGAGE TAG' : '✈️ BOARDING PASS • GATE 07'}
           </span>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -56,10 +71,14 @@ const FeedCard = ({ title, host, date, location, joining, bgImage, commentCount 
 
       <div className="ticket-details-grid">
         <div className="detail-item">
-          <span className="label-muted">{isStandby ? 'MEETUP TIME' : 'DEPARTURE'}</span>
+          <span className="label-muted">
+            {isRecurring ? '다음 회차' : (isStandby ? 'MEETUP TIME' : 'DEPARTURE')}
+          </span>
           <div className="detail-content">
             <Calendar size={14} color={isStandby ? '#f59f00' : 'var(--primary-orange)'} />
-            <span className="info-value">{date}</span>
+            <span className="info-value">
+              {isRecurring ? (nextOccurrence || '예정된 회차 없음') : date}
+            </span>
           </div>
         </div>
         <div className="detail-item text-right">

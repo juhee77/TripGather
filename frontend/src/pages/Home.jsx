@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import FeedCard from '../components/FeedCard';
 import TicketCard from '../components/TicketCard';
 import TripCard from '../components/TripCard';
-import ItineraryTab from '../components/ItineraryTab';
 import ChatTab from '../components/ChatTab';
 import ProfileTab from '../components/ProfileTab';
 import TravelInsightWidget from '../components/TravelInsightWidget';
@@ -11,6 +10,7 @@ import Card from '../components/UI/Card';
 import PrimaryButton from '../components/UI/PrimaryButton';
 import { useUser } from '../contexts/UserContext';
 import { useGatheringsViewModel } from '../viewmodels/useGatheringsViewModel';
+import { useItinerariesViewModel } from '../viewmodels/useItinerariesViewModel';
 import { Search, Map as MapIcon, Plus, MessageCircle, Plane } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { MemberStatus } from '../constants/enums';
@@ -30,7 +30,15 @@ const Home = () => {
     actions: { handleRegionChange, handleSearchQueryChange, handleAvailableOnlyChange, likeGathering, loadMoreGatherings }
   } = useGatheringsViewModel();
 
-  const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem('tg_activeTab') || '라운지');
+  // 탭 개편: '라운지' + '여행 피드' -> '둘러보기' 로 통합.
+  // 이전 세션에 저장된 값이 남아 있을 수 있어 매핑해 준다.
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = sessionStorage.getItem('tg_activeTab');
+    if (saved === '라운지' || saved === '여행 피드') return '둘러보기';
+    return saved || '둘러보기';
+  });
+  // 둘러보기 안에서 무엇을 볼지: 전체 / 모임 / 코스
+  const [discoverFilter, setDiscoverFilter] = useState('전체');
 
   useEffect(() => {
     sessionStorage.setItem('tg_activeTab', activeTab);
@@ -39,6 +47,10 @@ const Home = () => {
   const [showOnlyHosted, setShowOnlyHosted] = useState(false);
   const regions = ['전체', '강남구', '서초구', '송파구', '마포구', '용산구', '성동구', '종로구', '부산 해운대구', '제주도'];
   const [trips, setTrips] = useState([]);
+  const { itineraries: publicItineraries, isLoading: itinerariesLoading } = useItinerariesViewModel();
+  // '내 여행' 탭은 내 것만 모아 보여준다.
+  const [myItineraries, setMyItineraries] = useState([]);
+  const [joinedGatherings, setJoinedGatherings] = useState([]);
 
   useEffect(() => {
     if (!currentUser?.email) return;
@@ -51,8 +63,22 @@ const Home = () => {
       }
     };
     
+    const loadMine = async () => {
+      try {
+        const [itRes, joinedRes] = await Promise.all([
+          authFetch('/api/my-trips'),
+          authFetch('/api/gatherings/my/joined'),
+        ]);
+        if (itRes.ok) setMyItineraries(await itRes.json());
+        if (joinedRes.ok) setJoinedGatherings(await joinedRes.json());
+      } catch (err) {
+        console.error('Failed to fetch my items:', err);
+      }
+    };
+
     const refreshData = () => {
       loadTrips();
+      loadMine();
       refetchUser().catch((err) => console.error('Failed to refetch user:', err));
     };
     
@@ -74,7 +100,7 @@ const Home = () => {
             wordBreak: 'keep-all',
             whiteSpace: 'nowrap',
             fontSize: 'clamp(1.5rem, 5vw, 2rem)'
-          }}>라운지</h1>
+          }}>{activeTab}</h1>
         </div>
         <div className="home-header-filters">
           <input 
@@ -253,34 +279,73 @@ const Home = () => {
         marginBottom: '28px'
       }}>
         <nav style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '4px' }} className="hide-scrollbar">
-          {['라운지', '여행 피드', '내 여행', '내 여권'].map((tab) => (
+          {/* 탭 이름만으로는 남의 것인지 내 것인지 알 수 없어 부제를 함께 보여준다. */}
+          {[
+            { name: '둘러보기', sub: '모두의 모임·코스' },
+            { name: '내 여행', sub: '나만 보는 기록' },
+            { name: '내 여권', sub: '내 스탬프' },
+          ].map(({ name, sub }) => (
             <PrimaryButton
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              variant={activeTab === tab ? 'primary' : 'secondary'}
+              key={name}
+              onClick={() => setActiveTab(name)}
+              variant={activeTab === name ? 'primary' : 'secondary'}
               style={{
-                padding: '12px 24px',
+                padding: '10px 20px',
                 borderRadius: '16px',
-                background: activeTab === tab ? 'var(--text-primary)' : 'white',
-                color: activeTab === tab ? 'white' : 'var(--text-secondary)',
+                background: activeTab === name ? 'var(--text-primary)' : 'white',
+                color: activeTab === name ? 'white' : 'var(--text-secondary)',
                 fontWeight: 800,
-                fontSize: '15px',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
                 border: '1px solid var(--border-color)',
-                boxShadow: activeTab === tab ? '0 8px 20px rgba(15, 23, 42, 0.15)' : 'none',
-                transition: 'all 0.3s ease'
+                boxShadow: activeTab === name ? '0 8px 20px rgba(15, 23, 42, 0.15)' : 'none',
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: '2px',
+                lineHeight: 1.2
               }}
             >
-              {tab}
+              <span style={{ fontSize: '15px' }}>{name}</span>
+              <span style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                opacity: activeTab === name ? 0.75 : 0.6
+              }}>{sub}</span>
             </PrimaryButton>
           ))}
         </nav>
       </div>
 
       <div style={{ padding: '0 20px', flex: 1 }}>
-        {activeTab === '라운지' && (
+        {activeTab === '둘러보기' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* 모임과 공개 코스는 사용자 입장에서 모두 "둘러보는" 행동이라 한 피드에 담고,
+                무엇을 볼지는 칩으로 고른다. */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {['전체', '모임', '코스'].map(f => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setDiscoverFilter(f)}
+                  style={{
+                    padding: '7px 16px',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    border: '1px solid var(--border-color)',
+                    background: discoverFilter === f ? 'var(--primary-gradient)' : 'white',
+                    color: discoverFilter === f ? 'white' : 'var(--text-secondary)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {f === '모임' ? '🎫 모임' : f === '코스' ? '🗺️ 코스' : '전체'}
+                </button>
+              ))}
+            </div>
+
             {isLoading ? (
               // Skeleton UI
               [...Array(3)].map((_, idx) => (
@@ -288,7 +353,7 @@ const Home = () => {
               ))
             ) : (
               <>
-                {gatherings.filter(g => {
+                {discoverFilter !== '코스' && gatherings.filter(g => {
                   // The QueryDSL backend already handles location, searchQuery, and availableOnly.
                   // We only apply the showOnlyHosted filter on the client side since it strictly checks current user matching.
                   const hostMatch = !showOnlyHosted || (
@@ -324,13 +389,16 @@ const Home = () => {
                       likedByCurrentUser={g.likedByCurrentUser}
                       onLike={() => likeGathering(g.id)}
                       isStandby={!g.linkedItinerary}
+                      recurrenceRule={g.recurrenceRule}
+                      recurrenceDayOfWeek={g.recurrenceDayOfWeek}
+                      nextOccurrence={g.nextOccurrence}
                     />
 
                   </div>
                 ))}
 
                 {/* 서버는 페이지 단위로 내려주므로, 그 이후 모임은 여기서 이어서 불러온다. */}
-                {gatherings.length > 0 && hasMore && (
+                {discoverFilter !== '코스' && gatherings.length > 0 && hasMore && (
                   <button
                     type="button"
                     onClick={loadMoreGatherings}
@@ -352,8 +420,35 @@ const Home = () => {
                   </button>
                 )}
 
+                {/* 공개 코스 — 다른 여행자들이 공개한 여정 */}
+                {discoverFilter !== '모임' && publicItineraries.map((it, idx) => (
+                  <div key={`it-${it.id}`} className="animate-fade" style={{ animationDelay: `${idx * 0.06}s` }}>
+                    <TicketCard
+                      itinerary={it}
+                      onViewRoute={() => navigate(`/itinerary/${it.id}`)}
+                      onEdit={() => navigate(`/itinerary/edit/${it.id}`)}
+                    />
+                  </div>
+                ))}
+
+                {discoverFilter === '코스' && !itinerariesLoading && publicItineraries.length === 0 && (
+                  <Card glass={false} animate={true} style={{
+                    textAlign: 'center', padding: '60px 24px',
+                    border: '1px dashed var(--border-color)', background: 'var(--surface)'
+                  }}>
+                    <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗺️</div>
+                    <p style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                      아직 공개된 코스가 없습니다.
+                      <br />
+                      <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                        내 여정을 공개하면 여기에 나타납니다.
+                      </span>
+                    </p>
+                  </Card>
+                )}
+
                 {/* Empty State */}
-                {gatherings.filter(g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))).length === 0 && (
+                {discoverFilter !== '코스' && gatherings.filter(g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))).length === 0 && (
                   <Card 
                     glass={false}
                     animate={true}
@@ -431,11 +526,50 @@ const Home = () => {
                 <PrimaryButton variant="primary" onClick={() => navigate('/trip/create')}>새 여행 만들기</PrimaryButton>
               </Card>
             )}
-          </div>
-        )}
 
-        {activeTab === '여행 피드' && (
-          <ItineraryTab />
+            {/* 내가 만든 코스 — 공개/비공개 모두 여기 모인다 */}
+            {myItineraries.length > 0 && (
+              <>
+                <h2 style={{ fontSize: '18px', fontWeight: 900, marginTop: '12px' }}>내 코스</h2>
+                {myItineraries.map(it => (
+                  <TicketCard
+                    key={`mine-${it.id}`}
+                    itinerary={it}
+                    onViewRoute={() => navigate(`/itinerary/${it.id}`)}
+                    onEdit={() => navigate(`/itinerary/edit/${it.id}`)}
+                  />
+                ))}
+              </>
+            )}
+
+            {/* 참여 중인 모임 — 승인받아 크루로 합류한 모임 */}
+            {joinedGatherings.length > 0 && (
+              <>
+                <h2 style={{ fontSize: '18px', fontWeight: 900, marginTop: '12px' }}>참여 중인 모임</h2>
+                {joinedGatherings.map(g => (
+                  <div
+                    key={`joined-${g.id}`}
+                    onClick={() => navigate(`/gathering/${g.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <FeedCard
+                      title={g.title}
+                      host={typeof g.host === 'string' ? g.host : g.host?.name}
+                      date={g.startDate ? `${g.startDate}${g.endDate ? ' ~ ' + g.endDate : ''}` : ''}
+                      location={g.location}
+                      joining={`${g.currentJoining}/${g.maxJoining}`}
+                      bgImage={g.bgImageUrl}
+                      likedByCurrentUser={g.likedByCurrentUser}
+                      isStandby={!g.linkedItinerary}
+                      recurrenceRule={g.recurrenceRule}
+                      recurrenceDayOfWeek={g.recurrenceDayOfWeek}
+                      nextOccurrence={g.nextOccurrence}
+                    />
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
         )}
 
         {activeTab === '내 여권' && (
@@ -443,7 +577,7 @@ const Home = () => {
         )}
       </div>
 
-      {['라운지', '여행 피드'].includes(activeTab) && (
+      {activeTab === '둘러보기' && (
         <div style={{ 
           position: 'fixed', 
           bottom: '100px', 
@@ -456,9 +590,8 @@ const Home = () => {
         }}>
           <PrimaryButton
             onClick={() => {
-              if (activeTab === '라운지') navigate('/create');
-              else if (activeTab === '여행 피드') navigate('/itinerary/create');
-              else navigate('/itinerary/create');
+              // 무엇을 보고 있었는지에 따라 만들 대상을 정한다.
+              navigate(discoverFilter === '코스' ? '/itinerary/create' : '/create');
             }}
             variant="primary"
             className="fab-button"

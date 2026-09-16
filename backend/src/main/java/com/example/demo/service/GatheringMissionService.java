@@ -294,6 +294,9 @@ public class GatheringMissionService implements GatheringMissionUseCase {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이 미션은 인증 사진이 필요합니다.");
         }
         if (memo != null) {
+            if (memo.length() > 500) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "인증 메모는 500자를 초과할 수 없습니다.");
+            }
             profanityFilterService.validateText(memo);
         }
 

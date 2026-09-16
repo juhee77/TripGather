@@ -14,6 +14,26 @@ public interface GatheringRepository extends JpaRepository<Gathering, Long>, Gat
     List<Gathering> findTop5ByDeletedFalseOrderByLikeCountDescCreatedAtDesc();
 
     long countByHostId(Long hostId);
+
+    /**
+     * 이 여정을 링크한 모임의 호스트이거나 승인된 크루인지 검사한다.
+     * 비공개 여정이라도 자신이 참여 중인 모임에 걸려 있으면 볼 수 있어야 한다.
+     */
+    @org.springframework.data.jpa.repository.Query(
+            "SELECT COUNT(g) > 0 FROM Gathering g LEFT JOIN g.members m "
+            + "WHERE g.linkedItinerary.id = :itineraryId AND ("
+            + "  g.host.email = :email "
+            + "  OR (m.user.email = :email AND m.status = com.example.demo.domain.MemberStatus.APPROVED)"
+            + ")")
+    boolean isVisibleThroughGathering(
+            @org.springframework.data.repository.query.Param("itineraryId") Long itineraryId,
+            @org.springframework.data.repository.query.Param("email") String email);
+
+    /** 알림 수신자(호스트) 이메일만 조회한다. LAZY 프록시 접근을 피하기 위한 프로젝션. */
+    @org.springframework.data.jpa.repository.Query(
+            "SELECT g.host.email FROM Gathering g WHERE g.id = :gatheringId AND g.host.email IS NOT NULL")
+    java.util.Optional<String> findHostEmailById(
+            @org.springframework.data.repository.query.Param("gatheringId") Long gatheringId);
     
     @org.springframework.data.jpa.repository.Query("SELECT g FROM Gathering g JOIN g.members m WHERE m.user.email = :email AND m.status = 'APPROVED' ORDER BY g.createdAt DESC")
     List<Gathering> findJoinedGatherings(String email);

@@ -20,3 +20,7 @@ hs_err_pid*
 # Local documentation reports
 docs/backend_executive_report.html
 docs/*.html
+
+# 로컬 파일 스토리지 (storage.type=local)
+.storage/
+uploads/

@@ -240,8 +240,8 @@ public class GatheringMemberService implements GatheringMemberUseCase {
     @Override
     @Transactional(readOnly = true)
     public boolean isAuthorizedMember(Long gatheringId, String email) {
-        if (email == null || email.isEmpty() || email.equals("anonymousUser")) {
-            System.out.println("[Auth] Unauthorized: No email provided or anonymousUser");
+        if (gatheringId == null || email == null || email.isEmpty() || email.equals("anonymousUser")) {
+            System.out.println("[Auth] Unauthorized: Gathering ID or email is invalid");
             return false;
         }
         
@@ -291,6 +291,9 @@ public class GatheringMemberService implements GatheringMemberUseCase {
     @Override
     @Transactional
     public void checkinStandbyGathering(Long gatheringId, Double userLat, Double userLng, boolean force) {
+        if (gatheringId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
         User user = securityService.getCurrentUser();
         Gathering gathering = getGatheringById(gatheringId);
         
