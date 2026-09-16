@@ -734,5 +734,83 @@ class GatheringServiceImplTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("카테고리명은 50자 이하이어야 합니다.");
     }
-}
 
+    @Test
+    @DisplayName("정기 모임 생성 시 반복 요일이 없으면 예외 발생")
+    void createGathering_RecurringWithoutDayOfWeek_ThrowsException() {
+        // given
+        Gathering gathering = Gathering.builder()
+                .title("한강 러닝").location("반포").maxJoining(10)
+                .recurrenceRule(com.example.demo.domain.RecurrenceRule.WEEKLY)
+                .build();
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.createGathering(gathering))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("정기 모임은 반복 요일을 지정해야 합니다.");
+    }
+
+    @Test
+    @DisplayName("반복 종료일이 시작일보다 빠르면 예외 발생")
+    void createGathering_RecurrenceUntilBeforeStart_ThrowsException() {
+        // given
+        Gathering gathering = Gathering.builder()
+                .title("한강 러닝").location("반포").maxJoining(10)
+                .recurrenceRule(com.example.demo.domain.RecurrenceRule.WEEKLY)
+                .recurrenceDayOfWeek(java.time.DayOfWeek.TUESDAY)
+                .startDate(java.time.LocalDate.of(2026, 9, 1))
+                .recurrenceUntil(java.time.LocalDate.of(2026, 8, 1))
+                .build();
+
+        // when & then
+        assertThatThrownBy(() -> gatheringService.createGathering(gathering))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("반복 종료일은 시작일보다 빠를 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("일회성 모임으로 만들면 반복 관련 값은 정리된다")
+    void createGathering_NonRecurring_ClearsRecurrenceFields() {
+        // given: 규칙은 NONE 인데 반복 값만 딸려 온 경우
+        User host = User.builder().id(1L).email("host@test.com").build();
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.save(any(Gathering.class))).willAnswer(i -> i.getArgument(0));
+        Gathering gathering = Gathering.builder()
+                .title("단발 모임").location("강남").maxJoining(5)
+                .recurrenceRule(com.example.demo.domain.RecurrenceRule.NONE)
+                .recurrenceDayOfWeek(java.time.DayOfWeek.TUESDAY)
+                .recurrenceUntil(java.time.LocalDate.of(2026, 12, 1))
+                .build();
+
+        // when
+        Gathering saved = gatheringService.createGathering(gathering);
+
+        // then: 의도가 불분명한 값이 남아 정기편처럼 보이면 안 된다
+        assertThat(saved.getRecurrenceDayOfWeek()).isNull();
+        assertThat(saved.getRecurrenceUntil()).isNull();
+        assertThat(saved.isRecurring()).isFalse();
+    }
+
+    @Test
+    @DisplayName("정기 모임 생성 성공 시 다음 회차를 계산할 수 있다")
+    void createGathering_Recurring_Success() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.save(any(Gathering.class))).willAnswer(i -> i.getArgument(0));
+        Gathering gathering = Gathering.builder()
+                .title("한강 러닝").location("반포").maxJoining(10)
+                .recurrenceRule(com.example.demo.domain.RecurrenceRule.WEEKLY)
+                .recurrenceDayOfWeek(java.time.DayOfWeek.TUESDAY)
+                .startDate(java.time.LocalDate.of(2026, 9, 1))
+                .build();
+
+        // when
+        Gathering saved = gatheringService.createGathering(gathering);
+
+        // then
+        assertThat(saved.isRecurring()).isTrue();
+        assertThat(saved.nextOccurrence(java.time.LocalDate.of(2026, 9, 16)))
+                .isEqualTo(java.time.LocalDate.of(2026, 9, 22));
+    }
+}

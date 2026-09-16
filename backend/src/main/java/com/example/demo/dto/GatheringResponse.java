@@ -30,6 +30,12 @@ public class GatheringResponse {
     private List<GatheringMemberResponse> members;
     private int likeCount;
     private boolean likedByCurrentUser;
+    /** 반복 규칙 (NONE / WEEKLY) */
+    private com.example.demo.domain.RecurrenceRule recurrenceRule;
+    private java.time.DayOfWeek recurrenceDayOfWeek;
+    private java.time.LocalDate recurrenceUntil;
+    /** 정기편일 때 다가오는 다음 회차. 일회성이면 null. */
+    private java.time.LocalDate nextOccurrence;
     @com.fasterxml.jackson.annotation.JsonProperty("isGalleryPublic")
     private boolean isGalleryPublic;
     @com.fasterxml.jackson.annotation.JsonProperty("isChatPublic")
@@ -69,6 +75,10 @@ public class GatheringResponse {
                                 .collect(Collectors.toList()) : null)
                 .likeCount(gathering.getLikeCount())
                 .likedByCurrentUser(isLiked)
+                .recurrenceRule(gathering.getRecurrenceRule())
+                .recurrenceDayOfWeek(gathering.getRecurrenceDayOfWeek())
+                .recurrenceUntil(gathering.getRecurrenceUntil())
+                .nextOccurrence(gathering.nextOccurrence(java.time.LocalDate.now()))
                 .isGalleryPublic(gathering.isGalleryPublic())
                 .isChatPublic(gathering.isChatPublic())
                 .isCommentPublic(gathering.isCommentPublic())

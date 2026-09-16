@@ -108,6 +108,8 @@ public class GatheringServiceImpl implements GatheringUseCase {
             }
         }
 
+        validateRecurrence(gathering);
+
         if (gathering.getTitle() != null) profanityFilterService.validateText(gathering.getTitle());
         if (gathering.getLocation() != null) profanityFilterService.validateText(gathering.getLocation());
 
@@ -177,6 +179,13 @@ public class GatheringServiceImpl implements GatheringUseCase {
         gathering.setGalleryPublic(updateData.isGalleryPublic());
         gathering.setChatPublic(updateData.isChatPublic());
         gathering.setCommentPublic(updateData.isCommentPublic());
+
+        // 반복 규칙 변경 (일회성 <-> 정기편 전환 포함)
+        gathering.setRecurrenceRule(updateData.getRecurrenceRule() != null
+                ? updateData.getRecurrenceRule() : com.example.demo.domain.RecurrenceRule.NONE);
+        gathering.setRecurrenceDayOfWeek(updateData.getRecurrenceDayOfWeek());
+        gathering.setRecurrenceUntil(updateData.getRecurrenceUntil());
+        validateRecurrence(gathering);
         
         if (updateData.getLinkedItinerary() != null && updateData.getLinkedItinerary().getId() != null) {
             itineraryRepository.findById(updateData.getLinkedItinerary().getId())
@@ -247,6 +256,29 @@ public class GatheringServiceImpl implements GatheringUseCase {
                         .map(gathering -> gatheringLikeRepository.existsByUserAndGathering(user, gathering))
                         .orElse(false))
                 .orElse(false);
+    }
+
+    /**
+     * 반복 규칙의 앞뒤가 맞는지 확인한다.
+     * 규칙과 요일이 따로 놀면 회차를 계산할 수 없어 정기편이 조용히 일회성처럼 동작한다.
+     */
+    private void validateRecurrence(Gathering gathering) {
+        com.example.demo.domain.RecurrenceRule rule = gathering.getRecurrenceRule();
+        if (rule == null || rule == com.example.demo.domain.RecurrenceRule.NONE) {
+            // 일회성인데 반복 관련 값만 들어오면 의도가 불분명하므로 정리한다.
+            gathering.setRecurrenceDayOfWeek(null);
+            gathering.setRecurrenceUntil(null);
+            return;
+        }
+
+        if (gathering.getRecurrenceDayOfWeek() == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "정기 모임은 반복 요일을 지정해야 합니다.");
+        }
+        if (gathering.getRecurrenceUntil() != null
+                && gathering.getStartDate() != null
+                && gathering.getRecurrenceUntil().isBefore(gathering.getStartDate())) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "반복 종료일은 시작일보다 빠를 수 없습니다.");
+        }
     }
 
     private void validateHost(Long gatheringId) {
