@@ -389,6 +389,9 @@ const Home = () => {
                       likedByCurrentUser={g.likedByCurrentUser}
                       onLike={() => likeGathering(g.id)}
                       isStandby={!g.linkedItinerary}
+                      recurrenceRule={g.recurrenceRule}
+                      recurrenceDayOfWeek={g.recurrenceDayOfWeek}
+                      nextOccurrence={g.nextOccurrence}
                     />
 
                   </div>
@@ -558,6 +561,9 @@ const Home = () => {
                       bgImage={g.bgImageUrl}
                       likedByCurrentUser={g.likedByCurrentUser}
                       isStandby={!g.linkedItinerary}
+                      recurrenceRule={g.recurrenceRule}
+                      recurrenceDayOfWeek={g.recurrenceDayOfWeek}
+                      nextOccurrence={g.nextOccurrence}
                     />
                   </div>
                 ))}
