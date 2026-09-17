@@ -814,3 +814,4 @@ class GatheringServiceImplTest {
                 .isEqualTo(java.time.LocalDate.of(2026, 9, 22));
     }
 }
+

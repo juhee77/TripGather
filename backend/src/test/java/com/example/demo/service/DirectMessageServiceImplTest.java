@@ -353,7 +353,6 @@ class DirectMessageServiceImplTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("메시지 내용은 1000자 이내여야 합니다.");
     }
-
     @org.junit.jupiter.params.ParameterizedTest(name = "sender=''{0}'', receiver=''{1}''")
     @org.junit.jupiter.params.provider.CsvSource(value = {
             "NULL, other@test.com",

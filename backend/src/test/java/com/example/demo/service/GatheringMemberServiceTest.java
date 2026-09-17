@@ -760,6 +760,7 @@ class GatheringMemberServiceTest {
         assertThat(result).isFalse();
     }
 
+    @Test
     @DisplayName("스탠바이 체크인 성공 - 호스트에게 50포인트와 스탬프 지급")
     void checkinStandbyGathering_Host_Success() {
         // given
