@@ -39,12 +39,25 @@ public class GatheringMemberService implements GatheringMemberUseCase {
         return gatheringRepository.findJoinedGatherings(email);
     }
 
+    /**
+     * 모임의 승인된 크루 수.
+     *
+     * 멤버 컬렉션을 메모리로 올려 세지 않고 집계 쿼리로 센다.
+     * 정원 판단은 신청·승인 두 경로에서 같은 기준이어야 하므로 여기 한 곳에서만 계산한다.
+     */
+    private int countApprovedMembers(Gathering gathering) {
+        return (int) gatheringMemberRepository.countByGatheringIdAndStatus(
+                gathering.getId(), MemberStatus.APPROVED);
+    }
+
     @Transactional
     public Gathering joinGathering(Long id) {
         if (id == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
         }
-        Gathering gathering = getGatheringById(id);
+        // 신청도 정원을 검사하므로 같은 방식으로 잠근다.
+        Gathering gathering = gatheringRepository.findByIdWithPessimisticLock(id)
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
         User user = securityService.getCurrentUser();
 
         if (gathering.getHost().equals(user)) {
@@ -55,7 +68,10 @@ public class GatheringMemberService implements GatheringMemberUseCase {
                 .anyMatch(m -> m.getUser().getId().equals(user.getId()));
 
         if (!alreadyApplied) {
-            if (gathering.getMembers().size() >= gathering.getMaxJoining()) {
+            // 정원은 '승인된 크루' 기준이다.
+            // 예전에는 getMembers().size() 로 세어 거절당한 사람과 나간 사람까지 자리를 차지했다.
+            // (정원 10명 모임에 거절 5명·탈퇴 3명이 쌓이면 실제로는 2명밖에 못 받았다)
+            if (countApprovedMembers(gathering) >= gathering.getMaxJoining()) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 정원이 초과되었습니다.");
             }
             GatheringMember member = GatheringMember.builder()
@@ -101,9 +117,11 @@ public class GatheringMemberService implements GatheringMemberUseCase {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이미 승인된 모임 멤버입니다.");
         }
 
-        Gathering gathering = member.getGathering();
-        int approvedCount = (int) gathering.getMembers().stream()
-                .filter(m -> m.getStatus() == MemberStatus.APPROVED).count();
+        // 정원 검사와 currentJoining 갱신이 원자적이어야 하므로 모임 행을 잠그고 읽는다.
+        // 잠그지 않으면 두 승인이 같은 승인자 수를 읽고 둘 다 통과해 정원을 넘긴다.
+        Gathering gathering = gatheringRepository.findByIdWithPessimisticLock(gatheringId)
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
+        int approvedCount = countApprovedMembers(gathering);
 
         if (approvedCount >= gathering.getMaxJoining()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 정원이 이미 가득 차서 승인할 수 없습니다.");
