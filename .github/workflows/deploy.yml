@@ -79,10 +79,26 @@ jobs:
           npm run build
 
   # 3. 배포 잡 (CD - main 브랜치 푸시 완료 시에만 트리거)
+  #
+  # [임시] AWS 인프라가 준비될 때까지 기본적으로 건너뛴다.
+  #
+  # 배포에 필요한 시크릿 9개(AWS_REGION, AWS_ACCESS_KEY_ID, AWS_ECR_REPOSITORY,
+  # AWS_ECS_CLUSTER/SERVICE/TASK_DEFINITION, S3_BUCKET_NAME, CLOUDFRONT_DISTRIBUTION_ID 등)가
+  # 아직 등록되지 않아, 이 잡은 첫 단계인 자격증명 설정에서 매번 실패했다
+  # ("Input required and not supplied: aws-region").
+  #
+  # 빌드와 테스트는 통과하는데 배포만 실패하다 보니 main push 가 항상 빨갛게 기록됐고,
+  # 그러면 나중에 진짜 빌드가 깨져도 "원래 빨갛던 것"으로 넘길 위험이 있다.
+  #
+  # 인프라와 시크릿이 준비되면 저장소 변수 DEPLOY_ENABLED 를 true 로 설정해 활성화한다.
+  #   Settings > Secrets and variables > Actions > Variables > New repository variable
   deploy:
     name: Continuous Deployment
     needs: [backend-ci, frontend-ci]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: >
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
 
     steps:
