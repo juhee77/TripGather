@@ -58,7 +58,7 @@ class GatheringMemberServiceTest {
         User guest = User.builder().id(2L).email("guest@test.com").build();
         Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(5).members(new ArrayList<>()).build();
 
-        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
         given(securityService.getCurrentUser()).willReturn(guest);
         given(gatheringRepository.save(any())).willReturn(gathering);
 
@@ -78,7 +78,7 @@ class GatheringMemberServiceTest {
         User host = User.builder().id(1L).email("host@test.com").build();
         Gathering gathering = Gathering.builder().id(10L).host(host).members(new ArrayList<>()).build();
 
-        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
         given(securityService.getCurrentUser()).willReturn(host);
 
         // when & then
@@ -98,6 +98,7 @@ class GatheringMemberServiceTest {
         gathering.getMembers().add(member);
 
         given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
         given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
         given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 2L)).willReturn(Optional.of(member));
 
@@ -124,6 +125,8 @@ class GatheringMemberServiceTest {
         gathering.getMembers().add(member2);
 
         given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.countByGatheringIdAndStatus(10L, MemberStatus.APPROVED)).willReturn(1L);
         given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
         given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 3L)).willReturn(Optional.of(member2));
 
@@ -201,7 +204,7 @@ class GatheringMemberServiceTest {
         GatheringMember existingMember = GatheringMember.builder().gathering(gathering).user(guest).status(MemberStatus.PENDING).build();
         gathering.getMembers().add(existingMember);
 
-        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
         given(securityService.getCurrentUser()).willReturn(guest);
         given(gatheringRepository.save(any())).willReturn(gathering);
 
@@ -221,7 +224,7 @@ class GatheringMemberServiceTest {
         User guest = User.builder().id(2L).email("guest@test.com").build();
         Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(0).members(new ArrayList<>()).build();
 
-        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
         given(securityService.getCurrentUser()).willReturn(guest);
 
         // when & then
@@ -292,6 +295,7 @@ class GatheringMemberServiceTest {
         gathering.getMembers().add(member);
 
         given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
         given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
         given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 2L)).willReturn(Optional.of(member));
 
@@ -643,7 +647,8 @@ class GatheringMemberServiceTest {
         GatheringMember member1 = GatheringMember.builder().gathering(gathering).user(guest1).status(MemberStatus.APPROVED).build();
         gathering.getMembers().add(member1);
 
-        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.countByGatheringIdAndStatus(10L, MemberStatus.APPROVED)).willReturn(1L);
         given(securityService.getCurrentUser()).willReturn(guest2);
 
         // when & then
@@ -919,7 +924,7 @@ class GatheringMemberServiceTest {
         Gathering gathering = Gathering.builder().id(10L).title(null).host(host)
                 .maxJoining(5).members(new ArrayList<>()).build();
 
-        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
         given(securityService.getCurrentUser()).willReturn(guest);
 
         // when
@@ -943,7 +948,7 @@ class GatheringMemberServiceTest {
         Gathering gathering = Gathering.builder().id(10L).title("한강 모임").host(host)
                 .maxJoining(5).members(new ArrayList<>()).build();
 
-        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
         given(securityService.getCurrentUser()).willReturn(guest);
 
         // when
@@ -951,5 +956,78 @@ class GatheringMemberServiceTest {
 
         // then
         verify(notificationService, never()).send(any(), any(), any());
+    }
+
+    // ---- 정원 기준: 거절/탈퇴는 자리를 차지하지 않는다 ----
+
+    @Test
+    @DisplayName("거절·탈퇴한 멤버는 정원을 차지하지 않는다")
+    void joinGathering_RejectedAndLeftDoNotConsumeCapacity() {
+        // given: 정원 2명인데 거절 3명 + 탈퇴 2명이 쌓여 있고 승인된 크루는 0명
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User applicant = User.builder().id(9L).email("new@test.com").build();
+        Gathering gathering = Gathering.builder()
+                .id(1L).host(host).maxJoining(2).members(new ArrayList<>()).build();
+        for (long i = 2; i <= 6; i++) {
+            gathering.getMembers().add(GatheringMember.builder()
+                    .gathering(gathering)
+                    .user(User.builder().id(i).email("u" + i + "@test.com").build())
+                    .status(i <= 4 ? MemberStatus.REJECTED : MemberStatus.LEFT)
+                    .build());
+        }
+        given(gatheringRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.countByGatheringIdAndStatus(1L, MemberStatus.APPROVED)).willReturn(0L);
+        given(securityService.getCurrentUser()).willReturn(applicant);
+
+        // when: 승인된 크루가 없으므로 신청할 수 있어야 한다
+        gatheringMemberService.joinGathering(1L);
+
+        // then
+        verify(gatheringMemberRepository).save(org.mockito.ArgumentMatchers.any(GatheringMember.class));
+    }
+
+    @Test
+    @DisplayName("신청 시 정원 검사를 위해 모임 행을 잠그고 읽는다")
+    void joinGathering_LocksGatheringRow() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User applicant = User.builder().id(9L).email("new@test.com").build();
+        Gathering gathering = Gathering.builder()
+                .id(1L).host(host).maxJoining(5).members(new ArrayList<>()).build();
+        given(gatheringRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUser()).willReturn(applicant);
+
+        // when
+        gatheringMemberService.joinGathering(1L);
+
+        // then: 잠그지 않으면 두 신청이 같은 승인자 수를 읽고 둘 다 통과한다
+        verify(gatheringRepository).findByIdWithPessimisticLock(1L);
+    }
+
+    @Test
+    @DisplayName("승인 시에도 모임 행을 잠그고 정원을 집계 쿼리로 센다")
+    void approveMember_LocksRowAndCountsInSql() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User crew = User.builder().id(2L).email("crew@test.com").build();
+        Gathering gathering = Gathering.builder()
+                .id(1L).host(host).maxJoining(5).members(new ArrayList<>()).build();
+        GatheringMember member = GatheringMember.builder()
+                .id(10L).gathering(gathering).user(crew).status(MemberStatus.PENDING).build();
+
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringRepository.findById(1L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(1L, 2L)).willReturn(Optional.of(member));
+        given(gatheringMemberRepository.countByGatheringIdAndStatus(1L, MemberStatus.APPROVED)).willReturn(1L);
+
+        // when
+        gatheringMemberService.approveMember(1L, 2L);
+
+        // then: 승인자 1명 + 이번 승인 = 2명
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.APPROVED);
+        assertThat(gathering.getCurrentJoining()).isEqualTo(2);
+        verify(gatheringRepository).findByIdWithPessimisticLock(1L);
+        verify(gatheringMemberRepository).countByGatheringIdAndStatus(1L, MemberStatus.APPROVED);
     }
 }
