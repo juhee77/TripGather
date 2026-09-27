@@ -232,6 +232,12 @@ const ItineraryEditorPage = () => {
             alert('최소 한 개의 비행 계획(Stops)을 추가해야 합니다. 여행 경로를 완성해 주세요! ✈️');
             return;
         }
+        // 이름 없는 경유지는 서버가 거절한다. 어디를 채워야 하는지 먼저 알려준다.
+        const unnamed = formData.routePoints.find(p => !(p.label || '').trim());
+        if (unnamed) {
+            alert(`이름이 비어 있는 일정이 있습니다. Day ${unnamed.dayNumber || 1} 의 ${unnamed.sequenceOrder}번째 일정 이름을 채워주세요! ✍️`);
+            return;
+        }
         setSaving(true);
         try {
             const payload = {

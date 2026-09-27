@@ -101,7 +101,7 @@ const ItineraryDetailPage = () => {
 
     const renameStop = (idx, newLabel) => {
         const newPoints = [...(localItinerary.routePoints || [])];
-        newPoints[idx].label = newLabel;
+        newPoints[idx].label = newLabel.trim();
         saveItinerary({ ...localItinerary, routePoints: newPoints });
     };
 
@@ -489,7 +489,14 @@ const ItineraryDetailPage = () => {
                                                     {isOwner && isEditMode ? (
                                                         <input 
                                                             defaultValue={point.label}
-                                                            onBlur={(e) => renameStop(point.originalIndex, e.target.value)}
+                                                            onBlur={(e) => {
+                                                                // 빈 이름은 서버가 거절하므로 저장하지 않고 원래 이름으로 되돌린다.
+                                                                if (!e.target.value.trim()) {
+                                                                    e.target.value = point.label;
+                                                                    return;
+                                                                }
+                                                                renameStop(point.originalIndex, e.target.value);
+                                                            }}
                                                             className="clean-input"
                                                             style={{ fontWeight: 800, color: 'var(--text-primary)', border: 'none', background: 'transparent', width: '100%', fontSize: '15px' }}
                                                         />
