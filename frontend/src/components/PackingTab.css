@@ -179,7 +179,8 @@
   color: #ef4444;
 }
 
-.loading-text, .empty-text {
+/* .empty-text 공용 정의는 index.css 로 옮겼다 (4개 컴포넌트가 함께 쓰는 이름). */
+.loading-text {
   text-align: center;
   color: #94a3b8;
   padding: 1.5rem 0;

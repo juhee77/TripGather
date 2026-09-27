@@ -185,7 +185,9 @@
   opacity: 0.5;
 }
 
-.empty-text {
+/* 스탬프북의 빈 상태는 더 강하게 강조한다.
+   .empty-text 는 여러 컴포넌트가 공유하는 이름이므로 반드시 컨테이너 아래로 스코프한다. */
+.stamp-empty-board .empty-text {
   font-size: 16px;
   font-weight: 800;
   color: var(--text-primary);
