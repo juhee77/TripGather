@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import jakarta.validation.Valid;
+
 import com.example.demo.dto.GatheringMissionRequest;
 import com.example.demo.dto.GatheringMissionResponse;
 import com.example.demo.dto.MissionCompletionResponse;
@@ -35,7 +37,7 @@ public class GatheringMissionController {
     public ResponseEntity<MissionCompletionResponse> submit(
             @PathVariable Long gatheringId,
             @PathVariable Long missionId,
-            @RequestBody(required = false) MissionSubmitRequest request) {
+            @Valid @RequestBody(required = false) MissionSubmitRequest request) {
         return ResponseEntity.ok(missionService.submitCompletion(gatheringId, missionId, request));
     }
 
@@ -44,7 +46,7 @@ public class GatheringMissionController {
     @PostMapping
     public ResponseEntity<GatheringMissionResponse> create(
             @PathVariable Long gatheringId,
-            @RequestBody GatheringMissionRequest request) {
+            @Valid @RequestBody GatheringMissionRequest request) {
         return ResponseEntity.ok(missionService.createMission(gatheringId, request));
     }
 
@@ -52,7 +54,7 @@ public class GatheringMissionController {
     public ResponseEntity<GatheringMissionResponse> update(
             @PathVariable Long gatheringId,
             @PathVariable Long missionId,
-            @RequestBody GatheringMissionRequest request) {
+            @Valid @RequestBody GatheringMissionRequest request) {
         return ResponseEntity.ok(missionService.updateMission(gatheringId, missionId, request));
     }
 

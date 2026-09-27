@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import jakarta.validation.Valid;
+
 import com.example.demo.dto.TripExpenseRequest;
 import com.example.demo.dto.TripExpenseResponse;
 import com.example.demo.dto.TripSettlementResponse;
@@ -21,7 +23,7 @@ public class TripExpenseController {
     @PostMapping("/expenses")
     public ResponseEntity<TripExpenseResponse> addExpense(
             Principal principal,
-            @RequestBody TripExpenseRequest request) {
+            @Valid @RequestBody TripExpenseRequest request) {
         return ResponseEntity.ok(tripExpenseService.addExpense(principal.getName(), request));
     }
 

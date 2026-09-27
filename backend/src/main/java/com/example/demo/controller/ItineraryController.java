@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import jakarta.validation.Valid;
+
 import com.example.demo.domain.Itinerary;
 import com.example.demo.dto.ItineraryResponse;
 import com.example.demo.usecase.ItineraryUseCase;
@@ -30,12 +32,12 @@ public class ItineraryController {
     }
 
     @PostMapping
-    public ResponseEntity<ItineraryResponse> createItinerary(@RequestBody com.example.demo.dto.ItineraryRequest request) {
+    public ResponseEntity<ItineraryResponse> createItinerary(@Valid @RequestBody com.example.demo.dto.ItineraryRequest request) {
         return ResponseEntity.ok(ItineraryResponse.from(itineraryService.createItinerary(request.toEntity())));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ItineraryResponse> updateItinerary(@PathVariable Long id, @RequestBody com.example.demo.dto.ItineraryRequest request) {
+    public ResponseEntity<ItineraryResponse> updateItinerary(@PathVariable Long id, @Valid @RequestBody com.example.demo.dto.ItineraryRequest request) {
         return ResponseEntity.ok(ItineraryResponse.from(itineraryService.updateItinerary(id, request.toEntity())));
     }
 

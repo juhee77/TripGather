@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/trips/{tripId}/reviews")
@@ -19,12 +18,10 @@ public class TripReviewController {
     @PostMapping
     public ResponseEntity<TripReviewResponse> createReview(
             @PathVariable Long tripId,
-            @RequestBody Map<String, Object> body) {
-        String content = (String) body.get("content");
-        int rating = body.get("rating") != null ? ((Number) body.get("rating")).intValue() : 5;
-        String category = (String) body.getOrDefault("category", "관광지");
-        String imageUrls = (String) body.get("imageUrls");
-        return ResponseEntity.ok(tripReviewService.createReview(tripId, content, rating, category, imageUrls));
+            @RequestBody com.example.demo.dto.TripReviewRequest request) {
+        return ResponseEntity.ok(tripReviewService.createReview(
+                tripId, request.getContent(), request.ratingOrDefault(),
+                request.categoryOrDefault(), request.getImageUrls()));
     }
 
     @GetMapping
@@ -44,12 +41,10 @@ public class TripReviewController {
     public ResponseEntity<TripReviewResponse> updateReview(
             @PathVariable Long tripId,
             @PathVariable Long reviewId,
-            @RequestBody Map<String, Object> body) {
-        String content = (String) body.get("content");
-        int rating = body.get("rating") != null ? ((Number) body.get("rating")).intValue() : 5;
-        String category = (String) body.getOrDefault("category", "관광지");
-        String imageUrls = (String) body.get("imageUrls");
-        return ResponseEntity.ok(tripReviewService.updateReview(reviewId, content, rating, category, imageUrls));
+            @RequestBody com.example.demo.dto.TripReviewRequest request) {
+        return ResponseEntity.ok(tripReviewService.updateReview(
+                reviewId, request.getContent(), request.ratingOrDefault(),
+                request.categoryOrDefault(), request.getImageUrls()));
     }
 
     @GetMapping("/summary")

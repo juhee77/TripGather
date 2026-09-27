@@ -65,7 +65,8 @@ class TripExpenseControllerTest {
         mockMvc.perform(post("/api/trips/expenses")
                         .principal(principal)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new TripExpenseRequest())))
+                        .content(objectMapper.writeValueAsString(TripExpenseRequest.builder()
+                                .tripId(1L).title("숙소비").amount(new BigDecimal("120000")).build())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("숙소비"));
     }

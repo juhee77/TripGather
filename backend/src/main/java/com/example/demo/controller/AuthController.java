@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import jakarta.validation.Valid;
+
 import com.example.demo.dto.AuthRequest.LoginRequest;
 import com.example.demo.dto.AuthRequest.SignupRequest;
 import com.example.demo.dto.AuthResponse;
@@ -19,12 +21,12 @@ public class AuthController {
     private String frontendUrl;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody SignupRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody SignupRequest request) {
         return ResponseEntity.ok(authService.signup(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 

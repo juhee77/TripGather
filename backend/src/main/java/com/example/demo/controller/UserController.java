@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import jakarta.validation.Valid;
+
 import com.example.demo.domain.User;
 import com.example.demo.dto.UserResponse;
 import com.example.demo.usecase.UserUseCase;
@@ -41,7 +43,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserResponse> createUser(@RequestBody com.example.demo.dto.UserRequest request) {
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody com.example.demo.dto.UserRequest request) {
         return ResponseEntity.ok(UserResponse.from(userService.createUser(request.toEntity())));
     }
 
@@ -49,7 +51,7 @@ public class UserController {
      * 프로필 수정. 본인 계정만 수정할 수 있다.
      */
     @PatchMapping("/{id}")
-    public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @RequestBody com.example.demo.dto.UserRequest request) {
+    public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @Valid @RequestBody com.example.demo.dto.UserRequest request) {
         User currentUser = userService.getCurrentUser();
         if (!currentUser.getId().equals(id)) {
             throw new com.example.demo.exception.CustomException(

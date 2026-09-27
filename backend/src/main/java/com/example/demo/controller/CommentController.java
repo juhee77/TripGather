@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import jakarta.validation.Valid;
+
 import com.example.demo.domain.Comment;
 import com.example.demo.domain.Gathering;
 import com.example.demo.dto.CommentResponse;
@@ -42,7 +44,7 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity<CommentResponse> addComment(@PathVariable Long gatheringId, @RequestBody com.example.demo.dto.CommentRequest request, Principal principal) {
+    public ResponseEntity<CommentResponse> addComment(@PathVariable Long gatheringId, @Valid @RequestBody com.example.demo.dto.CommentRequest request, Principal principal) {
         if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
         
         if (request.getContent() == null || request.getContent().trim().isEmpty()) {

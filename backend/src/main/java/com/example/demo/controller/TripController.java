@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import jakarta.validation.Valid;
+
 import com.example.demo.dto.TripRequest;
 import com.example.demo.dto.TripResponse;
 import com.example.demo.dto.ItineraryResponse;
@@ -19,7 +21,7 @@ public class TripController {
     private final TripService tripService;
 
     @PostMapping
-    public ResponseEntity<TripResponse> createTrip(@RequestBody TripRequest request) {
+    public ResponseEntity<TripResponse> createTrip(@Valid @RequestBody TripRequest request) {
         return ResponseEntity.ok(tripService.createTrip(request));
     }
 
@@ -34,7 +36,7 @@ public class TripController {
     }
 
     @PutMapping("/{tripId}")
-    public ResponseEntity<TripResponse> updateTrip(@PathVariable Long tripId, @RequestBody TripRequest request) {
+    public ResponseEntity<TripResponse> updateTrip(@PathVariable Long tripId, @Valid @RequestBody TripRequest request) {
         return ResponseEntity.ok(tripService.updateTrip(tripId, request));
     }
 

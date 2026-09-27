@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/trips/{tripId}/packing")
@@ -29,8 +28,8 @@ public class PackingController {
     @PostMapping
     public ResponseEntity<PackingItemResponse> addItem(
             @PathVariable Long tripId,
-            @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(packingService.addItem(tripId, body.get("name"), body.get("category")));
+            @RequestBody com.example.demo.dto.PackingItemRequest request) {
+        return ResponseEntity.ok(packingService.addItem(tripId, request.getName(), request.getCategory()));
     }
 
     @PatchMapping("/{itemId}/toggle")
