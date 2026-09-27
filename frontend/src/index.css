@@ -326,6 +326,14 @@ label {
   letter-spacing: -0.2px;
 }
 
+/* 빈 상태 안내 문구 — PackingTab / StampBook / TripExpenseTab / TripReviewSummaryCard 공용.
+   여러 컴포넌트가 쓰는 이름이므로 컴포넌트 CSS 가 아니라 여기서 한 번만 정의한다. */
+.empty-text {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 1.5rem 0;
+}
+
 /* Typography Utilities */
 .font-mono {
   font-family: 'JetBrains Mono', monospace !important;
