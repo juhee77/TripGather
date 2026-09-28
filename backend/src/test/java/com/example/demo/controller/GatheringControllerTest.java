@@ -239,12 +239,14 @@ class GatheringControllerTest {
         // given
         Gathering updated = Gathering.builder().id(1L).title("Updated").build();
         given(gatheringService.updateGathering(anyLong(), any(Gathering.class))).willReturn(updated);
+        // 수정 본문도 생성과 같은 필수 조건(제목·정원)을 만족해야 한다.
+        Gathering requestBody = Gathering.builder().title("Updated").maxJoining(5).build();
 
         // when & then
         mockMvc.perform(put("/api/gatherings/1")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updated)))
+                        .content(objectMapper.writeValueAsString(requestBody)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Updated"));
     }

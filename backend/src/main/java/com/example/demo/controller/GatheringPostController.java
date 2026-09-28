@@ -1,5 +1,10 @@
 package com.example.demo.controller;
 
+import jakarta.validation.Valid;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import com.example.demo.domain.Gathering;
 import com.example.demo.domain.GatheringPost;
 import com.example.demo.domain.User;
@@ -58,7 +63,7 @@ public class GatheringPostController {
     @PostMapping("/{gatheringId}/posts")
     public ResponseEntity<PostResponse> createPost(
             @PathVariable Long gatheringId,
-            @RequestBody PostRequest request,
+            @Valid @RequestBody PostRequest request,
             Principal principal) {
         
         if (gatheringId == null) throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
@@ -119,8 +124,13 @@ public class GatheringPostController {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class PostRequest {
+        @NotBlank(message = "게시글 내용은 비워둘 수 없습니다.")
+        @Size(max = 2000, message = "게시글은 2000자 이내여야 합니다.")
         private String content;
+
+        @Size(max = 500, message = "이미지 주소는 500자 이내여야 합니다.")
         private String imageUrl;
+
         private boolean isPublic;
     }
 

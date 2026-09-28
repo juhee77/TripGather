@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import jakarta.validation.Valid;
+
 import com.example.demo.domain.Gathering;
 import com.example.demo.dto.GatheringResponse;
 import com.example.demo.usecase.GatheringUseCase;
@@ -80,12 +82,12 @@ public class GatheringController {
     }
 
     @PostMapping
-    public ResponseEntity<GatheringResponse> createGathering(@RequestBody com.example.demo.dto.GatheringRequest request) {
+    public ResponseEntity<GatheringResponse> createGathering(@Valid @RequestBody com.example.demo.dto.GatheringRequest request) {
         return ResponseEntity.ok(GatheringResponse.from(gatheringService.createGathering(request.toEntity())));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<GatheringResponse> updateGathering(@PathVariable Long id, @RequestBody com.example.demo.dto.GatheringRequest request) {
+    public ResponseEntity<GatheringResponse> updateGathering(@PathVariable Long id, @Valid @RequestBody com.example.demo.dto.GatheringRequest request) {
         return ResponseEntity.ok(GatheringResponse.from(gatheringService.updateGathering(id, request.toEntity())));
     }
 

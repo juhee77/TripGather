@@ -57,7 +57,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("name", "홍길동", "email", "user@test.com", "password", "pw12345"))))
+                                Map.of("name", "홍길동", "email", "user@test.com", "password", "pw123456"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("token"))
                 .andExpect(jsonPath("$.email").value("user@test.com"));
@@ -74,7 +74,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                Map.of("email", "user@test.com", "password", "pw12345"))))
+                                Map.of("email", "user@test.com", "password", "pw123456"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("홍길동"));
     }

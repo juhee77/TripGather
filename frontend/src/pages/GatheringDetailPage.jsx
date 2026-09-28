@@ -252,6 +252,15 @@ const GatheringDetailPage = () => {
   };
 
   const handleUpdate = async () => {
+    // 서버가 제목과 정원을 필수로 보므로 무엇을 고쳐야 하는지 먼저 알려준다.
+    if (!(editData.title || "").trim()) {
+      alert("모임 제목을 입력해주세요.");
+      return;
+    }
+    if (!Number.isInteger(editData.maxJoining) || editData.maxJoining < 1) {
+      alert("정원은 1명 이상의 숫자로 입력해주세요.");
+      return;
+    }
     try {
       const res = await authFetch(`/api/gatherings/${gathering.id}`, {
         method: "PUT",
@@ -264,7 +273,8 @@ const GatheringDetailPage = () => {
         onUpdate && onUpdate(updated);
         setIsEditing(false);
       } else {
-        alert("수정에 실패했습니다.");
+        const body = await res.json().catch(() => null);
+        alert(body?.message ? `수정에 실패했습니다: ${body.message}` : "수정에 실패했습니다.");
       }
     } catch (err) {
       console.error("Error updating gathering", err);
