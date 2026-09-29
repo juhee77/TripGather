@@ -186,7 +186,8 @@ class GatheringControllerTest {
     @DisplayName("모임 생성 성공")
     void createGathering_Success() throws Exception {
         // given
-        Gathering gathering = Gathering.builder().title("New Gathering").maxJoining(5).build();
+        Gathering gathering = Gathering.builder()
+                .title("New Gathering").location("성수동").maxJoining(5).build();
         given(gatheringService.createGathering(any(Gathering.class))).willReturn(gathering);
 
         // when & then
@@ -239,8 +240,9 @@ class GatheringControllerTest {
         // given
         Gathering updated = Gathering.builder().id(1L).title("Updated").build();
         given(gatheringService.updateGathering(anyLong(), any(Gathering.class))).willReturn(updated);
-        // 수정 본문도 생성과 같은 필수 조건(제목·정원)을 만족해야 한다.
-        Gathering requestBody = Gathering.builder().title("Updated").maxJoining(5).build();
+        // 수정 본문도 생성과 같은 필수 조건(제목·장소)을 만족해야 한다.
+        Gathering requestBody = Gathering.builder()
+                .title("Updated").location("성수동").maxJoining(5).build();
 
         // when & then
         mockMvc.perform(put("/api/gatherings/1")

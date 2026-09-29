@@ -95,12 +95,7 @@ public class GatheringServiceImpl implements GatheringUseCase {
         if (gathering.getCategory() != null && gathering.getCategory().trim().length() > 50) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "카테고리명은 50자 이하이어야 합니다.");
         }
-        if (gathering.getMaxJoining() < 2) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 인원은 최소 2명 이상이어야 합니다.");
-        }
-        if (gathering.getMaxJoining() > 100) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 인원은 최대 100명까지만 설정 가능합니다.");
-        }
+        validateCapacity(gathering.getMaxJoining());
 
         if (gathering.getStartDate() != null && gathering.getEndDate() != null) {
             if (gathering.getEndDate().isBefore(gathering.getStartDate())) {
@@ -142,10 +137,10 @@ public class GatheringServiceImpl implements GatheringUseCase {
 
         Gathering gathering = getGathering(id);
 
-        if (updateData.getMaxJoining() > 0) {
-            if (updateData.getMaxJoining() < 2 || updateData.getMaxJoining() > 100) {
-                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 인원은 최소 2명 이상 최대 100명 이하이어야 합니다.");
-            }
+        // maxJoining 은 int 라 "보내지 않음"을 표현할 수 없다. 0 이하면 기존 정원을 그대로 둔다.
+        boolean capacityProvided = updateData.getMaxJoining() > 0;
+        if (capacityProvided) {
+            validateCapacity(updateData.getMaxJoining());
             if (updateData.getMaxJoining() < gathering.getCurrentJoining()) {
                 throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "최대 모집 인원은 현재 참여 인원 이상이어야 합니다.");
             }
@@ -172,7 +167,9 @@ public class GatheringServiceImpl implements GatheringUseCase {
         gathering.setLocation(updateData.getLocation());
         gathering.setStartDate(updateData.getStartDate());
         gathering.setEndDate(updateData.getEndDate());
-        gathering.setMaxJoining(updateData.getMaxJoining());
+        if (capacityProvided) {
+            gathering.setMaxJoining(updateData.getMaxJoining());
+        }
         gathering.setBgImageUrl(updateData.getBgImageUrl());
         gathering.setCategory(updateData.getCategory());
         
@@ -262,6 +259,22 @@ public class GatheringServiceImpl implements GatheringUseCase {
      * 반복 규칙의 앞뒤가 맞는지 확인한다.
      * 규칙과 요일이 따로 놀면 회차를 계산할 수 없어 정기편이 조용히 일회성처럼 동작한다.
      */
+    /**
+     * 정원 범위 검사. 생성과 수정이 같은 규칙을 보도록 한 곳에 둔다.
+     *
+     * 현재 참여 인원과의 비교는 수정할 때만 의미가 있어 호출부에 남겨둔다.
+     */
+    private void validateCapacity(int maxJoining) {
+        if (maxJoining < Gathering.MIN_CAPACITY) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE,
+                    "모임 인원은 최소 " + Gathering.MIN_CAPACITY + "명 이상이어야 합니다.");
+        }
+        if (maxJoining > Gathering.MAX_CAPACITY) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE,
+                    "모임 인원은 최대 " + Gathering.MAX_CAPACITY + "명까지만 설정 가능합니다.");
+        }
+    }
+
     private void validateRecurrence(Gathering gathering) {
         com.example.demo.domain.RecurrenceRule rule = gathering.getRecurrenceRule();
         if (rule == null || rule == com.example.demo.domain.RecurrenceRule.NONE) {

@@ -14,6 +14,7 @@ import com.example.demo.repository.ItineraryRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.SecurityService;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -813,5 +814,89 @@ class GatheringServiceImplTest {
         assertThat(saved.nextOccurrence(java.time.LocalDate.of(2026, 9, 16)))
                 .isEqualTo(java.time.LocalDate.of(2026, 9, 22));
     }
-}
 
+    @Nested
+    @DisplayName("모임 정원 규칙")
+    class CapacityRule {
+
+        private static final Long GATHERING_ID = 1L;
+
+        private Gathering hostedGathering(int currentJoining, int maxJoining) {
+            User host = User.builder().id(10L).email("host@test.com").build();
+            return Gathering.builder()
+                    .id(GATHERING_ID).host(host)
+                    .currentJoining(currentJoining).maxJoining(maxJoining)
+                    .build();
+        }
+
+        private void givenHostEditing(Gathering existing) {
+            given(gatheringRepository.findById(GATHERING_ID)).willReturn(java.util.Optional.of(existing));
+            given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        }
+
+        @Test
+        @DisplayName("수정할 때도 생성과 같은 하한이 적용된다")
+        void update_BelowMinimum_ThrowsException() {
+            givenHostEditing(hostedGathering(1, 10));
+            Gathering updateData = Gathering.builder().title("수정").maxJoining(1).build();
+
+            assertThatThrownBy(() -> gatheringService.updateGathering(GATHERING_ID, updateData))
+                    .isInstanceOf(com.example.demo.exception.CustomException.class)
+                    .hasMessageContaining("최소 " + Gathering.MIN_CAPACITY + "명");
+        }
+
+        @Test
+        @DisplayName("수정할 때도 생성과 같은 상한이 적용된다")
+        void update_AboveMaximum_ThrowsException() {
+            givenHostEditing(hostedGathering(1, 10));
+            Gathering updateData = Gathering.builder().title("수정")
+                    .maxJoining(Gathering.MAX_CAPACITY + 1).build();
+
+            assertThatThrownBy(() -> gatheringService.updateGathering(GATHERING_ID, updateData))
+                    .isInstanceOf(com.example.demo.exception.CustomException.class)
+                    .hasMessageContaining("최대 " + Gathering.MAX_CAPACITY + "명");
+        }
+
+        @Test
+        @DisplayName("경계값인 최소 정원과 최대 정원은 받아들인다")
+        void update_BoundaryValues_Accepted() {
+            Gathering existing = hostedGathering(1, 10);
+            givenHostEditing(existing);
+
+            gatheringService.updateGathering(GATHERING_ID,
+                    Gathering.builder().title("수정").maxJoining(Gathering.MIN_CAPACITY).build());
+            assertThat(existing.getMaxJoining()).isEqualTo(Gathering.MIN_CAPACITY);
+
+            gatheringService.updateGathering(GATHERING_ID,
+                    Gathering.builder().title("수정").maxJoining(Gathering.MAX_CAPACITY).build());
+            assertThat(existing.getMaxJoining()).isEqualTo(Gathering.MAX_CAPACITY);
+        }
+
+        @Test
+        @DisplayName("정원을 보내지 않으면 기존 정원을 그대로 둔다")
+        void update_CapacityOmitted_KeepsExistingCapacity() {
+            // maxJoining 은 int 라 본문에서 빠지면 0 으로 들어온다.
+            // 예전에는 검사만 건너뛰고 값은 그대로 덮어써서 정원이 0 인 모임이 만들어졌고,
+            // 그 모임에는 아무도 참여할 수 없었다.
+            Gathering existing = hostedGathering(3, 10);
+            givenHostEditing(existing);
+
+            gatheringService.updateGathering(GATHERING_ID,
+                    Gathering.builder().title("제목만 수정").build());
+
+            assertThat(existing.getMaxJoining()).isEqualTo(10);
+            assertThat(existing.getTitle()).isEqualTo("제목만 수정");
+        }
+
+        @Test
+        @DisplayName("이미 참여한 인원보다 적게 줄일 수 없다")
+        void update_BelowCurrentJoining_ThrowsException() {
+            givenHostEditing(hostedGathering(8, 10));
+            Gathering updateData = Gathering.builder().title("수정").maxJoining(5).build();
+
+            assertThatThrownBy(() -> gatheringService.updateGathering(GATHERING_ID, updateData))
+                    .isInstanceOf(com.example.demo.exception.CustomException.class)
+                    .hasMessageContaining("현재 참여 인원 이상");
+        }
+    }
+}

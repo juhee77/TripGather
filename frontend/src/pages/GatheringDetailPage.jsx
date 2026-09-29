@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MemberStatus } from '../constants/enums';
+import { MemberStatus, GatheringCapacity } from '../constants/enums';
 import { X, Users, MapPin, Calendar, MessageCircle, Send, Trash2, Edit, CheckCircle, XCircle, Share2, Heart, Plane } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { authFetch } from '../api/client';
@@ -257,8 +257,14 @@ const GatheringDetailPage = () => {
       alert("모임 제목을 입력해주세요.");
       return;
     }
-    if (!Number.isInteger(editData.maxJoining) || editData.maxJoining < 1) {
-      alert("정원은 1명 이상의 숫자로 입력해주세요.");
+    if (!(editData.location || "").trim()) {
+      alert("만나는 장소를 입력해주세요.");
+      return;
+    }
+    if (!Number.isInteger(editData.maxJoining)
+        || editData.maxJoining < GatheringCapacity.MIN
+        || editData.maxJoining > GatheringCapacity.MAX) {
+      alert(`정원은 ${GatheringCapacity.MIN}명 이상 ${GatheringCapacity.MAX}명 이하로 입력해주세요.`);
       return;
     }
     try {
@@ -426,6 +432,8 @@ const GatheringDetailPage = () => {
                     label="MAX PARTICIPANTS"
                     icon={Users}
                     type="number"
+                    min={GatheringCapacity.MIN}
+                    max={GatheringCapacity.MAX}
                     value={editData.maxJoining}
                     onChange={e => setEditData({...editData, maxJoining: parseInt(e.target.value)})}
                   />

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { GatheringCapacity } from '../constants/enums';
 import { useNavigate } from 'react-router-dom';
 import { X, MapPin, Calendar as CalendarIcon, Users, Type, Camera, Clock, ChevronLeft, Plane } from 'lucide-react';
 import { authFetch } from '../api/client';
@@ -96,7 +97,7 @@ const CreateGatheringPage = () => {
     }
 
     const maxJoiningNum = parseInt(formData.maxJoining, 10);
-    if (isNaN(maxJoiningNum) || maxJoiningNum < 2 || maxJoiningNum > 100) {
+    if (isNaN(maxJoiningNum) || maxJoiningNum < GatheringCapacity.MIN || maxJoiningNum > GatheringCapacity.MAX) {
       alert("모집 인원은 최소 2명 이상, 최대 100명 이하로 설정해야 합니다.");
       return;
     }
@@ -400,7 +401,7 @@ const CreateGatheringPage = () => {
               <div style={{ position: 'relative' }}>
                 <Users size={18} color="var(--text-sub)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
                 <input 
-                  required type="number" min="2" max="100" name="maxJoining" value={formData.maxJoining} onChange={handleChange}
+                  required type="number" min={GatheringCapacity.MIN} max={GatheringCapacity.MAX} name="maxJoining" value={formData.maxJoining} onChange={handleChange}
                   style={{ ...inputStyle, paddingLeft: '44px' }}
                   onFocus={(e) => e.target.style.border = '1px solid var(--primary-orange)'}
                   onBlur={(e) => e.target.style.border = '1px solid var(--border-color)'}

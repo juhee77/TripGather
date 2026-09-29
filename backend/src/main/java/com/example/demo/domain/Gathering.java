@@ -13,6 +13,17 @@ import java.time.LocalDateTime;
 @org.hibernate.annotations.SQLRestriction("deleted = false")
 public class Gathering extends BaseEntity {
 
+    /**
+     * 모임 정원의 허용 범위.
+     *
+     * 혼자 하는 모임은 성립하지 않으므로 최소 2명이고,
+     * 그 이상은 모임이라기보다 행사에 가까워 100명에서 끊는다.
+     * 이 범위를 판단하는 곳은 GatheringServiceImpl 하나이며,
+     * 화면(프론트엔드)의 입력 제한도 같은 값을 쓴다.
+     */
+    public static final int MIN_CAPACITY = 2;
+    public static final int MAX_CAPACITY = 100;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
