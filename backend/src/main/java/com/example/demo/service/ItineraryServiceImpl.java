@@ -273,12 +273,12 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
                     .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "일정 소유자를 찾을 수 없습니다."));
             
             pointService.addPoints(
-                    owner.getId(), 
-                    200, 
-                    1, 
-                    itinerary.getTitle() != null ? itinerary.getTitle() : "여정 완수", 
-                    itinerary.getId(), 
-                    update.getStampImageUrl()
+                    owner.getId(),
+                    200,
+                    1,
+                    itinerary.getTitle() != null ? itinerary.getTitle() : "여정 완수",
+                    com.example.demo.service.StampGrant.forItinerary(
+                            itinerary.getId(), update.getStampImageUrl())
             );
         }
         

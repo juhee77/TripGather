@@ -58,7 +58,8 @@ class StampServiceTest {
         stampService.awardStamp(1L, 10L, "Busan Stamp", "stamp.png");
 
         // then
-        verify(pointService).addPoints(1L, 0, 1, "Busan Stamp", 10L, "stamp.png");
+        verify(pointService).addPoints(1L, 0, 1, "Busan Stamp",
+                StampGrant.forGathering(10L, null, "stamp.png"));
     }
 
     @Test
@@ -89,7 +90,8 @@ class StampServiceTest {
         stampService.awardStamp(1L, 10L, "   ", "stamp.png");
 
         // then
-        verify(pointService).addPoints(1L, 0, 1, "모임 참여 스탬프", 10L, "stamp.png");
+        verify(pointService).addPoints(1L, 0, 1, "모임 참여 스탬프",
+                StampGrant.forGathering(10L, null, "stamp.png"));
     }
 
     @Test

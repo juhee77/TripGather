@@ -45,6 +45,7 @@ public class StampService implements StampUseCase {
         }
         String stampTitle = (title != null && !title.isBlank()) ? title.trim() : "모임 참여 스탬프";
         // Delegate to pointService to ensure user's stampsCount is atomically updated via pessimistic lock
-        pointService.addPoints(userId, 0, 1, stampTitle, gatheringId, stampImageUrl);
+        pointService.addPoints(userId, 0, 1, stampTitle,
+                StampGrant.forGathering(gatheringId, null, stampImageUrl));
     }
 }

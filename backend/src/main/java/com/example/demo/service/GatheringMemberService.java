@@ -339,19 +339,41 @@ public class GatheringMemberService implements GatheringMemberUseCase {
             }
         }
         
-        boolean alreadyCheckedIn = stampRepository.existsByUserIdAndGatheringId(user.getId(), gatheringId);
-        if (alreadyCheckedIn) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이미 체크인을 완료하여 보상을 받았습니다.");
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate occurrenceDate;
+        String stampTitle;
+
+        if (gathering.isRecurring()) {
+            // 정기편은 회차마다 따로 찍는다. 그래야 "매주 나온다" 가 기록으로 남는다.
+            occurrenceDate = gathering.occurrenceOn(today).orElseThrow(() -> {
+                java.time.LocalDate next = gathering.nextOccurrence(today);
+                return new CustomException(ErrorCode.INVALID_INPUT_VALUE,
+                        next != null
+                                ? "오늘은 이 정기 모임의 회차가 아닙니다. 다음 회차는 " + next + " 입니다."
+                                : "이 정기 모임은 더 이상 예정된 회차가 없습니다.");
+            });
+            if (stampRepository.existsByUserIdAndGatheringIdAndOccurrenceDate(
+                    user.getId(), gatheringId, occurrenceDate)) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE,
+                        "이번 회차(" + occurrenceDate + ")는 이미 체크인했습니다.");
+            }
+            stampTitle = "[" + gathering.getTitle() + "] " + occurrenceDate + " 체크인";
+        } else {
+            // 일회성 모임은 예전과 같이 한 번만 찍는다.
+            occurrenceDate = gathering.getStartDate();
+            if (stampRepository.existsByUserIdAndGatheringId(user.getId(), gatheringId)) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이미 체크인을 완료하여 보상을 받았습니다.");
+            }
+            stampTitle = "[" + gathering.getTitle() + "] 스탠바이 체크인";
         }
-        
+
         // 보상 지급 (+50 PTS, 1 Stamp)
         pointService.addPoints(
-            user.getId(), 
-            50, 
-            1, 
-            "[" + gathering.getTitle() + "] 스탠바이 체크인", 
-            gatheringId, 
-            "/src/assets/stamp-placeholder.png"
+            user.getId(),
+            50,
+            1,
+            stampTitle,
+            StampGrant.forGathering(gatheringId, occurrenceDate, "/src/assets/stamp-placeholder.png")
         );
     }
 

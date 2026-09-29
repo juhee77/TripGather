@@ -781,8 +781,8 @@ class GatheringMemberServiceTest {
         gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false);
 
         // then
-        verify(pointService).addPoints(1L, 50, 1, "[한강 모임] 스탠바이 체크인", 10L,
-                "/src/assets/stamp-placeholder.png");
+        verify(pointService).addPoints(1L, 50, 1, "[한강 모임] 스탠바이 체크인",
+                StampGrant.forGathering(10L, null, "/src/assets/stamp-placeholder.png"));
     }
 
     @Test
@@ -804,7 +804,7 @@ class GatheringMemberServiceTest {
         gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false);
 
         // then
-        verify(pointService).addPoints(eq(2L), eq(50), eq(1), any(), eq(10L), any());
+        verify(pointService).addPoints(eq(2L), eq(50), eq(1), any(), any());
     }
 
     @Test
@@ -824,7 +824,7 @@ class GatheringMemberServiceTest {
         assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("모임에 승인된 멤버만 체크인할 수 있습니다.");
-        verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any(), any());
+        verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any());
     }
 
     @Test
@@ -875,7 +875,7 @@ class GatheringMemberServiceTest {
         gatheringMemberService.checkinStandbyGathering(10L, null, null, true);
 
         // then
-        verify(pointService).addPoints(eq(1L), eq(50), eq(1), any(), eq(10L), any());
+        verify(pointService).addPoints(eq(1L), eq(50), eq(1), any(), any());
     }
 
     @Test
@@ -894,7 +894,7 @@ class GatheringMemberServiceTest {
         gatheringMemberService.checkinStandbyGathering(10L, null, null, false);
 
         // then
-        verify(pointService).addPoints(eq(1L), eq(50), eq(1), any(), eq(10L), any());
+        verify(pointService).addPoints(eq(1L), eq(50), eq(1), any(), any());
     }
 
     @Test
@@ -912,7 +912,7 @@ class GatheringMemberServiceTest {
         assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
                 .isInstanceOf(CustomException.class)
                 .hasMessageContaining("이미 체크인을 완료하여 보상을 받았습니다.");
-        verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any(), any());
+        verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any());
     }
 
     @Test
@@ -1029,5 +1029,83 @@ class GatheringMemberServiceTest {
         assertThat(gathering.getCurrentJoining()).isEqualTo(2);
         verify(gatheringRepository).findByIdWithPessimisticLock(1L);
         verify(gatheringMemberRepository).countByGatheringIdAndStatus(1L, MemberStatus.APPROVED);
+    }
+
+    @org.junit.jupiter.api.Nested
+    @DisplayName("정기편 회차별 체크인")
+    class RecurringCheckin {
+
+        private final java.time.LocalDate today = java.time.LocalDate.now();
+        private final User host = User.builder().id(1L).email("host@test.com").build();
+
+        private Gathering weeklyOn(java.time.DayOfWeek day) {
+            return Gathering.builder()
+                    .id(10L).title("한강 러닝").host(host)
+                    .lat(37.5).lng(127.0)
+                    .recurrenceRule(com.example.demo.domain.RecurrenceRule.WEEKLY)
+                    .recurrenceDayOfWeek(day)
+                    .build();
+        }
+
+        private void givenHostAt(Gathering gathering) {
+            given(securityService.getCurrentUser()).willReturn(host);
+            given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        }
+
+        @Test
+        @DisplayName("지난 회차에 스탬프가 있어도 이번 회차는 체크인된다")
+        void pastOccurrenceDoesNotBlockThisWeek() {
+            // 예전에는 "이 모임에 스탬프가 있는가" 만 보고 막아서,
+            // 정기편에 첫 주 체크인하면 둘째 주부터 영영 막혔다.
+            givenHostAt(weeklyOn(today.getDayOfWeek()));
+            lenient().when(stampRepository.existsByUserIdAndGatheringId(1L, 10L)).thenReturn(true);
+            given(stampRepository.existsByUserIdAndGatheringIdAndOccurrenceDate(1L, 10L, today))
+                    .willReturn(false);
+
+            gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false);
+
+            verify(pointService).addPoints(eq(1L), eq(50), eq(1), any(),
+                    eq(StampGrant.forGathering(10L, today, "/src/assets/stamp-placeholder.png")));
+        }
+
+        @Test
+        @DisplayName("같은 회차를 두 번 찍을 수는 없다")
+        void sameOccurrenceTwiceIsRejected() {
+            givenHostAt(weeklyOn(today.getDayOfWeek()));
+            given(stampRepository.existsByUserIdAndGatheringIdAndOccurrenceDate(1L, 10L, today))
+                    .willReturn(true);
+
+            assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("이번 회차")
+                    .hasMessageContaining(today.toString());
+            verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any());
+        }
+
+        @Test
+        @DisplayName("회차가 아닌 날에는 다음 회차를 알려주며 막는다")
+        void nonOccurrenceDayIsRejectedWithNextDate() {
+            // 오늘이 아닌 요일로 반복하는 모임
+            Gathering gathering = weeklyOn(today.plusDays(1).getDayOfWeek());
+            givenHostAt(gathering);
+
+            assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("오늘은 이 정기 모임의 회차가 아닙니다")
+                    .hasMessageContaining(today.plusDays(1).toString());
+            verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any());
+        }
+
+        @Test
+        @DisplayName("종료된 정기편은 남은 회차가 없다고 알린다")
+        void endedSeriesSaysNoMoreOccurrences() {
+            Gathering gathering = weeklyOn(today.plusDays(1).getDayOfWeek());
+            gathering.setRecurrenceUntil(today.minusDays(1));
+            givenHostAt(gathering);
+
+            assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("예정된 회차가 없습니다");
+        }
     }
 }

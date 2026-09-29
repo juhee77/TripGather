@@ -10,6 +10,10 @@ import java.util.List;
 public interface StampRepository extends JpaRepository<Stamp, Long> {
     List<Stamp> findByUserEmailOrderByCompletedAtDesc(String email);
     boolean existsByUserIdAndGatheringId(Long userId, Long gatheringId);
+
+    /** 정기편 회차 중복 체크인 판정용. */
+    boolean existsByUserIdAndGatheringIdAndOccurrenceDate(
+            Long userId, Long gatheringId, java.time.LocalDate occurrenceDate);
     long countByUserId(Long userId);
 
     /** 피드 렌더링용: 사용자가 스탬프를 받은 모임 ID 를 한 번에 읽는다. */
