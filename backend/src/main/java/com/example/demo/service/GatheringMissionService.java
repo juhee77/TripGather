@@ -174,8 +174,8 @@ public class GatheringMissionService implements GatheringMissionUseCase {
                 mission.getRewardPoints(),
                 1,
                 mission.getTitle(),
-                gatheringId,
-                completion.getPhotoUrl()
+                // 미션은 출제 단위라 회차에 묶이지 않는다. 회차 날짜는 비워 둔다.
+                com.example.demo.service.StampGrant.forGathering(gatheringId, null, completion.getPhotoUrl())
         );
 
         Map<String, Object> approved = new HashMap<>();

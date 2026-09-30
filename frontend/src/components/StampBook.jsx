@@ -68,6 +68,11 @@ const StampItem = ({ stamp }) => {
               <Clock size={12} />
               <span>{formatDate(stamp.completedAt)}</span>
             </div>
+            {stamp.occurrenceDate && (
+              <div className="memory-date-row">
+                <span>🔁 {stamp.occurrenceDate} 회차</span>
+              </div>
+            )}
           </div>
           <div>
             <div className="mission-clear-badge" style={{ marginBottom: '6px' }}>MISSION CLEAR</div>

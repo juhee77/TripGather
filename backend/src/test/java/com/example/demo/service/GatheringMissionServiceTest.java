@@ -327,7 +327,8 @@ class GatheringMissionServiceTest {
             assertThat(response.getReviewedAt()).isNotNull();
 
             // 인증 사진이 그대로 스탬프 이미지가 된다
-            verify(pointService).addPoints(crew.getId(), 80, 1, "흑돼지 먹기", GATHERING_ID, "photo.png");
+            verify(pointService).addPoints(crew.getId(), 80, 1, "흑돼지 먹기",
+                StampGrant.forGathering(GATHERING_ID, null, "photo.png"));
             verify(notificationService).send(eq(crew.getEmail()), eq("mission-approved"), any());
         }
 
@@ -347,7 +348,7 @@ class GatheringMissionServiceTest {
                     .hasMessageContaining("이미 승인");
 
             verify(pointService, never())
-                    .addPoints(anyLong(), anyInt(), anyInt(), anyString(), anyLong(), anyString());
+                    .addPoints(anyLong(), anyInt(), anyInt(), anyString(), any());
         }
 
         @Test
@@ -611,7 +612,7 @@ class GatheringMissionServiceTest {
             assertThat(response.getReviewedAt()).isNotNull();
             verify(notificationService).send(eq(crew.getEmail()), eq("mission-rejected"), any());
             verify(pointService, never())
-                    .addPoints(anyLong(), anyInt(), anyInt(), anyString(), anyLong(), anyString());
+                    .addPoints(anyLong(), anyInt(), anyInt(), anyString(), any());
         }
 
         @Test

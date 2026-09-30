@@ -133,7 +133,8 @@ class PointServiceTest {
         given(userRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.of(user));
 
         // when
-        pointService.addPoints(1L, 30, 1, "여정 완주", 77L, "https://cdn/stamp.png");
+        pointService.addPoints(1L, 30, 1, "여정 완주",
+                StampGrant.forGathering(77L, null, "https://cdn/stamp.png"));
 
         // then
         assertThat(user.getPoints()).isEqualTo(30);

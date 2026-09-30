@@ -113,4 +113,45 @@ class GatheringRecurrenceTest {
 
         assertThat(g.nextOccurrence(LocalDate.of(2026, 9, 16))).isNull();
     }
+
+    @Test
+    @DisplayName("반복 요일 당일만 회차로 인정한다")
+    void occurrenceOn_OnlyOnRecurringWeekday() {
+        Gathering g = weekly(DayOfWeek.TUESDAY, LocalDate.of(2026, 9, 1), null);
+
+        // 2026-09-22 는 화요일, 다음 날은 수요일
+        assertThat(g.occurrenceOn(LocalDate.of(2026, 9, 22))).contains(LocalDate.of(2026, 9, 22));
+        assertThat(g.occurrenceOn(LocalDate.of(2026, 9, 23))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("시작 전이거나 종료일을 지난 날짜는 회차가 아니다")
+    void occurrenceOn_OutsideRange() {
+        Gathering g = weekly(DayOfWeek.TUESDAY, LocalDate.of(2026, 9, 15), LocalDate.of(2026, 9, 29));
+
+        assertThat(g.occurrenceOn(LocalDate.of(2026, 9, 8))).isEmpty();   // 시작 전 화요일
+        assertThat(g.occurrenceOn(LocalDate.of(2026, 9, 22))).isNotEmpty();
+        assertThat(g.occurrenceOn(LocalDate.of(2026, 10, 6))).isEmpty();  // 종료 후 화요일
+    }
+
+    @Test
+    @DisplayName("일회성 모임은 시작일이 유일한 회차다")
+    void occurrenceOn_OneOffUsesStartDate() {
+        Gathering once = Gathering.builder()
+                .title("번개 모임")
+                .startDate(LocalDate.of(2026, 9, 20))
+                .build();
+
+        // 어느 날 찍든 같은 회차를 가리켜야 중복 체크인이 걸러진다
+        assertThat(once.occurrenceOn(LocalDate.of(2026, 9, 20))).contains(LocalDate.of(2026, 9, 20));
+        assertThat(once.occurrenceOn(LocalDate.of(2026, 9, 25))).contains(LocalDate.of(2026, 9, 20));
+    }
+
+    @Test
+    @DisplayName("시작일이 없는 일회성 모임은 회차를 특정할 수 없다")
+    void occurrenceOn_OneOffWithoutStartDate() {
+        Gathering once = Gathering.builder().title("번개 모임").build();
+
+        assertThat(once.occurrenceOn(LocalDate.of(2026, 9, 20))).isEmpty();
+    }
 }

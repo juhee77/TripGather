@@ -150,6 +150,34 @@ public class Gathering extends BaseEntity {
         return result;
     }
 
+    /**
+     * 주어진 날짜가 이 모임의 회차라면 그 회차 날짜를 돌려준다.
+     *
+     * 정기편은 그날이 반복 요일이고 기간 안에 들어야 회차로 인정한다(당일만).
+     * 화요일 모임을 수요일에 찍으면 별개 회차가 되어 개근 기록이 어긋나기 때문이다.
+     *
+     * 일회성 모임은 회차가 하나뿐이라 시작일을 그 하나의 회차로 본다.
+     * 시작일이 없으면 회차를 특정할 수 없어 비어 있는 값을 돌려준다.
+     */
+    public java.util.Optional<java.time.LocalDate> occurrenceOn(java.time.LocalDate date) {
+        if (date == null) {
+            return java.util.Optional.empty();
+        }
+        if (!isRecurring()) {
+            return java.util.Optional.ofNullable(startDate);
+        }
+        if (date.getDayOfWeek() != recurrenceDayOfWeek) {
+            return java.util.Optional.empty();
+        }
+        if (startDate != null && date.isBefore(startDate)) {
+            return java.util.Optional.empty();
+        }
+        if (recurrenceUntil != null && date.isAfter(recurrenceUntil)) {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(date);
+    }
+
     /** 다음 회차. 없으면 null. */
     public java.time.LocalDate nextOccurrence(java.time.LocalDate from) {
         java.util.List<java.time.LocalDate> next = upcomingOccurrences(from, 1);

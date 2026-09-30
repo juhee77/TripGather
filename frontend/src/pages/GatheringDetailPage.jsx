@@ -94,8 +94,8 @@ const GatheringDetailPage = () => {
           alert("현장 체크인이 완료되었습니다! 50포인트와 여권 마일리지가 적립되었습니다. ✈️");
           loadGathering();
         } else {
-          const errText = await res.text();
-          alert(`체크인 실패: ${errText || "모임 조건이 충족되지 않았습니다."}`);
+          const body = await res.json().catch(() => null);
+          alert(`체크인 실패: ${body?.message || "모임 조건이 충족되지 않았습니다."}`);
         }
       } catch (err) {
         console.error("Error checkin", err);

@@ -956,4 +956,37 @@ class ItineraryServiceImplTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> itineraryService.updateItinerary(1L, null))
                 .isInstanceOf(CustomException.class);
     }
+
+    @Test
+    @DisplayName("여정 완수 스탬프는 모임이 아니라 코스를 가리킨다")
+    void updateItinerary_CompletionStamp_TargetsItineraryNotGathering() {
+        // 예전에는 코스 ID 를 gatheringId 자리에 넣었다.
+        // 피드는 스탬프의 gatheringId 목록으로 "이미 참여한 모임" 을 칠하기 때문에,
+        // 코스 12번을 완주하면 모임 12번이 참여한 것처럼 보였다.
+        Long itineraryId = 12L;
+        Itinerary existing = Itinerary.builder()
+                .id(itineraryId).title("제주 3박 4일")
+                .ownerEmail("owner@test.com")
+                .build();
+        Itinerary update = Itinerary.builder()
+                .title("제주 3박 4일")
+                .ownerEmail("owner@test.com")
+                .stampImageUrl("https://cdn/jeju.png")
+                .build();
+
+        given(itineraryRepository.findById(itineraryId)).willReturn(Optional.of(existing));
+        given(itineraryRepository.save(any(Itinerary.class))).willAnswer(i -> i.getArgument(0));
+        given(userRepository.findByEmail("owner@test.com")).willReturn(
+                Optional.of(User.builder().id(7L).email("owner@test.com").build()));
+
+        itineraryService.updateItinerary(itineraryId, update);
+
+        verify(pointService).addPoints(
+                org.mockito.ArgumentMatchers.eq(7L),
+                org.mockito.ArgumentMatchers.eq(200),
+                org.mockito.ArgumentMatchers.eq(1),
+                any(),
+                org.mockito.ArgumentMatchers.eq(
+                        StampGrant.forItinerary(itineraryId, "https://cdn/jeju.png")));
+    }
 }

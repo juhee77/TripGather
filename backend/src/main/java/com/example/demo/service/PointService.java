@@ -20,13 +20,14 @@ public class PointService {
     private final PointTransactionRepository pointTransactionRepository;
     private final StampRepository stampRepository;
 
+    /** 스탬프 없이 포인트만 적립·차감한다. */
     @Transactional
     public void addPoints(Long userId, int amount, int stampsToAdd, String description) {
-        addPoints(userId, amount, stampsToAdd, description, null, null);
+        addPoints(userId, amount, stampsToAdd, description, null);
     }
 
     @Transactional
-    public void addPoints(Long userId, int amount, int stampsToAdd, String description, Long gatheringId, String stampImageUrl) {
+    public void addPoints(Long userId, int amount, int stampsToAdd, String description, StampGrant stampGrant) {
         if (userId == null) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND, "사용자 ID가 올바르지 않습니다.");
         }
@@ -47,9 +48,11 @@ public class PointService {
 
             Stamp stamp = Stamp.builder()
                     .user(user)
-                    .gatheringId(gatheringId)
+                    .gatheringId(stampGrant != null ? stampGrant.gatheringId() : null)
+                    .itineraryId(stampGrant != null ? stampGrant.itineraryId() : null)
+                    .occurrenceDate(stampGrant != null ? stampGrant.occurrenceDate() : null)
                     .title(txDescription)
-                    .stampImageUrl(stampImageUrl)
+                    .stampImageUrl(stampGrant != null ? stampGrant.imageUrl() : null)
                     .build();
             stampRepository.save(stamp);
         }
