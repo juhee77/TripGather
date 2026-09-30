@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -23,24 +22,74 @@ public class PackingService {
     private final ProfanityFilterService profanityFilterService;
     private final TripAccessGuard tripAccessGuard;
 
-    private static final Map<String, List<String[]>> DEFAULT_ITEMS = Map.of(
-            "필수", List.of(
-                    new String[]{"여권"}, new String[]{"항공권/e-티켓"}, new String[]{"현금/카드"},
-                    new String[]{"여행자 보험"}, new String[]{"호텔 예약 확인서"}
-            ),
-            "전자기기", List.of(
-                    new String[]{"충전기"}, new String[]{"보조배터리"}, new String[]{"멀티어댑터"}
-            ),
-            "세면", List.of(
-                    new String[]{"칫솔/치약"}, new String[]{"샴푸/바디워시"}, new String[]{"썬크림"}
-            ),
-            "의류", List.of(
-                    new String[]{"속옷/양말"}, new String[]{"잠옷"}, new String[]{"외투"}
-            ),
-            "기타", List.of(
-                    new String[]{"상비약"}, new String[]{"우산"}
-            )
+    /**
+     * 준비물 카테고리를 화면에 보여줄 순서.
+     *
+     * 이름순으로 정렬하면 유니코드 차례상 "기타" 가 맨 위, "필수" 가 맨 아래로 간다.
+     * 목록을 열었을 때 상비약과 우산이 먼저 보이고 여권이 맨 끝에 있었다.
+     * 여기에 없는 카테고리(사용자가 직접 만든 것)는 뒤에 이름순으로 붙는다.
+     */
+    private static final List<String> CATEGORY_ORDER = List.of("필수", "전자기기", "의류", "세면", "기타");
+
+    /** 기본 준비물이 이 여행에 해당하는지 가리는 조건. */
+    private enum Applies {
+        /** 어떤 여행이든 챙긴다. */
+        ALWAYS,
+        /** 해외 여행에만 해당한다. */
+        OVERSEAS_ONLY,
+        /** 하룻밤 이상 묵는 여행에만 해당한다. */
+        OVERNIGHT_ONLY
+    }
+
+    /**
+     * @param perDay 여행 일수만큼 필요한 물건이면 true. 이름 뒤에 "(3일치)" 처럼 며칠치인지 붙인다.
+     */
+    private record DefaultItem(String category, String name, Applies applies, boolean perDay) {
+        static DefaultItem of(String category, String name) {
+            return new DefaultItem(category, name, Applies.ALWAYS, false);
+        }
+
+        static DefaultItem of(String category, String name, Applies applies) {
+            return new DefaultItem(category, name, applies, false);
+        }
+
+        static DefaultItem perDay(String category, String name, Applies applies) {
+            return new DefaultItem(category, name, applies, true);
+        }
+    }
+
+    /**
+     * 기본 준비물 템플릿.
+     *
+     * 예전에는 여행과 무관하게 같은 16개를 넣었다. 그래서 당일치기 국내 여행에도
+     * 여권과 멀티어댑터, 잠옷이 따라붙었고 사용자가 매번 지워야 했다.
+     * 여행의 나라와 기간을 보고 해당하는 것만 넣는다.
+     */
+    private static final List<DefaultItem> DEFAULT_ITEMS = List.of(
+            DefaultItem.of("필수", "여권", Applies.OVERSEAS_ONLY),
+            DefaultItem.of("필수", "여행자 보험", Applies.OVERSEAS_ONLY),
+            DefaultItem.of("필수", "항공권/e-티켓"),
+            DefaultItem.of("필수", "현금/카드"),
+            DefaultItem.of("필수", "숙소 예약 확인서", Applies.OVERNIGHT_ONLY),
+
+            DefaultItem.of("전자기기", "충전기"),
+            DefaultItem.of("전자기기", "보조배터리"),
+            DefaultItem.of("전자기기", "멀티어댑터", Applies.OVERSEAS_ONLY),
+
+            DefaultItem.perDay("의류", "속옷/양말", Applies.OVERNIGHT_ONLY),
+            DefaultItem.of("의류", "잠옷", Applies.OVERNIGHT_ONLY),
+            DefaultItem.of("의류", "외투"),
+
+            DefaultItem.of("세면", "칫솔/치약", Applies.OVERNIGHT_ONLY),
+            DefaultItem.of("세면", "샴푸/바디워시", Applies.OVERNIGHT_ONLY),
+            DefaultItem.of("세면", "썬크림"),
+
+            DefaultItem.of("기타", "상비약"),
+            DefaultItem.of("기타", "우산")
     );
+
+    /** 국내 여행을 가리키는 국가 코드. */
+    private static final String DOMESTIC_COUNTRY = "KR";
 
     @Transactional
     public List<PackingItemResponse> initDefaultItems(Long tripId) {
@@ -51,11 +100,64 @@ public class PackingService {
         Trip trip = tripRepository.findById(tripId)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다."));
 
-        DEFAULT_ITEMS.forEach((category, items) ->
-                items.forEach(item -> packingItemRepository.save(PackingItem.of(trip, item[0], category)))
-        );
+        // 이미 있는 항목은 건너뛴다. 버튼을 두 번 누르면 목록이 통째로 두 벌이 되던 문제를 막고,
+        // 사용자가 직접 넣은 항목을 지우지 않으면서 빠진 것만 채워 넣는다.
+        java.util.Set<String> existing = packingItemRepository.findByTripId(tripId).stream()
+                .map(PackingItem::getName)
+                .collect(java.util.stream.Collectors.toSet());
+
+        for (DefaultItem item : DEFAULT_ITEMS) {
+            if (!appliesTo(item, trip)) {
+                continue;
+            }
+            String name = itemName(item, trip);
+            if (existing.add(name)) {
+                packingItemRepository.save(PackingItem.of(trip, name, item.category()));
+            }
+        }
 
         return getItems(tripId);
+    }
+
+    /** 정의된 카테고리는 그 순서대로, 사용자가 만든 카테고리는 그 뒤에 이름순으로 둔다. */
+    private static int categoryRank(String category) {
+        int index = CATEGORY_ORDER.indexOf(category);
+        return index >= 0 ? index : CATEGORY_ORDER.size();
+    }
+
+    /** 이 여행이 해외 여행인가. 국가를 모르면 해외로 본다(빠뜨리는 쪽보다 낫다). */
+    private boolean isOverseas(Trip trip) {
+        return trip.getCountry() == null || !DOMESTIC_COUNTRY.equalsIgnoreCase(trip.getCountry().trim());
+    }
+
+    /**
+     * 몇 밤을 묵는 여행인가. 날짜를 모르면 -1 을 돌려준다.
+     *
+     * 날짜가 비어 있으면 당일치기인지 알 수 없으므로, 호출부는 숙박 조건을 걸지 않고 모두 넣는다.
+     */
+    private long nights(Trip trip) {
+        if (trip.getStartDate() == null || trip.getEndDate() == null) {
+            return -1;
+        }
+        return java.time.temporal.ChronoUnit.DAYS.between(trip.getStartDate(), trip.getEndDate());
+    }
+
+    private boolean appliesTo(DefaultItem item, Trip trip) {
+        return switch (item.applies()) {
+            case ALWAYS -> true;
+            case OVERSEAS_ONLY -> isOverseas(trip);
+            // 날짜를 모르면(-1) 판단을 미루고 넣어 둔다.
+            case OVERNIGHT_ONLY -> nights(trip) != 0;
+        };
+    }
+
+    /** 일수만큼 필요한 물건이면 며칠치인지 이름에 적어 준다. */
+    private String itemName(DefaultItem item, Trip trip) {
+        long nights = nights(trip);
+        if (!item.perDay() || nights < 0) {
+            return item.name();
+        }
+        return item.name() + " (" + (nights + 1) + "일치)";
     }
 
     @Transactional(readOnly = true)
@@ -69,6 +171,10 @@ public class PackingService {
         }
         return packingItemRepository.findByTripIdOrderByCategoryAscNameAsc(tripId)
                 .stream()
+                .sorted(java.util.Comparator
+                        .comparingInt((PackingItem i) -> categoryRank(i.getCategory()))
+                        .thenComparing(PackingItem::getCategory)
+                        .thenComparing(PackingItem::getName))
                 .map(PackingItemResponse::from)
                 .toList();
     }
