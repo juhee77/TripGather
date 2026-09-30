@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { authFetch } from '../api/client';
 import { Plus, Trash2, CheckCircle, Circle } from 'lucide-react';
 
+/** 백엔드 PackingService.CATEGORY_ORDER 와 같은 순서. */
+const CATEGORIES = ['필수', '전자기기', '의류', '세면', '기타'];
+
 const PackingList = ({ tripId }) => {
   const [items, setItems] = useState([]);
   const [newItemName, setNewItemName] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState('기타');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,10 +27,19 @@ const PackingList = ({ tripId }) => {
   };
 
   const initDefaultItems = async () => {
-    if (!window.confirm('기본 준비물을 불러오시겠습니까?')) return;
+    if (!window.confirm('여행 조건에 맞는 기본 준비물을 채워 넣을까요?')) return;
     try {
+      const before = items.length;
       const res = await authFetch(`/api/trips/${tripId}/packing/init`, { method: 'POST' });
-      if (res.ok) setItems(await res.json());
+      if (res.ok) {
+        const next = await res.json();
+        setItems(next);
+        // 이미 있는 항목은 건너뛰므로, 아무것도 안 늘었을 때 버튼이 먹통처럼 보이지 않게 알려 준다.
+        const added = next.length - before;
+        alert(added > 0
+          ? `기본 준비물 ${added}개를 채웠습니다.`
+          : '빠진 기본 준비물이 없습니다.');
+      }
     } catch (err) {
       console.error(err);
     }
@@ -39,7 +52,7 @@ const PackingList = ({ tripId }) => {
       const res = await authFetch(`/api/trips/${tripId}/packing`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newItemName, category: '기타' })
+        body: JSON.stringify({ name: newItemName, category: newItemCategory })
       });
       if (res.ok) {
         setItems([...items, await res.json()]);
@@ -75,6 +88,11 @@ const PackingList = ({ tripId }) => {
 
   if (loading) return <div>로딩 중...</div>;
 
+  const checkedCount = items.filter(i => i.checked).length;
+  const progressPercentage = items.length === 0
+    ? 0
+    : Math.round((checkedCount / items.length) * 100);
+
   const groupedItems = items.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
     acc[item.category].push(item);
@@ -90,11 +108,42 @@ const PackingList = ({ tripId }) => {
           border: '1px solid var(--border-color)', color: 'var(--text-secondary)',
           fontSize: '11px', fontWeight: 700, cursor: 'pointer'
         }}>
-          기본 준비물 불러오기
+          기본 준비물 채우기
         </button>
       </div>
 
+      {items.length > 0 && (
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)' }}>
+              {checkedCount}개 완료 / 총 {items.length}개
+            </span>
+            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>
+              {progressPercentage}%
+            </span>
+          </div>
+          <div style={{ height: '8px', borderRadius: 'var(--radius-full)', background: 'var(--border-color)', overflow: 'hidden' }}>
+            <div style={{
+              width: `${progressPercentage}%`, height: '100%',
+              background: progressPercentage === 100 ? '#10b981' : 'var(--text-primary)',
+              transition: 'width 0.3s'
+            }} />
+          </div>
+        </div>
+      )}
+
       <form onSubmit={addItem} style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+        <select
+          value={newItemCategory}
+          onChange={e => setNewItemCategory(e.target.value)}
+          style={{
+            padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)',
+            outline: 'none', fontSize: '14px', fontWeight: 600, background: 'white',
+            color: 'var(--text-primary)'
+          }}
+        >
+          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
         <input 
           type="text" value={newItemName} onChange={e => setNewItemName(e.target.value)}
           placeholder="추가할 준비물 입력" 
@@ -136,7 +185,7 @@ const PackingList = ({ tripId }) => {
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)', fontWeight: 600 }}>
           <p style={{ marginBottom: '16px' }}>등록된 준비물이 없습니다.</p>
           <button type="button" className="primary-btn" onClick={initDefaultItems}>
-            기본 준비물 불러오기
+            기본 준비물 채우기
           </button>
         </div>
       )}
