@@ -275,5 +275,117 @@ class PackingServiceTest {
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("카테고리명은 50자 이내여야 합니다.");
     }
-}
 
+    @org.junit.jupiter.api.Nested
+    @DisplayName("기본 준비물 템플릿")
+    class DefaultTemplate {
+
+        private Trip trip(String country, java.time.LocalDate start, java.time.LocalDate end) {
+            return Trip.builder().id(1L).title("여행").country(country)
+                    .startDate(start).endDate(end).build();
+        }
+
+        /** 템플릿 생성 후 저장된 항목 이름을 모은다. */
+        private java.util.List<String> savedNames(Trip trip, java.util.List<PackingItem> alreadyThere) {
+            given(tripRepository.findById(1L)).willReturn(java.util.Optional.of(trip));
+            given(tripRepository.existsById(1L)).willReturn(true);
+            given(packingItemRepository.findByTripId(1L)).willReturn(alreadyThere);
+            given(packingItemRepository.findByTripIdOrderByCategoryAscNameAsc(1L)).willReturn(List.of());
+
+            packingService.initDefaultItems(1L);
+
+            org.mockito.ArgumentCaptor<PackingItem> captor =
+                    org.mockito.ArgumentCaptor.forClass(PackingItem.class);
+            org.mockito.Mockito.verify(packingItemRepository, org.mockito.Mockito.atLeast(0))
+                    .save(captor.capture());
+            return captor.getAllValues().stream().map(PackingItem::getName).toList();
+        }
+
+        @Test
+        @DisplayName("국내 여행에는 여권과 멀티어댑터를 넣지 않는다")
+        void domesticTripSkipsOverseasItems() {
+            java.util.List<String> names = savedNames(
+                    trip("KR", java.time.LocalDate.of(2026, 5, 1), java.time.LocalDate.of(2026, 5, 3)),
+                    List.of());
+
+            assertThat(names).doesNotContain("여권", "멀티어댑터", "여행자 보험");
+            assertThat(names).contains("현금/카드", "상비약");
+        }
+
+        @Test
+        @DisplayName("해외 여행에는 여권과 멀티어댑터를 넣는다")
+        void overseasTripIncludesOverseasItems() {
+            java.util.List<String> names = savedNames(
+                    trip("JP", java.time.LocalDate.of(2026, 5, 1), java.time.LocalDate.of(2026, 5, 3)),
+                    List.of());
+
+            assertThat(names).contains("여권", "멀티어댑터", "여행자 보험");
+        }
+
+        @Test
+        @DisplayName("당일치기에는 잠옷과 숙소 예약 확인서를 넣지 않는다")
+        void dayTripSkipsOvernightItems() {
+            java.time.LocalDate sameDay = java.time.LocalDate.of(2026, 5, 1);
+            java.util.List<String> names = savedNames(trip("KR", sameDay, sameDay), List.of());
+
+            assertThat(names).doesNotContain("잠옷", "숙소 예약 확인서", "샴푸/바디워시");
+            assertThat(names).contains("외투", "현금/카드");
+        }
+
+        @Test
+        @DisplayName("일수만큼 필요한 항목에는 며칠치인지 적어 준다")
+        void perDayItemCarriesDayCount() {
+            // 5/1 ~ 5/3 은 2박 3일
+            java.util.List<String> names = savedNames(
+                    trip("KR", java.time.LocalDate.of(2026, 5, 1), java.time.LocalDate.of(2026, 5, 3)),
+                    List.of());
+
+            assertThat(names).contains("속옷/양말 (3일치)");
+        }
+
+        @Test
+        @DisplayName("날짜를 모르면 숙박 여부를 단정하지 않고 모두 넣는다")
+        void unknownDatesKeepOvernightItems() {
+            java.util.List<String> names = savedNames(trip("KR", null, null), List.of());
+
+            assertThat(names).contains("잠옷", "숙소 예약 확인서");
+            // 며칠치인지도 알 수 없으므로 수량을 붙이지 않는다
+            assertThat(names).contains("속옷/양말");
+        }
+
+        @Test
+        @DisplayName("이미 있는 항목은 다시 만들지 않는다")
+        void doesNotDuplicateExistingItems() {
+            // 예전에는 버튼을 두 번 누르면 목록이 통째로 두 벌이 됐다.
+            Trip trip = trip("KR", java.time.LocalDate.of(2026, 5, 1), java.time.LocalDate.of(2026, 5, 3));
+            java.util.List<PackingItem> already = List.of(
+                    PackingItem.of(trip, "현금/카드", "필수"),
+                    PackingItem.of(trip, "상비약", "기타"));
+
+            java.util.List<String> names = savedNames(trip, already);
+
+            assertThat(names).doesNotContain("현금/카드", "상비약");
+            assertThat(names).contains("외투");
+        }
+    }
+
+    @Test
+    @DisplayName("준비물 목록은 필수 카테고리부터 보여 준다")
+    void getItems_OrdersEssentialCategoryFirst() {
+        // 이름순으로 두면 유니코드 차례상 "기타" 가 맨 위, "필수" 가 맨 아래로 간다.
+        Trip trip = Trip.builder().id(1L).title("여행").build();
+        given(tripRepository.existsById(1L)).willReturn(true);
+        given(packingItemRepository.findByTripIdOrderByCategoryAscNameAsc(1L)).willReturn(List.of(
+                PackingItem.of(trip, "우산", "기타"),
+                PackingItem.of(trip, "썬크림", "세면"),
+                PackingItem.of(trip, "여권", "필수"),
+                PackingItem.of(trip, "충전기", "전자기기"),
+                PackingItem.of(trip, "내가 만든 것", "나만의 분류")));
+
+        java.util.List<String> categories = packingService.getItems(1L).stream()
+                .map(com.example.demo.dto.PackingItemResponse::getCategory)
+                .toList();
+
+        assertThat(categories).containsExactly("필수", "전자기기", "세면", "기타", "나만의 분류");
+    }
+}
