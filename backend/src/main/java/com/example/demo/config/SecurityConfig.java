@@ -43,14 +43,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-            frontendUrl,
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:5175",
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:5174"
-        ));
+        // 개발용 주소는 로컬에서만 연다. 운영에서 localhost 를 허용해 둘 이유가 없다.
+        List<String> allowedOrigins = new java.util.ArrayList<>(List.of(frontendUrl));
+        if (isLocalProfile()) {
+            allowedOrigins.addAll(List.of(
+                "http://localhost:5173",
+                "http://localhost:5174",
+                "http://localhost:5175",
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:5174"
+            ));
+        }
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

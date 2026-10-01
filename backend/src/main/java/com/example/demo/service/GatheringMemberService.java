@@ -373,7 +373,11 @@ public class GatheringMemberService implements GatheringMemberUseCase {
             50,
             1,
             stampTitle,
-            StampGrant.forGathering(gatheringId, occurrenceDate, "/src/assets/stamp-placeholder.png")
+            // 이미지를 비워 두면 화면이 기본 도장(VISITED)을 그린다.
+            // 예전에는 "/src/assets/stamp-placeholder.png" 를 넣었는데, 이는 Vite 개발 서버의
+            // 소스 경로다. 빌드하면 파일명에 해시가 붙어 그 경로가 사라지므로 깨진 이미지가 떴고,
+            // 값이 비어 있지는 않아서 기본 도장으로 넘어가지도 못했다.
+            StampGrant.forGathering(gatheringId, occurrenceDate, null)
         );
     }
 
