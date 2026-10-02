@@ -782,7 +782,7 @@ class GatheringMemberServiceTest {
 
         // then
         verify(pointService).addPoints(1L, 50, 1, "[한강 모임] 스탠바이 체크인",
-                StampGrant.forGathering(10L, null, "/src/assets/stamp-placeholder.png"));
+                StampGrant.forGathering(10L, null, null));
     }
 
     @Test
@@ -1064,8 +1064,9 @@ class GatheringMemberServiceTest {
 
             gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false);
 
+            // 이미지는 비워 둔다. 화면이 기본 도장을 그린다.
             verify(pointService).addPoints(eq(1L), eq(50), eq(1), any(),
-                    eq(StampGrant.forGathering(10L, today, "/src/assets/stamp-placeholder.png")));
+                    eq(StampGrant.forGathering(10L, today, null)));
         }
 
         @Test
