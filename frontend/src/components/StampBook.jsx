@@ -40,7 +40,7 @@ const StampItem = ({ stamp }) => {
       <div className={`stamp-card-3d ${isFlipped ? 'flipped' : ''}`}>
         
         {/* Front: The Official Stamp */}
-        <div className="stamp-side stamp-front-light" style={{ position: 'relative' }}>
+        <div className="stamp-side stamp-front-light">
           <div className="stamp-inner-border">
             {stamp.stampImageUrl ? (
               <img src={stamp.stampImageUrl} alt="stamp" className="stamp-graphic" />
@@ -68,11 +68,6 @@ const StampItem = ({ stamp }) => {
               <Clock size={12} />
               <span>{formatDate(stamp.completedAt)}</span>
             </div>
-            {stamp.occurrenceDate && (
-              <div className="memory-date-row">
-                <span>🔁 {stamp.occurrenceDate} 회차</span>
-              </div>
-            )}
           </div>
           <div>
             <div className="mission-clear-badge" style={{ marginBottom: '6px' }}>MISSION CLEAR</div>
