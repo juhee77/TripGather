@@ -46,7 +46,7 @@ const GatheringDetailPage = () => {
   const { user: currentUser } = useUser();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
-  const [activeTab, setActiveTab] = useState('브리핑'); // '브리핑', '크루', '무전', '갤러리'
+  const [activeTab, setActiveTab] = useState('브리핑'); // '브리핑', '크루', '미션', '방명록', '갤러리', '채팅'
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
 
@@ -374,11 +374,11 @@ const GatheringDetailPage = () => {
               '브리핑', 
               '크루', 
               isMember ? '미션 🎯' : null,
-              `무전 (${comments.length})`, 
+              `방명록 (${comments.length})`, 
               '갤러리 📸',
               (isMember || gathering.isChatPublic) ? '채팅 💬' : null
             ].filter(Boolean).map((tab) => {
-              const tabName = tab.startsWith('무전') ? '무전' : tab.startsWith('갤러리') ? '갤러리' : tab.startsWith('채팅') ? '채팅' : tab.startsWith('미션') ? '미션' : tab;
+              const tabName = tab.startsWith('방명록') ? '방명록' : tab.startsWith('갤러리') ? '갤러리' : tab.startsWith('채팅') ? '채팅' : tab.startsWith('미션') ? '미션' : tab;
               const isActive = activeTab === tabName;
               
               return (
@@ -672,7 +672,7 @@ const GatheringDetailPage = () => {
             </div>
           )}
 
-          {activeTab === '무전' && (
+          {activeTab === '방명록' && (
             <div className="animate-fade" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
               {(isMember || gathering.isCommentPublic) ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '80px' }}>
@@ -694,15 +694,15 @@ const GatheringDetailPage = () => {
                   ))}
                   {comments.length === 0 && (
                     <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                      <p style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: 600 }}>궁금한 점을 무전으로 남겨보세요! 💬</p>
+                      <p style={{ fontSize: '15px', color: 'var(--text-muted)', fontWeight: 600 }}>첫 글을 남겨보세요! 궁금한 점도 좋습니다 💬</p>
                     </div>
                   )}
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '48px', marginBottom: '20px' }}>📻</div>
-                  <h4 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>무전 교신 제한</h4>
-                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600, lineHeight: 1.6 }}>라운지 밖에서의 무전은 승인된 크루들끼리만 가능합니다. 참여 신청 후 멤버들과 소통해보세요.</p>
+                  <h4 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>방명록 비공개</h4>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600, lineHeight: 1.6 }}>이 모임의 방명록은 승인된 크루만 볼 수 있습니다. 참여 신청 후 멤버들과 소통해보세요.</p>
                 </div>
               )}
             </div>
@@ -738,7 +738,7 @@ const GatheringDetailPage = () => {
         </div>
 
         {/* Comment Input Wrapper - Only shown for Taik tab */}
-        {activeTab === '무전' && (isMember || gathering.isCommentPublic) && (
+        {activeTab === '방명록' && (isMember || gathering.isCommentPublic) && (
           <div style={{
             padding: '12px 24px 24px 24px', background: 'var(--surface)', borderTop: '1px solid var(--border-color)',
             display: 'flex', gap: '8px'
