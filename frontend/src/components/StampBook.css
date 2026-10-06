@@ -60,7 +60,12 @@
 }
 
 .stamp-side {
+  /* 두 면을 같은 자리에 겹쳐 둔다.
+     top/left 를 적지 않으면 "원래 있었을 자리(static position)" 에 놓이므로,
+     형제 중 하나라도 흐름에 남으면 뒷면이 그만큼 아래로 밀려난다. */
   position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
