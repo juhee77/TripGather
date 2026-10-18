@@ -71,6 +71,44 @@ const CreateTripPage = () => {
       </header>
 
       <form onSubmit={handleSubmit} style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+          color: 'white',
+          padding: '16px 18px',
+          borderRadius: '18px',
+          border: '1px solid rgba(255, 92, 0, 0.45)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}>
+          <div>
+            <span style={{ fontSize: '11px', fontWeight: 900, color: 'var(--primary-orange)' }}>
+              ✨ PHOTO-TO-ITINERARY
+            </span>
+            <div style={{ fontSize: '15px', fontWeight: 800, marginTop: '2px' }}>
+              📸 여행 사진이 있으신가요? 사진으로 코스부터 1초 자동 생성!
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/itinerary/create')}
+            style={{
+              background: 'var(--primary-orange)',
+              color: 'white',
+              border: 'none',
+              padding: '10px 14px',
+              borderRadius: '12px',
+              fontWeight: 800,
+              fontSize: '13px',
+              cursor: 'pointer'
+            }}
+          >
+            사진으로 여정 만들기 →
+          </button>
+        </div>
+
         <div>
           <label style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>여행 제목 *</label>
           <input style={inputStyle} placeholder="예: 제주도 힐링 여행"

@@ -5,6 +5,7 @@ import { authFetch } from '../api/client';
 import { useUser } from '../contexts/UserContext';
 import FormInput from '../components/UI/FormInput';
 import PrimaryButton from '../components/UI/PrimaryButton';
+import PhotoToItineraryWizard from '../components/PhotoToItineraryWizard';
 import stampPlaceholder from '../assets/stamp-placeholder.png';
 
 const ItineraryEditorPage = () => {
@@ -24,6 +25,7 @@ const ItineraryEditorPage = () => {
         endDate: '',
         description: '',
         stampImageUrl: '',
+        timelapseUrl: '',
         isPublic: false,
         routePoints: []
     });
@@ -74,6 +76,7 @@ const ItineraryEditorPage = () => {
                             endDate: itinerary.endDate || '',
                             description: itinerary.description || '',
                             stampImageUrl: itinerary.stampImageUrl || '',
+                            timelapseUrl: itinerary.timelapseUrl || '',
                             isPublic: itinerary.isPublic || false,
                             routePoints: itinerary.routePoints ? [...itinerary.routePoints].sort((a, b) => 
                                 a.dayNumber !== b.dayNumber ? a.dayNumber - b.dayNumber : a.sequenceOrder - b.sequenceOrder
@@ -244,6 +247,7 @@ const ItineraryEditorPage = () => {
                 title: formData.title,
                 description: formData.description,
                 stampImageUrl: formData.stampImageUrl,
+                timelapseUrl: formData.timelapseUrl || null,
                 routePoints: formData.routePoints,
                 location: formData.region,
                 startDate: formData.startDate,
@@ -287,6 +291,19 @@ const ItineraryEditorPage = () => {
         }
     };
 
+    const handleApplyPhotoDraft = (draft) => {
+        setFormData(prev => ({
+            ...prev,
+            title: prev.title.trim() ? prev.title : (draft.suggestedTitle || prev.title),
+            description: prev.description.trim() ? prev.description : (draft.suggestedDescription || prev.description),
+            region: prev.region.trim() ? prev.region : (draft.region || prev.region),
+            startDate: draft.startDate || prev.startDate,
+            endDate: draft.endDate || prev.endDate,
+            timelapseUrl: draft.timelapseUrl || prev.timelapseUrl,
+            routePoints: draft.routePoints || prev.routePoints
+        }));
+    };
+
     const days = Array.from(new Set(formData.routePoints.map(p => p.dayNumber || 1))).sort((a, b) => a - b);
     if (days.length === 0) days.push(1);
 
@@ -304,6 +321,8 @@ const ItineraryEditorPage = () => {
             </header>
 
             <form onSubmit={handleSubmit} className="hide-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    <PhotoToItineraryWizard onApplyDraft={handleApplyPhotoDraft} />
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                         <FormInput 
                             label="VOYAGE TITLE"
@@ -490,19 +509,35 @@ const ItineraryEditorPage = () => {
                                                     onDragOver={(e) => e.preventDefault()}
                                                     onDrop={(e) => handleDrop(e, globalIndex, dayNum)}
                                                 >
-                                                    <div style={{ position: 'relative' }}>
-                                                        <MapPin size={16} color="var(--primary-orange)" style={{ position: 'absolute', top: '13px', left: '14px' }} />
-                                                        <input 
-                                                            required 
-                                                            value={point.label} 
-                                                            onChange={(e) => updatePoint(globalIndex, 'label', e.target.value)} 
-                                                            placeholder="장소를 입력하세요" 
-                                                            className="glass"
-                                                            style={{ 
-                                                                width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px', border: '1px solid var(--border-color)',
-                                                                color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, outline: 'none', background: 'var(--surface)'
-                                                            }} 
-                                                        />
+                                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                                        {point.photoUrl && (
+                                                            <img
+                                                                src={point.photoUrl}
+                                                                alt={point.label || '경유지 사진'}
+                                                                style={{
+                                                                    width: '44px',
+                                                                    height: '44px',
+                                                                    borderRadius: '10px',
+                                                                    objectFit: 'cover',
+                                                                    border: '2px solid var(--primary-orange)',
+                                                                    flexShrink: 0
+                                                                }}
+                                                            />
+                                                        )}
+                                                        <div style={{ position: 'relative', flex: 1 }}>
+                                                            <MapPin size={16} color="var(--primary-orange)" style={{ position: 'absolute', top: '13px', left: '14px' }} />
+                                                            <input 
+                                                                required 
+                                                                value={point.label} 
+                                                                onChange={(e) => updatePoint(globalIndex, 'label', e.target.value)} 
+                                                                placeholder="장소를 입력하세요" 
+                                                                className="glass"
+                                                                style={{ 
+                                                                    width: '100%', padding: '12px 14px 12px 42px', borderRadius: '12px', border: '1px solid var(--border-color)',
+                                                                    color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600, outline: 'none', background: 'var(--surface)'
+                                                                }} 
+                                                            />
+                                                        </div>
                                                     </div>
                                                     
                                                     {/* Aviation Style Time Range Slider */}
