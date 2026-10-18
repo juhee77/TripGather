@@ -1,0 +1,219 @@
+/* TripGather — 여행 사진 기반 여정(Itinerary) 자동 생성 위저드 스타일 (#29) */
+
+.pti-wizard {
+  --pti-accent: #FF5C00;
+  --pti-dark: #0F172A;
+  --pti-border: rgba(15, 23, 42, 0.1);
+  background: linear-gradient(145deg, #0F172A 0%, #1E293B 100%);
+  color: #FFFFFF;
+  border-radius: 22px;
+  padding: 20px;
+  border: 1.5px solid rgba(255, 92, 0, 0.42);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pti-wizard .pti-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pti-wizard .pti-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #FF5C00;
+  background: rgba(255, 92, 0, 0.16);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.pti-wizard .pti-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 6px 0 2px;
+  color: #FFFFFF;
+}
+
+.pti-wizard .pti-sub {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.76);
+  margin: 0;
+}
+
+.pti-wizard .pti-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pti-wizard .pti-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pti-wizard .pti-btn:hover:not(:disabled) {
+  border-color: #FF5C00;
+  background: rgba(255, 92, 0, 0.22);
+}
+
+.pti-wizard .pti-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pti-wizard .pti-btn-orange {
+  background: #FF5C00;
+  border-color: #FF5C00;
+  color: #FFFFFF;
+}
+
+.pti-wizard .pti-btn-orange:hover:not(:disabled) {
+  background: #E04F00;
+}
+
+.pti-wizard .pti-hidden-input {
+  display: none;
+}
+
+.pti-wizard .pti-body {
+  background: #FFFFFF;
+  color: var(--text-primary);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pti-wizard .pti-options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--pti-border);
+}
+
+.pti-wizard .pti-check-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.pti-wizard .pti-summary-card {
+  background: #FFF7ED;
+  border: 1px solid rgba(255, 92, 0, 0.3);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pti-wizard .pti-day-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.pti-wizard .pti-day-group {
+  background: var(--bg-lite);
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid var(--pti-border);
+}
+
+.pti-wizard .pti-day-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pti-wizard .pti-day-pill {
+  background: #0F172A;
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+.pti-wizard .pti-stop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.pti-wizard .pti-stop-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #FFFFFF;
+  border: 1px solid var(--pti-border);
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.pti-wizard .pti-stop-thumb {
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1.5px solid #FF5C00;
+  flex-shrink: 0;
+}
+
+.pti-wizard .pti-stop-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.pti-wizard .pti-stop-name {
+  font-size: 0.84rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pti-wizard .pti-stop-time {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.pti-wizard .pti-status {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #FF5C00;
+}
