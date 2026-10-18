@@ -22,6 +22,8 @@ public class RoutePointResponse {
     private Double lng;
     private Boolean isCompleted;
     private String memo;
+    private String photoUrl;
+    private java.time.LocalDateTime takenAt;
 
     public static RoutePointResponse from(RoutePoint routePoint) {
         if (routePoint == null) return null;
@@ -37,6 +39,8 @@ public class RoutePointResponse {
                 .lng(routePoint.getLng())
                 .isCompleted(routePoint.getIsCompleted())
                 .memo(routePoint.getMemo())
+                .photoUrl(routePoint.getPhotoUrl())
+                .takenAt(routePoint.getTakenAt())
                 .build();
     }
 }

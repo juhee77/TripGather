@@ -46,6 +46,14 @@ public class RoutePoint {
     @Column(length = 500)
     private String memo;
 
+    /** 경유지 대표/인증 사진 URL (#28) */
+    @Column(name = "photo_url", columnDefinition = "TEXT")
+    private String photoUrl;
+
+    /** 사진 촬영 시각 (#28) */
+    @Column(name = "taken_at")
+    private java.time.LocalDateTime takenAt;
+
     @Column(name = "is_completed")
     @Builder.Default
     private Boolean isCompleted = false;

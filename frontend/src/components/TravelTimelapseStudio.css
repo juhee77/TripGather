@@ -1,0 +1,585 @@
+/* TripGather — 여행·여정 동선 타임랩스 스튜디오 스타일 (#28) */
+
+.tl-studio {
+  --tl-accent: #FF5C00;
+  --tl-accent-soft: rgba(255, 92, 0, 0.12);
+  --tl-dark: #0F172A;
+  --tl-border: rgba(15, 23, 42, 0.08);
+  --bg-base: var(--bg-lite);
+  --bg-surface: #FFFFFF;
+  --primary-orange-light: #FFF7ED;
+  --primary-orange-hover: #E04F00;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: var(--text-primary);
+}
+
+.tl-studio .tl-ticket-banner {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  color: #FFFFFF;
+  border-radius: 20px;
+  padding: 20px 22px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 92, 0, 0.35);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+}
+
+.tl-studio .tl-ticket-banner::before,
+.tl-studio .tl-ticket-banner::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-base);
+  transform: translateY(-50%);
+}
+
+.tl-studio .tl-ticket-banner::before {
+  left: -11px;
+}
+
+.tl-studio .tl-ticket-banner::after {
+  right: -11px;
+}
+
+.tl-studio .tl-banner-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tl-studio .tl-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #FF5C00;
+  background: rgba(255, 92, 0, 0.16);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.tl-studio .tl-banner-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 8px 0 4px;
+  color: #FFFFFF;
+}
+
+.tl-studio .tl-banner-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+}
+
+.tl-studio .tl-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(255, 92, 0, 0.45);
+}
+
+.tl-studio .tl-stat-box {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.tl-studio .tl-stat-val {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FF5C00;
+}
+
+.tl-studio .tl-stat-lbl {
+  font-size: 0.73rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.tl-studio .tl-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--tl-border);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tl-studio .tl-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.tl-studio .tl-card-title {
+  font-size: 1rem;
+  font-weight: 800;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tl-studio .tl-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.tl-studio .tl-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: 1.5px dashed rgba(255, 92, 0, 0.45);
+  background: var(--primary-orange-light);
+  color: var(--primary-orange);
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tl-studio .tl-upload-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 92, 0, 0.15);
+}
+
+.tl-studio .tl-upload-btn.tl-camera {
+  background: var(--primary-orange);
+  color: #FFFFFF;
+  border-style: solid;
+  border-color: var(--primary-orange);
+}
+
+.tl-studio .tl-upload-btn.tl-secondary {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  border-style: solid;
+  border-color: var(--tl-border);
+}
+
+.tl-studio .tl-hidden-input {
+  display: none;
+}
+
+/* 위치 미지정 트레이 */
+.tl-studio .tl-unplaced-card {
+  border: 1.5px solid rgba(245, 158, 11, 0.45);
+  background: linear-gradient(180deg, rgba(255, 247, 237, 0.9), #FFFFFF);
+}
+
+.tl-studio .tl-badge-warn {
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.18);
+  color: #B45309;
+}
+
+.tl-studio .tl-unplaced-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 6px 2px 10px;
+}
+
+.tl-studio .tl-unplaced-item {
+  flex: 0 0 96px;
+  background: #FFFFFF;
+  border: 2px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  padding: 6px;
+  cursor: pointer;
+  position: relative;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.tl-studio .tl-unplaced-item.is-selected {
+  border-color: var(--primary-orange);
+  box-shadow: 0 0 0 3px rgba(255, 92, 0, 0.2);
+}
+
+.tl-studio .tl-unplaced-item img {
+  width: 100%;
+  height: 66px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+.tl-studio .tl-unplaced-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tl-studio .tl-route-matcher {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 92, 0, 0.08);
+  border: 1px solid rgba(255, 92, 0, 0.25);
+  margin-top: 8px;
+}
+
+.tl-studio .tl-select,
+.tl-studio .tl-input {
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  font-size: 0.85rem;
+  background: #FFFFFF;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 160px;
+}
+
+.tl-studio .tl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tl-studio .tl-btn:hover:not(:disabled) {
+  border-color: var(--primary-orange);
+  color: var(--primary-orange);
+}
+
+.tl-studio .tl-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tl-studio .tl-btn-primary {
+  background: var(--primary-orange);
+  color: #FFFFFF;
+  border-color: var(--primary-orange);
+}
+
+.tl-studio .tl-btn-primary:hover:not(:disabled) {
+  background: var(--primary-orange-hover);
+  color: #FFFFFF;
+}
+
+.tl-studio .tl-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* 인터랙티브 지도 래퍼 */
+.tl-studio .tl-map-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.tl-studio .tl-chip-group {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tl-studio .tl-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tl-studio .tl-chip.is-active {
+  background: var(--primary-orange);
+  color: #FFFFFF;
+  border-color: var(--primary-orange);
+}
+
+.tl-studio .tl-map-box {
+  position: relative;
+  width: 100%;
+  height: 390px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #0F172A;
+}
+
+.tl-studio .tl-leaflet-canvas {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.tl-studio .tl-pick-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  background: rgba(15, 23, 42, 0.92);
+  color: #FFFFFF;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.tl-studio .tl-tour-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--tl-border);
+}
+
+/* 촬영 지점 타임라인 리스트 */
+.tl-studio .tl-spot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.tl-studio .tl-spot-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--bg-base);
+  border: 1px solid var(--tl-border);
+}
+
+.tl-studio .tl-gate-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--primary-orange);
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tl-studio .tl-spot-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(255, 92, 0, 0.35);
+}
+
+.tl-studio .tl-spot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tl-studio .tl-spot-title-input {
+  font-weight: 800;
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 2px 6px;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 240px;
+}
+
+.tl-studio .tl-spot-title-input:focus {
+  border-color: var(--primary-orange);
+  background: #FFFFFF;
+  outline: none;
+}
+
+.tl-studio .tl-spot-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
+.tl-studio .tl-loc-tag {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(255, 92, 0, 0.12);
+  color: var(--primary-orange);
+}
+
+.tl-studio .tl-spot-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* GIF / MP4 보딩패스 스튜디오 설정 및 미리보기 */
+.tl-studio .tl-gif-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tl-studio .tl-opt-group {
+  background: var(--bg-base);
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--tl-border);
+}
+
+.tl-studio .tl-opt-label {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.tl-studio .tl-preview-stage {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #0F172A;
+  color: #FFFFFF;
+  text-align: center;
+}
+
+.tl-studio .tl-preview-media {
+  max-width: 100%;
+  max-height: 440px;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  border: 2px solid rgba(255, 92, 0, 0.5);
+}
+
+.tl-studio .tl-progress-bar {
+  width: 100%;
+  height: 10px;
+  background: rgba(15, 23, 42, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.tl-studio .tl-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FF5C00, #FB923C);
+  transition: width 0.2s ease;
+}
+
+.tl-studio .tl-toast {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #0F172A;
+  color: #FFFFFF;
+  font-size: 0.84rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Leaflet 커스텀 핀 마커 */
+.tl-leaflet-pin {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2.5px solid #FF5C00;
+  background: #FFFFFF;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.35);
+  overflow: visible;
+}
+
+.tl-leaflet-pin img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9px;
+}
+
+.tl-leaflet-pin-num {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #FF5C00;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFFFFF;
+}
+
+@media (max-width: 640px) {
+  .tl-studio .tl-map-box {
+    height: 310px;
+  }
+  .tl-studio .tl-spot-row {
+    flex-wrap: wrap;
+  }
+}

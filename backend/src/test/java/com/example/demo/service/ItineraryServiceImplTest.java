@@ -989,4 +989,64 @@ class ItineraryServiceImplTest {
                 org.mockito.ArgumentMatchers.eq(
                         StampGrant.forItinerary(itineraryId, "https://cdn/jeju.png")));
     }
+
+    @Test
+    @DisplayName("여정 수정 및 복제·병합 시 경유지 사진(photoUrl, takenAt)과 타임랩스(timelapseUrl)가 보존된다")
+    void updateCloneMerge_PreservesPhotoAndTimelapse() {
+        java.time.LocalDateTime shotTime = java.time.LocalDateTime.of(2026, 10, 10, 14, 30);
+        com.example.demo.domain.RoutePoint rp = com.example.demo.domain.RoutePoint.builder()
+                .label("성산일출봉")
+                .dayNumber(1)
+                .sequenceOrder(1)
+                .lat(33.4580)
+                .lng(126.9426)
+                .photoUrl("/uploads/seongsan.jpg")
+                .takenAt(shotTime)
+                .build();
+
+        Itinerary existing = Itinerary.builder()
+                .id(1L)
+                .title("제주 동선")
+                .ownerEmail("owner@test.com")
+                .routePoints(new ArrayList<>())
+                .build();
+
+        Itinerary updatePayload = Itinerary.builder()
+                .title("제주 동선 업데이트")
+                .bgImageUrl("/uploads/cover.jpg")
+                .timelapseUrl("/uploads/jeju-timelapse.gif")
+                .routePoints(new ArrayList<>(java.util.List.of(rp)))
+                .build();
+
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(existing));
+        given(itineraryRepository.save(any(Itinerary.class))).willAnswer(i -> i.getArgument(0));
+
+        Itinerary updated = itineraryService.updateItinerary(1L, updatePayload);
+        assertThat(updated.getBgImageUrl()).isEqualTo("/uploads/cover.jpg");
+        assertThat(updated.getTimelapseUrl()).isEqualTo("/uploads/jeju-timelapse.gif");
+        assertThat(updated.getRoutePoints()).hasSize(1);
+        assertThat(updated.getRoutePoints().get(0).getPhotoUrl()).isEqualTo("/uploads/seongsan.jpg");
+        assertThat(updated.getRoutePoints().get(0).getTakenAt()).isEqualTo(shotTime);
+
+        // 복제 시에도 photoUrl, takenAt, timelapseUrl 유지 확인
+        Itinerary cloned = itineraryService.cloneItinerary(1L, "other@test.com");
+        assertThat(cloned.getTimelapseUrl()).isEqualTo("/uploads/jeju-timelapse.gif");
+        assertThat(cloned.getRoutePoints().get(0).getPhotoUrl()).isEqualTo("/uploads/seongsan.jpg");
+        assertThat(cloned.getRoutePoints().get(0).getTakenAt()).isEqualTo(shotTime);
+
+        // 병합 시에도 photoUrl, takenAt 유지 확인
+        Itinerary mergeTarget = Itinerary.builder()
+                .id(2L)
+                .title("내 제주 여행")
+                .ownerEmail("other@test.com")
+                .routePoints(new ArrayList<>())
+                .build();
+        given(itineraryRepository.findById(2L)).willReturn(Optional.of(mergeTarget));
+
+        Itinerary merged = itineraryService.mergeItinerary(1L, 2L, 2, "other@test.com");
+        assertThat(merged.getRoutePoints()).hasSize(1);
+        assertThat(merged.getRoutePoints().get(0).getPhotoUrl()).isEqualTo("/uploads/seongsan.jpg");
+        assertThat(merged.getRoutePoints().get(0).getTakenAt()).isEqualTo(shotTime);
+    }
 }
+

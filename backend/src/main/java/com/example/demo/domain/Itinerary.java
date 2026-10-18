@@ -56,6 +56,10 @@ public class Itinerary extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String stampImageUrl;
 
+    /** 보딩패스 동선 타임랩스 GIF/MP4 URL (#28) */
+    @Column(name = "timelapse_url", columnDefinition = "TEXT")
+    private String timelapseUrl;
+
     @OneToMany(mappedBy = "itinerary", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private java.util.List<RoutePoint> routePoints = new java.util.ArrayList<>();

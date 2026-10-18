@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, List, Map, Globe, CheckSquare, Star, Plus } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, List, Map, Globe, CheckSquare, Star, Plus, Film } from 'lucide-react';
 import { authFetch } from '../api/client';
 import PackingList from '../components/PackingList';
 import TranslatorWidget from '../components/TranslatorWidget';
 import ReviewSection from '../components/ReviewSection';
+import TravelTimelapseStudio from '../components/TravelTimelapseStudio';
 
 const TripHubPage = () => {
   const { id } = useParams();
@@ -62,6 +63,7 @@ const TripHubPage = () => {
 
   const TABS = [
     { id: '일정', icon: <List size={18} /> },
+    { id: '타임랩스', icon: <Film size={18} /> },
     { id: '추천', icon: <Map size={18} /> },
     { id: '번역', icon: <Globe size={18} /> },
     { id: '준비물', icon: <CheckSquare size={18} /> },
@@ -149,17 +151,30 @@ const TripHubPage = () => {
       <div style={{ padding: '20px' }}>
         {activeTab === '일정' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 800 }}>내 여행 코스</h3>
-              {trip.itineraryId && (
-                <button onClick={() => navigate(`/itinerary/edit/${trip.itineraryId}`)} style={{
-                  background: 'var(--bg-lite)', color: 'var(--text-primary)', border: '1px solid var(--border-color)',
-                  padding: '8px 14px', borderRadius: '10px', fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer',
-                  boxShadow: 'var(--shadow-sm)'
-                }}>
-                  <Plus size={14} /> 일정 편집
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => setActiveTab('타임랩스')}
+                  style={{
+                    background: 'var(--primary-orange)', color: 'white', border: 'none',
+                    padding: '8px 14px', borderRadius: '10px', fontWeight: 800, fontSize: '13px',
+                    display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}
+                >
+                  <Film size={14} /> 보딩패스 GIF 만들기
                 </button>
-              )}
+                {trip.itineraryId && (
+                  <button onClick={() => navigate(`/itinerary/edit/${trip.itineraryId}`)} style={{
+                    background: 'var(--bg-lite)', color: 'var(--text-primary)', border: '1px solid var(--border-color)',
+                    padding: '8px 14px', borderRadius: '10px', fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}>
+                    <Plus size={14} /> 일정 편집
+                  </button>
+                )}
+              </div>
             </div>
 
             {!itinerary || !itinerary.routePoints || itinerary.routePoints.length === 0 ? (
@@ -228,7 +243,7 @@ const TripHubPage = () => {
                             </div>
 
                             {/* Info */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, marginTop: '2px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, marginTop: '2px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{
                                   fontWeight: 800, fontSize: '14px',
@@ -243,6 +258,19 @@ const TripHubPage = () => {
                                   {point.memo}
                                 </span>
                               )}
+                              {point.photoUrl && (
+                                <img
+                                  src={point.photoUrl}
+                                  alt={point.label}
+                                  style={{
+                                    width: '72px',
+                                    height: '72px',
+                                    objectFit: 'cover',
+                                    borderRadius: '10px',
+                                    border: '1.5px solid var(--primary-orange)'
+                                  }}
+                                />
+                              )}
                             </div>
                           </div>
                         );
@@ -253,6 +281,14 @@ const TripHubPage = () => {
               </div>
             )}
           </div>
+        )}
+        {activeTab === '타임랩스' && (
+          <TravelTimelapseStudio
+            itinerary={itinerary}
+            tripTitle={trip.title}
+            canEdit={true}
+            onItineraryUpdated={(updated) => setItinerary(updated)}
+          />
         )}
         {activeTab === '추천' && <div>추천 코스 준비 중...</div>}
         {activeTab === '번역' && <TranslatorWidget country={trip.country} />}

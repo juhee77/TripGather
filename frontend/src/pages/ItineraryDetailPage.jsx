@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, Edit3, Plane, Check, FileText } from 'lucide-react';
+import { MapPin, Edit3, Plane, Check, FileText, Film } from 'lucide-react';
 import { Map as KakaoMap, MapMarker, Polyline } from 'react-kakao-maps-sdk';
 import { useUser } from '../contexts/UserContext';
 import { authFetch } from '../api/client';
@@ -8,6 +8,7 @@ import ModalHeader from '../components/UI/ModalHeader';
 import ModalFooter from '../components/UI/ModalFooter';
 import PrimaryButton from '../components/UI/PrimaryButton';
 import JourneyRepository from '../repositories/JourneyRepository';
+import TravelTimelapseStudio from '../components/TravelTimelapseStudio';
 
 const ItineraryDetailPage = () => {
     const { id } = useParams();
@@ -24,6 +25,7 @@ const ItineraryDetailPage = () => {
     const [selectedDay, setSelectedDay] = useState(1);
     const [actionLoading, setActionLoading] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
+    const [showTimelapseStudio, setShowTimelapseStudio] = useState(false);
 
     useEffect(() => {
         setIsVisible(true);
@@ -545,6 +547,23 @@ const ItineraryDetailPage = () => {
                                                             </p>
                                                         </div>
                                                     )}
+
+                                                    {/* 경유지 인증/매칭 사진 */}
+                                                    {point.photoUrl && (
+                                                        <div style={{ marginTop: '10px' }}>
+                                                            <img
+                                                                src={point.photoUrl}
+                                                                alt={point.label}
+                                                                style={{
+                                                                    width: '96px',
+                                                                    height: '96px',
+                                                                    objectFit: 'cover',
+                                                                    borderRadius: '12px',
+                                                                    border: '2px solid var(--primary-orange)'
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -553,6 +572,70 @@ const ItineraryDetailPage = () => {
                             </div>
                         </div>
                     ))}
+
+                    {/* 보딩패스 동선 타임랩스(GIF/MP4) 스튜디오 섹션 */}
+                    <div style={{ marginTop: '28px', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Film size={18} color="var(--primary-orange)" />
+                                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>
+                                    보딩패스 동선 타임랩스 (GIF · MP4)
+                                </h3>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowTimelapseStudio(prev => !prev)}
+                                style={{
+                                    background: showTimelapseStudio ? 'var(--text-primary)' : 'var(--primary-orange)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '10px 16px',
+                                    borderRadius: '12px',
+                                    fontWeight: 800,
+                                    fontSize: '13px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {showTimelapseStudio ? '스튜디오 접기 ▲' : '🎬 사진으로 동선 GIF 만들기 ▼'}
+                            </button>
+                        </div>
+
+                        {!showTimelapseStudio && localItinerary.timelapseUrl && (
+                            <div style={{
+                                padding: '16px',
+                                borderRadius: '16px',
+                                background: '#0F172A',
+                                textAlign: 'center',
+                                marginBottom: '12px'
+                            }}>
+                                {localItinerary.timelapseUrl.endsWith('.mp4') || localItinerary.timelapseUrl.endsWith('.webm') ? (
+                                    <video
+                                        src={localItinerary.timelapseUrl}
+                                        controls
+                                        loop
+                                        muted
+                                        playsInline
+                                        style={{ maxWidth: '100%', maxHeight: '380px', borderRadius: '12px' }}
+                                    />
+                                ) : (
+                                    <img
+                                        src={localItinerary.timelapseUrl}
+                                        alt="여정 타임랩스"
+                                        style={{ maxWidth: '100%', maxHeight: '380px', borderRadius: '12px' }}
+                                    />
+                                )}
+                            </div>
+                        )}
+
+                        {showTimelapseStudio && (
+                            <TravelTimelapseStudio
+                                itinerary={localItinerary}
+                                tripTitle={localItinerary.title}
+                                canEdit={Boolean(isOwner || isAuthor)}
+                                onItineraryUpdated={(updated) => setLocalItinerary(updated)}
+                            />
+                        )}
+                    </div>
                 </div>
 
                 <ModalFooter>
