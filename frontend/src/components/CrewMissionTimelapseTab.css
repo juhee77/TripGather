@@ -1,0 +1,233 @@
+/* TripGather — 모임(Gathering) 크루 미션·인증 사진 합동 동선 타임랩스 스타일 (#30) */
+
+.crew-tl {
+  --crew-accent: #FF5C00;
+  --crew-dark: #0F172A;
+  --crew-border: rgba(15, 23, 42, 0.09);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--text-primary);
+}
+
+.crew-tl .crew-tl-hero {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  color: #FFFFFF;
+  border-radius: 20px;
+  padding: 20px;
+  border: 1.5px solid rgba(255, 92, 0, 0.4);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.16);
+}
+
+.crew-tl .crew-tl-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #FF5C00;
+  background: rgba(255, 92, 0, 0.16);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.crew-tl .crew-tl-title {
+  font-size: 1.18rem;
+  font-weight: 800;
+  margin: 8px 0 4px;
+  color: #FFFFFF;
+}
+
+.crew-tl .crew-tl-desc {
+  font-size: 0.83rem;
+  color: rgba(255, 255, 255, 0.76);
+  margin: 0;
+}
+
+.crew-tl .crew-tl-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(255, 92, 0, 0.45);
+}
+
+.crew-tl .crew-tl-metric {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+}
+
+.crew-tl .crew-tl-metric strong {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FF5C00;
+}
+
+.crew-tl .crew-tl-metric span {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.crew-tl .crew-tl-card {
+  background: #FFFFFF;
+  border: 1px solid var(--crew-border);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.crew-tl .crew-tl-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.crew-tl .crew-tl-head h4 {
+  font-size: 0.96rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.crew-tl .crew-tl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.crew-tl .crew-tl-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--crew-border);
+  background: var(--bg-lite);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.crew-tl .crew-tl-chip.is-active {
+  background: #FF5C00;
+  color: #FFFFFF;
+  border-color: #FF5C00;
+}
+
+.crew-tl .crew-tl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 11px;
+  border: 1px solid var(--crew-border);
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.crew-tl .crew-tl-btn.is-primary {
+  background: #FF5C00;
+  color: #FFFFFF;
+  border-color: #FF5C00;
+}
+
+.crew-tl .crew-tl-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.crew-tl .crew-tl-hidden {
+  display: none;
+}
+
+.crew-tl .crew-tl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  max-height: 310px;
+  overflow-y: auto;
+}
+
+.crew-tl .crew-tl-spot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--bg-lite);
+  border: 1px solid var(--crew-border);
+}
+
+.crew-tl .crew-tl-spot-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #FF5C00;
+  color: #FFFFFF;
+  font-size: 0.74rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.crew-tl .crew-tl-spot-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1.5px solid #FF5C00;
+  flex-shrink: 0;
+}
+
+.crew-tl .crew-tl-spot-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.crew-tl .crew-tl-spot-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crew-tl .crew-tl-spot-sub {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.crew-tl .crew-tl-preview {
+  background: #0F172A;
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+  margin-top: 12px;
+}
+
+.crew-tl .crew-tl-preview-media {
+  max-width: 100%;
+  max-height: 420px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 92, 0, 0.55);
+}
+
+.crew-tl .crew-tl-toast {
+  background: #0F172A;
+  color: #FFFFFF;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}

@@ -11,6 +11,7 @@ import PrimaryButton from '../components/UI/PrimaryButton';
 import GatheringFeed from '../components/GatheringFeed';
 import ChatRoom from '../components/ChatRoom';
 import MissionBoard from '../components/MissionBoard';
+import CrewMissionTimelapseTab from '../components/CrewMissionTimelapseTab';
 
 const GatheringDetailPage = () => {
   const { id } = useParams();
@@ -376,9 +377,20 @@ const GatheringDetailPage = () => {
               isMember ? '미션 🎯' : null,
               `방명록 (${comments.length})`, 
               '갤러리 📸',
+              (isMember || gathering.isGalleryPublic) ? '타임랩스 🎬' : null,
               (isMember || gathering.isChatPublic) ? '채팅 💬' : null
             ].filter(Boolean).map((tab) => {
-              const tabName = tab.startsWith('방명록') ? '방명록' : tab.startsWith('갤러리') ? '갤러리' : tab.startsWith('채팅') ? '채팅' : tab.startsWith('미션') ? '미션' : tab;
+              const tabName = tab.startsWith('방명록')
+                ? '방명록'
+                : tab.startsWith('갤러리')
+                ? '갤러리'
+                : tab.startsWith('타임랩스')
+                ? '타임랩스'
+                : tab.startsWith('채팅')
+                ? '채팅'
+                : tab.startsWith('미션')
+                ? '미션'
+                : tab;
               const isActive = activeTab === tabName;
               
               return (
@@ -715,7 +727,42 @@ const GatheringDetailPage = () => {
           {activeTab === '갤러리' && (
             <div className="animate-fade" style={{ height: '100%', minHeight: '400px' }}>
               {(isMember || gathering.isGalleryPublic) ? (
-                <GatheringFeed gatheringId={gathering.id} currentUser={currentUser} />
+                <>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+                    color: 'white',
+                    padding: '14px 16px',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 92, 0, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    flexWrap: 'wrap',
+                    marginBottom: '16px'
+                  }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800 }}>
+                      🎬 크루 미션·스냅샷 사진들을 합쳐 보딩패스 동선 GIF를 만들어보세요!
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('타임랩스')}
+                      style={{
+                        background: 'var(--primary-orange)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 14px',
+                        borderRadius: '10px',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      합동 타임랩스 만들기 →
+                    </button>
+                  </div>
+                  <GatheringFeed gatheringId={gathering.id} currentUser={currentUser} />
+                </>
               ) : (
                 <div style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '48px', marginBottom: '20px' }}>📷</div>
@@ -723,6 +770,16 @@ const GatheringDetailPage = () => {
                   <p style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 600, lineHeight: 1.6 }}>여행의 소중한 기록은 함께 떠나는 크루들만 공유할 수 있습니다.</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === '타임랩스' && (
+            <div className="animate-fade">
+              <CrewMissionTimelapseTab
+                gathering={gathering}
+                currentUser={currentUser}
+                onGoToGallery={() => setActiveTab('갤러리')}
+              />
             </div>
           )}
 
