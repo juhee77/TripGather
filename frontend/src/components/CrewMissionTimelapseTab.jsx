@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { authFetch } from '../api/client';
+import { authFetch, apiUrl } from '../api/client';
 import { getMissions } from '../api/missions';
 import {
   calcDistanceKm,
@@ -272,13 +272,14 @@ const CrewMissionTimelapseTab = ({ gathering, currentUser, onGoToGallery }) => {
       });
       if (!upRes.ok) throw new Error('파일 업로드 실패');
       const { url } = await upRes.json();
+      const fullImageUrl = apiUrl(url);
 
       const postRes = await authFetch(`/api/gatherings/${gathering.id}/posts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content: `✈️ [${gathering.title}] 크루 ${crewMembers.length}인의 미션·인증 합동 보딩패스 타임랩스 (${filteredSpots.length} GATES · ${totalKm.toFixed(1)}km)`,
-          imageUrl: url,
+          imageUrl: fullImageUrl,
           isPublic: true
         })
       });

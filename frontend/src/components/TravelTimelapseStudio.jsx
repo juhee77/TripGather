@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { authFetch } from '../api/client';
+import { authFetch, apiUrl } from '../api/client';
 import {
   calcDistanceKm,
   sortSpots,
@@ -708,7 +708,7 @@ const TravelTimelapseStudio = ({ itinerary, tripTitle, canEdit = false, onItiner
     });
     if (!res.ok) throw new Error('파일 업로드 실패');
     const data = await res.json();
-    return data.url;
+    return apiUrl(data.url);
   };
 
   // 내 여정(Itinerary)에 경유지별 사진(photoUrl, takenAt) 및 타임랩스(timelapseUrl) 영구 저장

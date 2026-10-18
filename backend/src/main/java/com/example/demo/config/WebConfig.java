@@ -2,11 +2,13 @@ package com.example.demo.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Paths;
+
 /**
- * 전역 CORS 설정.
- * 각 컨트롤러의 @CrossOrigin 을 대체하므로, 컨트롤러에서 개별 어노테이션을 제거해도 됩니다.
+ * 전역 CORS 설정 및 로컬 업로드 파일 정적 서빙 설정.
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -21,5 +23,12 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(false);
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String storageUri = Paths.get(".storage").toAbsolutePath().normalize().toUri().toString();
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations(storageUri);
     }
 }

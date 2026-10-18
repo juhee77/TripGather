@@ -91,6 +91,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll()
                 // WebSocket (핸드셰이크 허용)
                 .requestMatchers("/ws-stomp/**").permitAll()
+                // 로컬 업로드 정적 파일 조회 허용
+                .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                 // 나머지는 인증 필요
                 .anyRequest().authenticated();
             })

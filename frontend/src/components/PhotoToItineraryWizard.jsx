@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { authFetch } from '../api/client';
+import { authFetch, apiUrl } from '../api/client';
 import {
   extractExifFromFile,
   loadPhotoFile,
@@ -164,7 +164,7 @@ const PhotoToItineraryWizard = ({ onApplyDraft }) => {
       });
       if (res.ok) {
         const data = await res.json();
-        return data.url || fallbackUrl;
+        return data.url ? apiUrl(data.url) : fallbackUrl;
       }
     } catch {
       // fallback
