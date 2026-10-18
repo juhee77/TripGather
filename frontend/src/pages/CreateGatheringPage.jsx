@@ -5,6 +5,7 @@ import { X, MapPin, Calendar as CalendarIcon, Users, Type, Camera, Clock, Chevro
 import { authFetch } from '../api/client';
 import gatheringPlaceholder from '../assets/gathering-placeholder.png';
 import { useUser } from '../contexts/UserContext';
+import OpenRouteMap from '../components/OpenRouteMap';
 
 const CATEGORIES = [
   { label: '밥/카페', icon: '🍚' },
@@ -266,7 +267,7 @@ const CreateGatheringPage = () => {
           
           <div>
             <label style={{ display: 'block', fontSize: '15px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-main)' }}>만나는 장소</label>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', marginBottom: '12px' }}>
               <MapPin size={18} color="var(--text-sub)" style={{ position: 'absolute', top: '16px', left: '16px' }} />
               <input 
                 required name="location" value={formData.location} onChange={handleChange}
@@ -276,6 +277,28 @@ const CreateGatheringPage = () => {
                 onBlur={(e) => e.target.style.border = '1px solid var(--border-color)'}
               />
             </div>
+            <OpenRouteMap
+              title="오픈소스 집결지 지도 & 장소 검색 🗺️"
+              routePoints={
+                formData.lat && formData.lng
+                  ? [{ id: 'pick', dayNumber: 1, sequenceOrder: 1, label: formData.location || '선택한 집결지', lat: formData.lat, lng: formData.lng }]
+                  : []
+              }
+              fallbackLocationText={formData.location || '서울 강남역'}
+              height={220}
+              enablePlaceSearch={true}
+              allowMapClickPick={true}
+              showRouteSummaryStrip={false}
+              searchPlaceholder="장소 검색 또는 지도 클릭으로 모임 위치 지정..."
+              onSelectPlace={(place) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  location: prev.location.trim() ? prev.location : place.name,
+                  lat: place.lat,
+                  lng: place.lng
+                }));
+              }}
+            />
           </div>
 
           <div>

@@ -6,6 +6,8 @@ import PackingList from '../components/PackingList';
 import TranslatorWidget from '../components/TranslatorWidget';
 import ReviewSection from '../components/ReviewSection';
 import TravelTimelapseStudio from '../components/TravelTimelapseStudio';
+import OpenRouteMap from '../components/OpenRouteMap';
+import { getRecommendedSpotsForRegion } from '../utils/openMapService';
 
 const TripHubPage = () => {
   const { id } = useParams();
@@ -177,6 +179,14 @@ const TripHubPage = () => {
               </div>
             </div>
 
+            <OpenRouteMap
+              title="내 여행 동선 지도 🗺️"
+              routePoints={itinerary?.routePoints || []}
+              fallbackLocationText={trip.destination || trip.title}
+              height={280}
+              showRouteSummaryStrip={true}
+            />
+
             {!itinerary || !itinerary.routePoints || itinerary.routePoints.length === 0 ? (
               <div style={{
                 textAlign: 'center', padding: '50px 20px', color: 'var(--text-secondary)',
@@ -185,7 +195,7 @@ const TripHubPage = () => {
               }}>
                 <span style={{ fontSize: '32px' }}>✈️</span>
                 <p style={{ fontWeight: 700, fontSize: '14px', margin: 0 }}>아직 추가된 세부 일정이 없습니다.</p>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>일정 편집을 눌러 첫 번째 방문지를 등록해 보세요!</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>일정 편집 또는 추천 탭에서 첫 번째 방문지를 등록해 보세요!</p>
                 {trip.itineraryId && (
                   <button onClick={() => navigate(`/itinerary/edit/${trip.itineraryId}`)} className="primary-btn" style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '10px', marginTop: '8px' }}>
                     일정 편집하기
@@ -290,7 +300,104 @@ const TripHubPage = () => {
             onItineraryUpdated={(updated) => setItinerary(updated)}
           />
         )}
-        {activeTab === '추천' && <div>추천 코스 준비 중...</div>}
+        {activeTab === '추천' && (() => {
+          const recommendedSpots = getRecommendedSpotsForRegion(trip.destination || trip.title);
+          const handleAddSpotToItinerary = async (spot) => {
+            if (!itinerary?.id) {
+              alert('연결된 여행 일정이 없습니다.');
+              return;
+            }
+            const existing = itinerary.routePoints || [];
+            const maxDay = existing.reduce((m, p) => Math.max(m, p.dayNumber || 1), 1);
+            const inLastDay = existing.filter((p) => (p.dayNumber || 1) === maxDay);
+            const nextPoint = {
+              dayNumber: maxDay,
+              dayLabel: `Day ${maxDay}`,
+              sequenceOrder: inLastDay.length + 1,
+              label: spot.name,
+              lat: spot.lat,
+              lng: spot.lng,
+              memo: spot.desc || spot.address || '',
+              isCompleted: false
+            };
+            const updatedPayload = {
+              ...itinerary,
+              routePoints: [...existing, nextPoint]
+            };
+            try {
+              const res = await authFetch(`/api/itineraries/${itinerary.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedPayload)
+              });
+              if (res.ok) {
+                setItinerary(await res.json());
+                alert(`✈️ '${spot.name}' 경유지가 Day ${maxDay} 일정에 추가되었습니다!`);
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          };
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <OpenRouteMap
+                title={`${trip.destination || '여행지'} 주변 추천 명소 & 오픈소스 장소 검색 🗺️`}
+                routePoints={recommendedSpots.map((s, idx) => ({
+                  id: `rec-${idx}`,
+                  dayNumber: 1,
+                  sequenceOrder: idx + 1,
+                  label: s.name,
+                  lat: s.lat,
+                  lng: s.lng,
+                  memo: s.desc
+                }))}
+                fallbackLocationText={trip.destination || trip.title}
+                height={320}
+                enablePlaceSearch={true}
+                searchPlaceholder="오픈스트리트맵 장소 검색 후 바로 내 일정에 추가..."
+                onSelectPlace={(place) => handleAddSpotToItinerary(place)}
+              />
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '12px' }}>
+                {recommendedSpots.map((spot, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      background: 'white',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '16px',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                      boxShadow: 'var(--shadow-sm)'
+                    }}
+                  >
+                    <div>
+                      <span className="osm-route-map-badge">{spot.category} · {spot.region}</span>
+                      <h4 style={{ margin: '8px 0 4px', fontSize: '15px', fontWeight: 900, color: 'var(--text-primary)' }}>
+                        📍 {spot.name}
+                      </h4>
+                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                        {spot.desc}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAddSpotToItinerary(spot)}
+                      className="osm-route-map-search-btn"
+                      style={{ width: '100%' }}
+                    >
+                      + 내 여행 코스에 추가
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         {activeTab === '번역' && <TranslatorWidget country={trip.country} />}
         {activeTab === '준비물' && <PackingList tripId={trip.id} />}
         {activeTab === '리뷰' && <ReviewSection tripId={trip.id} />}

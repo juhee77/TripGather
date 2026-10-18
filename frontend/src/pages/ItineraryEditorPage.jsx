@@ -6,6 +6,7 @@ import { useUser } from '../contexts/UserContext';
 import FormInput from '../components/UI/FormInput';
 import PrimaryButton from '../components/UI/PrimaryButton';
 import PhotoToItineraryWizard from '../components/PhotoToItineraryWizard';
+import OpenRouteMap from '../components/OpenRouteMap';
 import stampPlaceholder from '../assets/stamp-placeholder.png';
 
 const ItineraryEditorPage = () => {
@@ -454,6 +455,51 @@ const ItineraryEditorPage = () => {
                     </div>
 
                     <div style={{ marginTop: '8px' }}>
+                        <div style={{ marginBottom: '20px' }}>
+                            <OpenRouteMap
+                                title="오픈소스 여행 동선 미리보기 & 장소 검색 추가 🗺️"
+                                routePoints={formData.routePoints}
+                                fallbackLocationText={formData.region || formData.title || '서울'}
+                                height={290}
+                                enablePlaceSearch={true}
+                                allowMapClickPick={true}
+                                searchPlaceholder="경유지 장소 검색 후 클릭하면 아래 코스에 자동 추가됩니다 (예: 성산일출봉, 해운대)"
+                                onSelectPlace={(place) => {
+                                    setFormData((prev) => {
+                                        const pts = [...prev.routePoints];
+                                        const emptyIdx = pts.findIndex((p) => !(p.label || '').trim());
+                                        if (emptyIdx >= 0) {
+                                            pts[emptyIdx] = {
+                                                ...pts[emptyIdx],
+                                                label: place.name,
+                                                lat: place.lat,
+                                                lng: place.lng
+                                            };
+                                            return { ...prev, routePoints: pts };
+                                        }
+                                        const maxDay = pts.reduce((m, p) => Math.max(m, p.dayNumber || 1), 1);
+                                        const inDay = pts.filter((p) => (p.dayNumber || 1) === maxDay);
+                                        return {
+                                            ...prev,
+                                            routePoints: [
+                                                ...pts,
+                                                {
+                                                    dayNumber: maxDay,
+                                                    dayLabel: `Day ${maxDay}`,
+                                                    sequenceOrder: inDay.length + 1,
+                                                    label: place.name,
+                                                    startTime: '12:00',
+                                                    endTime: '13:00',
+                                                    lat: place.lat,
+                                                    lng: place.lng
+                                                }
+                                            ]
+                                        };
+                                    });
+                                }}
+                            />
+                        </div>
+
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 800, letterSpacing: '1px' }}>FLIGHT PATH (STOPS)</label>
                             <button 

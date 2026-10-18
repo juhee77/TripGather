@@ -12,6 +12,7 @@ import GatheringFeed from '../components/GatheringFeed';
 import ChatRoom from '../components/ChatRoom';
 import MissionBoard from '../components/MissionBoard';
 import CrewMissionTimelapseTab from '../components/CrewMissionTimelapseTab';
+import OpenRouteMap from '../components/OpenRouteMap';
 
 const GatheringDetailPage = () => {
   const { id } = useParams();
@@ -574,6 +575,22 @@ const GatheringDetailPage = () => {
                         </div>
                       </div>
                     )}
+
+                    <div style={{ marginTop: '8px' }}>
+                      <OpenRouteMap
+                        title="모임 집결지 & 여행 동선 지도 🗺️"
+                        routePoints={
+                          gathering.linkedItinerary?.routePoints?.length > 0
+                            ? gathering.linkedItinerary.routePoints
+                            : gathering.lat && gathering.lng
+                            ? [{ id: 'g-loc', dayNumber: 1, sequenceOrder: 1, label: gathering.location || gathering.title, lat: gathering.lat, lng: gathering.lng }]
+                            : []
+                        }
+                        fallbackLocationText={gathering.location || gathering.title}
+                        height={240}
+                        showRouteSummaryStrip={Boolean(gathering.linkedItinerary?.routePoints?.length)}
+                      />
+                    </div>
                   </div>
 
                   <button
