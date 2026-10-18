@@ -119,4 +119,40 @@ class ItineraryControllerTest {
                 .andExpect(jsonPath("$.id").value(7));
     }
 
+    @Test
+    @WithMockUser
+    @DisplayName("일정 수정 시 타임랩스 URL과 경유지 사진 정보가 응답에 포함된다")
+    void updateItinerary_WithTimelapseAndPhoto_Success() throws Exception {
+        java.time.LocalDateTime shotTime = java.time.LocalDateTime.of(2026, 10, 10, 12, 0);
+        com.example.demo.dto.RoutePointRequest rpReq = com.example.demo.dto.RoutePointRequest.builder()
+                .label("협재해수욕장")
+                .dayNumber(1)
+                .sequenceOrder(1)
+                .lat(33.3941)
+                .lng(126.2397)
+                .photoUrl("/uploads/hyeopjae.jpg")
+                .takenAt(shotTime)
+                .build();
+
+        com.example.demo.dto.ItineraryRequest req = com.example.demo.dto.ItineraryRequest.builder()
+                .title("제주 바다 동선")
+                .bgImageUrl("/uploads/cover.jpg")
+                .timelapseUrl("/uploads/timelapse.gif")
+                .routePoints(List.of(rpReq))
+                .build();
+
+        given(itineraryService.updateItinerary(anyLong(), any(Itinerary.class)))
+                .willAnswer(invocation -> invocation.getArgument(1));
+
+        mockMvc.perform(patch("/api/itineraries/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.timelapseUrl").value("/uploads/timelapse.gif"))
+                .andExpect(jsonPath("$.bgImageUrl").value("/uploads/cover.jpg"))
+                .andExpect(jsonPath("$.routePoints[0].photoUrl").value("/uploads/hyeopjae.jpg"));
+    }
+
 }
+

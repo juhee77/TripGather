@@ -30,6 +30,8 @@ public class RoutePointRequest {
     private Double lng;
     @Size(max = 500, message = "메모는 500자 이내여야 합니다.")
     private String memo;
+    private String photoUrl;
+    private java.time.LocalDateTime takenAt;
 
     public RoutePoint toEntity(Itinerary itinerary) {
         return RoutePoint.builder()
@@ -43,6 +45,8 @@ public class RoutePointRequest {
                 .lat(this.lat)
                 .lng(this.lng)
                 .memo(this.memo)
+                .photoUrl(this.photoUrl)
+                .takenAt(this.takenAt)
                 .itinerary(itinerary)
                 .build();
     }

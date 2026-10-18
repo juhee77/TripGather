@@ -163,6 +163,7 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
                 .endDate(original.getEndDate())
                 .bgImageUrl(original.getBgImageUrl())
                 .stampImageUrl(original.getStampImageUrl())
+                .timelapseUrl(original.getTimelapseUrl())
                 .build();
 
         if (original.getRoutePoints() != null) {
@@ -177,6 +178,8 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
                         .lat(originalPoint.getLat())
                         .lng(originalPoint.getLng())
                         .memo(originalPoint.getMemo())
+                        .photoUrl(originalPoint.getPhotoUrl())
+                        .takenAt(originalPoint.getTakenAt())
                         .isCompleted(false)
                         .itinerary(clone)
                         .build();
@@ -239,6 +242,12 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         }
         if (update.getLocation() != null && update.getLocation().length() > 200) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 위치/장소는 200자 이하이어야 합니다.");
+        }
+        if (update.getBgImageUrl() != null) {
+            itinerary.setBgImageUrl(update.getBgImageUrl());
+        }
+        if (update.getTimelapseUrl() != null) {
+            itinerary.setTimelapseUrl(update.getTimelapseUrl());
         }
         itinerary.setStampImageUrl(update.getStampImageUrl());
         itinerary.setStartDate(update.getStartDate());
@@ -343,6 +352,8 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
                     .lat(sourcePoint.getLat())
                     .lng(sourcePoint.getLng())
                     .memo(sourcePoint.getMemo())
+                    .photoUrl(sourcePoint.getPhotoUrl())
+                    .takenAt(sourcePoint.getTakenAt())
                     .isCompleted(false)
                     .itinerary(target)
                     .build();

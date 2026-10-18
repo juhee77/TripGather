@@ -30,8 +30,11 @@ public class ItineraryRequest {
     private String author;
     private String authorEmail;
     private String ownerEmail;
+    @com.fasterxml.jackson.annotation.JsonAlias("isPublic")
     private boolean publicStatus;
+    private String bgImageUrl;
     private String stampImageUrl;
+    private String timelapseUrl;
     @Valid
     private List<RoutePointRequest> routePoints;
 
@@ -46,7 +49,9 @@ public class ItineraryRequest {
                 .authorEmail(this.authorEmail)
                 .ownerEmail(this.ownerEmail)
                 .publicStatus(this.publicStatus)
+                .bgImageUrl(this.bgImageUrl)
                 .stampImageUrl(this.stampImageUrl)
+                .timelapseUrl(this.timelapseUrl)
                 .build();
         
         if (this.routePoints != null) {

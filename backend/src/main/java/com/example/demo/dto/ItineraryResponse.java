@@ -28,6 +28,7 @@ public class ItineraryResponse {
     private java.time.LocalDate endDate;
     private String bgImageUrl;
     private String stampImageUrl;
+    private String timelapseUrl;
     private LocalDateTime createdAt;
     private List<RoutePointResponse> routePoints;
 
@@ -47,6 +48,7 @@ public class ItineraryResponse {
                 .endDate(itinerary.getEndDate())
                 .bgImageUrl(itinerary.getBgImageUrl())
                 .stampImageUrl(itinerary.getStampImageUrl())
+                .timelapseUrl(itinerary.getTimelapseUrl())
                 .createdAt(itinerary.getCreatedAt())
                 .routePoints(itinerary.getRoutePoints() != null ? 
                         itinerary.getRoutePoints().stream()
