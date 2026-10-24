@@ -1,0 +1,93 @@
+package com.tripgather.service;
+
+import com.tripgather.domain.User;
+import com.tripgather.dto.BadgeDto;
+import com.tripgather.repository.GatheringRepository;
+import com.tripgather.repository.StampRepository;
+import com.tripgather.repository.UserRepository;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
+
+@ExtendWith(MockitoExtension.class)
+class BadgeServiceTest {
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private GatheringRepository gatheringRepository;
+
+    @Mock
+    private StampRepository stampRepository;
+
+    @InjectMocks
+    private BadgeService badgeService;
+
+    @Test
+    @DisplayName("유저 뱃지 조회 성공 및 획득 여부 계산 검증")
+    void getUserBadges_Success() {
+        // given
+        String email = "test@example.com";
+        User user = User.builder().id(1L).email(email).points(1500).build();
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(gatheringRepository.countByHostId(1L)).willReturn(0L);
+        given(stampRepository.countByUserId(1L)).willReturn(2L);
+
+        // when
+        List<BadgeDto> badges = badgeService.getUserBadges(email);
+
+        // then
+        assertThat(badges).hasSize(4);
+        assertThat(badges.get(0).isUnlocked()).isTrue(); // 첫 발걸음
+        assertThat(badges.get(1).isUnlocked()).isFalse(); // 열정적인 호스트 (0개)
+        assertThat(badges.get(2).isUnlocked()).isTrue(); // 스탬프 수집가 (2개)
+        assertThat(badges.get(3).isUnlocked()).isTrue(); // 포인트 리치 (1500pt)
+    }
+
+    @Test
+    @DisplayName("모임을 1회 이상 호스팅하면 '열정적인 호스트' 뱃지가 해금된다")
+    void getUserBadges_HostedGathering_UnlocksHostBadge() {
+        // given
+        String email = "host@example.com";
+        User user = User.builder().id(2L).email(email).points(0).build();
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(gatheringRepository.countByHostId(2L)).willReturn(3L);
+        given(stampRepository.countByUserId(2L)).willReturn(0L);
+
+        // when
+        List<BadgeDto> badges = badgeService.getUserBadges(email);
+
+        // then
+        assertThat(badges.get(1).isUnlocked()).isTrue();  // 열정적인 호스트
+        assertThat(badges.get(2).isUnlocked()).isFalse(); // 스탬프 수집가 (0개)
+    }
+
+    @Test
+    @DisplayName("null 또는 공백 이메일로 뱃지 조회 시 예외 발생")
+    void getUserBadges_NullOrBlankEmail_ThrowsException() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> badgeService.getUserBadges("   "))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("이메일 정보가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 유저 이메일로 뱃지 조회 시 예외 발생")
+    void getUserBadges_UserNotFound_ThrowsException() {
+        given(userRepository.findByEmail("unknown@example.com")).willReturn(Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> badgeService.getUserBadges("unknown@example.com"))
+                .isInstanceOf(com.tripgather.exception.CustomException.class);
+    }
+}

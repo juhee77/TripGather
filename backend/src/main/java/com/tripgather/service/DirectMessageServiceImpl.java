@@ -1,0 +1,134 @@
+package com.tripgather.service;
+
+import com.tripgather.domain.DirectMessage;
+import com.tripgather.domain.User;
+import com.tripgather.exception.CustomException;
+import com.tripgather.exception.ErrorCode;
+import com.tripgather.repository.DirectMessageRepository;
+import com.tripgather.repository.UserRepository;
+import com.tripgather.usecase.DirectMessageUseCase;
+import com.tripgather.dto.DMResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class DirectMessageServiceImpl implements DirectMessageUseCase {
+
+    private final DirectMessageRepository dmRepository;
+    private final UserRepository userRepository;
+    private final ProfanityFilterService profanityFilterService;
+
+    @Override
+    @Transactional
+    public DMResponse sendDM(String senderEmail, String receiverEmail, String content) {
+        if (senderEmail == null || senderEmail.trim().isEmpty() || receiverEmail == null || receiverEmail.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "발신자 및 수신자 이메일 정보가 올바르지 않습니다.");
+        }
+        if (senderEmail.equals(receiverEmail)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신에게는 메시지를 발송할 수 없습니다.");
+        }
+        if (content == null || content.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "메시지 내용을 입력해주세요.");
+        }
+        if (content.trim().length() > 1000) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "메시지 내용은 1000자 이내여야 합니다.");
+        }
+
+        profanityFilterService.validateText(content);
+        User sender = userRepository.findByEmail(senderEmail)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User receiver = userRepository.findByEmail(receiverEmail)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        DirectMessage dm = DirectMessage.of(sender, receiver, content);
+
+        DirectMessage saved = dmRepository.save(dm);
+        return DMResponse.from(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DirectMessage> getChatHistory(String email1, String email2) {
+        if (email1 == null || email1.trim().isEmpty() || email2 == null || email2.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 필요합니다.");
+        }
+        if (email1.equals(email2)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신과의 채팅 내역은 조회할 수 없습니다.");
+        }
+        User user1 = userRepository.findByEmail(email1)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User user2 = userRepository.findByEmail(email2)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        return dmRepository.findChatHistory(user1, user2);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DirectMessage> getChatHistory(String email1, String email2, Long beforeId, int size) {
+        if (email1 == null || email1.trim().isEmpty() || email2 == null || email2.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 필요합니다.");
+        }
+        if (email1.equals(email2)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신과의 채팅 내역은 조회할 수 없습니다.");
+        }
+        User user1 = userRepository.findByEmail(email1)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User user2 = userRepository.findByEmail(email2)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        int pageSize = Math.min(size <= 0 ? DEFAULT_PAGE_SIZE : size, MAX_PAGE_SIZE);
+        org.springframework.data.domain.PageRequest page =
+                org.springframework.data.domain.PageRequest.of(0, pageSize);
+
+        // 최신순 한 페이지를 읽은 뒤, 화면 표시 순서(오래된 -> 최신)로 뒤집어 반환한다.
+        List<DirectMessage> messages = (beforeId == null)
+                ? dmRepository.findLatestChatHistory(user1, user2, page)
+                : dmRepository.findOlderChatHistory(user1, user2, beforeId, page);
+
+        List<DirectMessage> ascending = new java.util.ArrayList<>(messages);
+        java.util.Collections.reverse(ascending);
+        return ascending;
+    }
+
+    @Override
+    @Transactional
+    public void markAsRead(Long dmId) {
+        if (dmId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "메시지 ID가 올바르지 않습니다.");
+        }
+        DirectMessage dm = dmRepository.findById(dmId)
+                .orElseThrow(() -> new CustomException(ErrorCode.DM_NOT_FOUND)); 
+        dm.setRead(true);
+    }
+
+    @Override
+    @Transactional
+    public void markMessagesAsRead(String currentEmail, String partnerEmail) {
+        if (currentEmail == null || currentEmail.trim().isEmpty() || partnerEmail == null || partnerEmail.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 필요합니다.");
+        }
+        if (currentEmail.equals(partnerEmail)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "자기 자신과의 대화방은 처리할 수 없습니다.");
+        }
+        User me = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        User other = userRepository.findByEmail(partnerEmail)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        
+        List<DirectMessage> unread = dmRepository.findUnreadMessages(other, me);
+        unread.forEach(dm -> dm.setRead(true));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> getChatPartners(String myEmail) {
+        if (myEmail == null || myEmail.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 올바르지 않습니다.");
+        }
+        return dmRepository.findChatPartners(myEmail);
+    }
+}

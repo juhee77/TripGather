@@ -1,0 +1,322 @@
+package com.tripgather.service;
+
+import com.tripgather.domain.User;
+import com.tripgather.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.util.Optional;
+import com.tripgather.exception.CustomException;
+import com.tripgather.exception.ErrorCode;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class UserServiceImplTest {
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private ProfanityFilterService profanityFilterService;
+
+    @InjectMocks
+    private UserServiceImpl userService;
+
+    private User testUser;
+
+    @BeforeEach
+    void setUp() {
+        testUser = User.builder()
+                .id(1L)
+                .email("test@example.com")
+                .name("Test User")
+                .build();
+    }
+
+    @Test
+    @DisplayName("ID로 유저 조회 성공")
+    void getById_Success() {
+        // given
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+
+        // when
+        User result = userService.getById(1L);
+
+        // then
+        assertThat(result).isEqualTo(testUser);
+        verify(userRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 ID로 유저 조회 시 예외 발생")
+    void getById_NotFound_ThrowsException() {
+        // given
+        given(userRepository.findById(1L)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.getById(1L))
+                .isInstanceOf(CustomException.class);
+    }
+
+    @Test
+    @DisplayName("현재 로그인한 유저 조회 성공")
+    void getCurrentUser_Success() {
+        // given
+        SecurityContext securityContext = mock(SecurityContext.class);
+        Authentication authentication = mock(Authentication.class);
+        
+        given(authentication.isAuthenticated()).willReturn(true);
+        given(authentication.getName()).willReturn("test@example.com");
+        given(securityContext.getAuthentication()).willReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
+        given(userRepository.findByEmail("test@example.com")).willReturn(Optional.of(testUser));
+
+        // when
+        User result = userService.getCurrentUser();
+
+        // then
+        assertThat(result.getEmail()).isEqualTo("test@example.com");
+        verify(userRepository).findByEmail("test@example.com");
+        
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("프로필 업데이트 성공 - 일부 필드만 수정")
+    void updateProfile_Partial_Success() {
+        // given
+        User updateInfo = User.builder()
+                .name("Updated Name")
+                // bio and profileImageUrl are null
+                .build();
+        
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+        given(userRepository.save(any(User.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        User updated = userService.updateProfile(1L, updateInfo);
+
+        // then
+        assertThat(updated.getName()).isEqualTo("Updated Name");
+        assertThat(updated.getBio()).isEqualTo(testUser.getBio()); // bio should remain unchanged
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("프로필 업데이트 성공 - 프로필 이미지 수정")
+    void updateProfile_Image_Success() {
+        // given
+        User updateInfo = User.builder()
+                .profileImageUrl("http://new-image.com")
+                .build();
+        
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+        given(userRepository.save(any(User.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        User updated = userService.updateProfile(1L, updateInfo);
+
+        // then
+        assertThat(updated.getProfileImageUrl()).isEqualTo("http://new-image.com");
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("전체 유저 조회 성공")
+    void getAllUsers_Success() {
+        // given
+        given(userRepository.findAll()).willReturn(java.util.List.of(testUser));
+
+        // when
+        java.util.List<User> result = userService.getAllUsers();
+
+        // then
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("유저 생성 성공")
+    void createUser_Success() {
+        // given
+        given(userRepository.save(any(User.class))).willReturn(testUser);
+
+        // when
+        User result = userService.createUser(testUser);
+
+        // then
+        assertThat(result).isEqualTo(testUser);
+    }
+
+    @Test
+    @DisplayName("인증 정보 없을 때 getCurrentUser 실패")
+    void getCurrentUser_Unauthenticated_ThrowsException() {
+        // given
+        SecurityContextHolder.clearContext();
+
+        // when & then
+        assertThatThrownBy(() -> userService.getCurrentUser())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Authentication is required");
+    }
+
+    @Test
+    @DisplayName("인증은 되었으나 DB에 유저가 없을 때 getCurrentUser 실패")
+    void getCurrentUser_UserNotFound_ThrowsException() {
+        // given
+        SecurityContext securityContext = mock(SecurityContext.class);
+        Authentication authentication = mock(Authentication.class);
+        
+        given(authentication.isAuthenticated()).willReturn(true);
+        given(authentication.getName()).willReturn("notfound@example.com");
+        given(securityContext.getAuthentication()).willReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
+        given(userRepository.findByEmail("notfound@example.com")).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.getCurrentUser())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Authenticated user not found in database");
+        
+        SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    @DisplayName("유저 탈퇴/비활성화 처리 성공")
+    void deactivateUser_Success() {
+        // given
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+
+        // when
+        userService.deactivateUser(1L);
+
+        // then
+        assertThat(testUser.getName()).isEqualTo("탈퇴한 회원");
+        assertThat(testUser.getBio()).isEqualTo("탈퇴한 회원입니다.");
+        assertThat(testUser.getProfileImageUrl()).isEqualTo("/default-profile.png");
+        verify(userRepository).save(testUser);
+    }
+
+    @Test
+    @DisplayName("프로필 수정 시 비속어 닉네임 사용 시 예외 발생")
+    void updateProfile_ProfanityName_ThrowsException() {
+        // given
+        User updateInfo = User.builder().name("개새끼").build();
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+        org.mockito.BDDMockito.willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText("개새끼");
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateProfile(1L, updateInfo))
+                .isInstanceOf(CustomException.class);
+    }
+
+    @Test
+    @DisplayName("프로필 수정 시 공백 닉네임 사용 시 예외 발생")
+    void updateProfile_EmptyName_ThrowsException() {
+        // given
+        User updateInfo = User.builder().name("   ").build();
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateProfile(1L, updateInfo))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("닉네임은 공백일 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("유저 생성 시 공백 또는 null 이메일 전달 시 예외 발생")
+    void createUser_EmptyEmail_ThrowsException() {
+        // given
+        User newUser = User.builder().email("   ").name("New User").build();
+
+        // when & then
+        assertThatThrownBy(() -> userService.createUser(newUser))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("이메일은 필수 입력값입니다.");
+    }
+
+    @Test
+    @DisplayName("유저 생성 시 비속어 닉네임 사용 시 예외 발생")
+    void createUser_ProfanityName_ThrowsException() {
+        // given
+        User newUser = User.builder().email("new@test.com").name("개새끼").build();
+        org.mockito.BDDMockito.willThrow(new CustomException(ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText("개새끼");
+
+        // when & then
+        assertThatThrownBy(() -> userService.createUser(newUser))
+                .isInstanceOf(CustomException.class);
+    }
+
+    @Test
+    @DisplayName("유저 생성 시 공백 닉네임 전달 시 예외 발생")
+    void createUser_EmptyName_ThrowsException() {
+        // given
+        User newUser = User.builder().email("new@test.com").name("   ").build();
+
+        // when & then
+        assertThatThrownBy(() -> userService.createUser(newUser))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("닉네임은 공백일 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("null 유저 ID로 조회 시 예외 발생")
+    void getById_NullId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> userService.getById(null))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("유저 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("프로필 수정 시 닉네임 20자 초과 설정 시 예외 발생")
+    void updateProfile_ExceedMaxNameLength_ThrowsException() {
+        // given
+        String longName = "a".repeat(21);
+        User updateInfo = User.builder().name(longName).build();
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateProfile(1L, updateInfo))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("닉네임은 최대 20자까지 설정 가능합니다.");
+    }
+
+    @Test
+    @DisplayName("프로필 수정 시 자기소개가 200자를 초과하면 예외가 발생한다")
+    void updateProfile_ExceedBioLength_ThrowsException() {
+        // given
+        String longBio = "A".repeat(201);
+        User updateInfo = User.builder().bio(longBio).build();
+        given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateProfile(1L, updateInfo))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("자기소개는 200자 이내여야 합니다.");
+    }
+
+    @Test
+    @DisplayName("null 유저 객체로 생성 시 예외가 발생한다")
+    void createUser_NullUser_ThrowsException() {
+        assertThatThrownBy(() -> userService.createUser(null))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("사용자 정보가 올바르지 않습니다.");
+    }
+}
