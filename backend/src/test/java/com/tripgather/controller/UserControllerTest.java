@@ -1,0 +1,184 @@
+package com.tripgather.controller;
+
+import com.tripgather.domain.User;
+import com.tripgather.usecase.UserUseCase;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(UserController.class)
+class UserControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private UserUseCase userService;
+
+    @MockBean
+    private com.tripgather.security.JwtTokenProvider jwtTokenProvider;
+
+    @MockBean
+    private com.tripgather.repository.UserRepository userRepository;
+
+    @MockBean
+    private com.tripgather.security.oauth.CustomOAuth2UserService customOAuth2UserService;
+
+    @MockBean
+    private com.tripgather.security.oauth.OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    @WithMockUser
+    @DisplayName("내 프로필 조회 성공")
+    void getMyProfile_Success() throws Exception {
+        // given
+        User user = User.builder().id(1L).email("test@example.com").name("Test User").build();
+        given(userService.getCurrentUser()).willReturn(user);
+
+        // when & then
+        mockMvc.perform(get("/api/users/me"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andExpect(jsonPath("$.name").value("Test User"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("ID로 특정 유저 조회 성공")
+    void getUser_Success() throws Exception {
+        // given
+        User user = User.builder().id(1L).email("user1@example.com").name("User 1").build();
+        given(userService.getById(1L)).willReturn(user);
+
+        // when & then
+        mockMvc.perform(get("/api/users/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.name").value("User 1"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("전체 유저 목록 조회 성공")
+    void getAllUsers_Success() throws Exception {
+        // given
+        User user1 = User.builder().id(1L).name("User 1").email("u1@ex.com").build();
+        User user2 = User.builder().id(2L).name("User 2").email("u2@ex.com").build();
+        given(userService.getAllUsers()).willReturn(List.of(user1, user2));
+
+        // when & then
+        mockMvc.perform(get("/api/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("프로필 업데이트 성공")
+    void updateProfile_Success() throws Exception {
+        // given
+        User updateData = User.builder().name("New Name").build();
+        User updatedUser = User.builder().id(1L).name("New Name").email("test@example.com").build();
+        given(userService.getCurrentUser()).willReturn(User.builder().id(1L).email("test@example.com").build());
+        given(userService.updateProfile(anyLong(), any(User.class))).willReturn(updatedUser);
+
+        // when & then
+        mockMvc.perform(patch("/api/users/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateData)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("New Name"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("타인 프로필 수정 시도 시 권한 예외 발생")
+    void updateProfile_NotOwner_ReturnsForbidden() throws Exception {
+        // given
+        User updateData = User.builder().name("Hacked").build();
+        given(userService.getCurrentUser()).willReturn(User.builder().id(2L).email("other@example.com").build());
+
+        // when & then
+        mockMvc.perform(patch("/api/users/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateData)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("회원 탈퇴 요청 성공")
+    void withdrawMyProfile_Success() throws Exception {
+        // given
+        User user = User.builder().id(1L).email("test@example.com").build();
+        given(userService.getCurrentUser()).willReturn(user);
+
+        // when & then
+        mockMvc.perform(delete("/api/users/me")
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("인증 정보가 없어 현재 유저를 특정할 수 없으면 프로필 조회는 401 반환")
+    void getMyProfile_NoCurrentUser_Returns401() throws Exception {
+        // given
+        given(userService.getCurrentUser()).willThrow(new IllegalStateException("인증 정보 없음"));
+
+        // when & then
+        mockMvc.perform(get("/api/users/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("유저 생성 API 성공")
+    void createUser_Success() throws Exception {
+        // given
+        User created = User.builder().id(5L).email("new@example.com").name("신규유저").build();
+        given(userService.createUser(any(User.class))).willReturn(created);
+
+        // when & then
+        mockMvc.perform(post("/api/users")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("email", "new@example.com", "name", "신규유저"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("new@example.com"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("인증 정보가 없어 현재 유저를 특정할 수 없으면 회원 탈퇴는 401 반환")
+    void withdrawMyProfile_NoCurrentUser_Returns401() throws Exception {
+        // given
+        given(userService.getCurrentUser()).willThrow(new IllegalStateException("인증 정보 없음"));
+
+        // when & then
+        mockMvc.perform(delete("/api/users/me").with(csrf()))
+                .andExpect(status().isUnauthorized());
+    }
+}

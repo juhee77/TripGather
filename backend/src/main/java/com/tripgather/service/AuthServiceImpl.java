@@ -1,0 +1,143 @@
+package com.tripgather.service;
+
+import com.tripgather.domain.User;
+import com.tripgather.dto.AuthRequest.LoginRequest;
+import com.tripgather.dto.AuthRequest.SignupRequest;
+import com.tripgather.dto.AuthResponse;
+import com.tripgather.repository.UserRepository;
+import com.tripgather.security.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.tripgather.usecase.AuthUseCase;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.tripgather.exception.CustomException;
+import com.tripgather.exception.ErrorCode;
+
+@Service
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthUseCase {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final com.tripgather.security.LoginAttemptService loginAttemptService;
+    private final EmailService emailService;
+
+    /**
+     * 회원가입
+     */
+    public AuthResponse signup(SignupRequest request) {
+        if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 올바르지 않습니다.");
+        }
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호를 입력해주세요.");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+
+        String verificationToken = java.util.UUID.randomUUID().toString();
+
+        User user = User.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .provider("local")
+                .role("ROLE_USER")
+                .emailVerified(false)
+                .verificationToken(verificationToken)
+                .build();
+
+        userRepository.save(user);
+
+        emailService.sendVerificationEmail(user.getEmail(), verificationToken);
+
+        return AuthResponse.builder()
+                .accessToken("") // No token until verified
+                .userId(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
+    }
+
+    /**
+     * 로그인
+     */
+    public AuthResponse login(LoginRequest request) {
+        if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "이메일 정보가 올바르지 않습니다.");
+        }
+        if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "비밀번호를 입력해주세요.");
+        }
+        if (loginAttemptService.isBlocked(request.getEmail())) {
+            throw new IllegalStateException("보안을 위해 계정이 잠시 잠겼습니다. 나중에 다시 시도해주세요.");
+        }
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseGet(() -> {
+                    loginAttemptService.loginFailed(request.getEmail());
+                    throw new CustomException(ErrorCode.INVALID_CREDENTIALS);
+                });
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            loginAttemptService.loginFailed(request.getEmail());
+            throw new CustomException(ErrorCode.INVALID_CREDENTIALS);
+        }
+
+        if (!user.isEmailVerified()) {
+            throw new IllegalStateException("이메일 인증이 완료되지 않았습니다.");
+        }
+
+        loginAttemptService.loginSucceeded(request.getEmail());
+        String token = jwtTokenProvider.generateAccessToken(user.getEmail());
+        return AuthResponse.builder()
+                .accessToken(token)
+                .userId(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void verifyEmail(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "인증 토큰이 올바르지 않습니다.");
+        }
+        User user = userRepository.findByVerificationToken(token)
+                .orElseThrow(() -> new CustomException(ErrorCode.UNAUTHORIZED_ACCESS));
+
+        user.setEmailVerified(true);
+        user.setVerificationToken(null);
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse mockKakaoLogin() {
+        String mockEmail = "kakao_mock@example.com";
+        User user = userRepository.findByEmail(mockEmail)
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .name("KakaoMock")
+                            .email(mockEmail)
+                            .password(passwordEncoder.encode("kakao_mock_pwd_123!"))
+                            .provider("kakao")
+                            .role("ROLE_USER")
+                            .emailVerified(true)
+                            .build();
+                    return userRepository.save(newUser);
+                });
+
+        String token = jwtTokenProvider.generateAccessToken(user.getEmail());
+        return AuthResponse.builder()
+                .accessToken(token)
+                .userId(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
+    }
+}

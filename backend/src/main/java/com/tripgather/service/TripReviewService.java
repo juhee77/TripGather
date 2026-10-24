@@ -1,0 +1,154 @@
+package com.tripgather.service;
+
+import com.tripgather.domain.Trip;
+import com.tripgather.domain.TripReview;
+import com.tripgather.domain.User;
+import com.tripgather.dto.TripReviewResponse;
+import com.tripgather.exception.CustomException;
+import com.tripgather.exception.ErrorCode;
+import com.tripgather.repository.TripRepository;
+import com.tripgather.repository.TripReviewRepository;
+import com.tripgather.security.SecurityService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class TripReviewService {
+
+    private final TripReviewRepository tripReviewRepository;
+    private final TripRepository tripRepository;
+    private final SecurityService securityService;
+    private final PointService pointService;
+    private final ProfanityFilterService profanityFilterService;
+    private final TripAccessGuard tripAccessGuard;
+
+    @Transactional
+    public TripReviewResponse createReview(Long tripId, String content, int rating, String category, String imageUrls) {
+        tripAccessGuard.requireOwner(tripId);
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
+        if (content == null || content.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 내용을 입력해주세요.");
+        }
+        if (rating < 1 || rating > 5) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "평점은 1점부터 5점 사이여야 합니다.");
+        }
+        if (imageUrls != null && !imageUrls.isBlank() && imageUrls.split(",").length > 5) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 사진은 최대 5장까지 첨부할 수 있습니다.");
+        }
+
+        profanityFilterService.validateText(content);
+        User author = securityService.getCurrentUser();
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다."));
+        TripReview review = TripReview.of(trip, author, content, rating, category);
+        review.setImageUrls(imageUrls);
+        
+        TripReviewResponse response = TripReviewResponse.from(tripReviewRepository.save(review));
+        
+        // 후기 작성 성공 시 100포인트 적립
+        pointService.addPoints(author.getId(), 100, 0, "여행 후기 작성");
+        
+        return response;
+    }
+
+    @Transactional(readOnly = true)
+    public List<TripReviewResponse> getReviews(Long tripId, String category) {
+        tripAccessGuard.requireOwner(tripId);
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
+        if (!tripRepository.existsById(tripId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다.");
+        }
+        String filterCategory = (category != null && !category.isBlank() && !"전체".equals(category.trim())) ? category.trim() : null;
+        if (filterCategory != null) {
+            return tripReviewRepository.findByTripIdAndCategoryOrderByCreatedAtDesc(tripId, filterCategory)
+                    .stream().map(TripReviewResponse::from).toList();
+        }
+        return tripReviewRepository.findByTripIdOrderByCreatedAtDesc(tripId)
+                .stream().map(TripReviewResponse::from).toList();
+    }
+
+    @Transactional
+    public void deleteReview(Long reviewId) {
+        deleteReview(null, reviewId);
+    }
+
+    @Transactional
+    public void deleteReview(Long tripId, Long reviewId) {
+        tripAccessGuard.requireOwner(tripId);
+        if (reviewId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 ID가 올바르지 않습니다.");
+        }
+        TripReview review = tripReviewRepository.findById(reviewId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰를 찾을 수 없습니다."));
+
+        if (tripId != null && review.getTrip() != null && !review.getTrip().getId().equals(tripId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "해당 여행의 리뷰가 아닙니다.");
+        }
+
+        String email = securityService.getCurrentUserEmail();
+        if (!review.getAuthor().getEmail().equals(email)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "본인의 리뷰만 삭제할 수 있습니다.");
+        }
+        tripReviewRepository.delete(review);
+    }
+
+    @Transactional
+    public TripReviewResponse updateReview(Long reviewId, String content, int rating, String category, String imageUrls) {
+        if (reviewId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 ID가 올바르지 않습니다.");
+        }
+        TripReview review = tripReviewRepository.findById(reviewId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰를 찾을 수 없습니다."));
+
+        String email = securityService.getCurrentUserEmail();
+        if (!review.getAuthor().getEmail().equals(email)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION);
+        }
+
+        if (content == null || content.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 내용을 입력해주세요.");
+        }
+        if (rating < 1 || rating > 5) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "평점은 1점부터 5점 사이여야 합니다.");
+        }
+        if (imageUrls != null && !imageUrls.isBlank() && imageUrls.split(",").length > 5) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "리뷰 사진은 최대 5장까지 첨부할 수 있습니다.");
+        }
+
+        profanityFilterService.validateText(content);
+        review.setContent(content.trim());
+        review.setRating(rating);
+        if (category != null) review.setCategory(category.trim());
+        review.setImageUrls(imageUrls);
+
+        return TripReviewResponse.from(tripReviewRepository.save(review));
+    }
+
+    @Transactional(readOnly = true)
+    public com.tripgather.dto.TripReviewSummaryResponse getReviewSummary(Long tripId) {
+        tripAccessGuard.requireOwner(tripId);
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
+        if (!tripRepository.existsById(tripId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다.");
+        }
+        List<TripReview> reviews = tripReviewRepository.findByTripIdOrderByCreatedAtDesc(tripId);
+        int totalReviews = reviews.size();
+        double avgRating = reviews.stream().mapToInt(TripReview::getRating).average().orElse(0.0);
+
+        return com.tripgather.dto.TripReviewSummaryResponse.builder()
+                .tripId(tripId)
+                .totalReviews(totalReviews)
+                .averageRating(Math.round(avgRating * 10.0) / 10.0)
+                .build();
+    }
+}

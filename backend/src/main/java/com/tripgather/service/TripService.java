@@ -1,0 +1,201 @@
+package com.tripgather.service;
+
+import com.tripgather.domain.*;
+import com.tripgather.dto.TripRequest;
+import com.tripgather.dto.TripResponse;
+import com.tripgather.dto.ItineraryResponse;
+import com.tripgather.exception.CustomException;
+import com.tripgather.exception.ErrorCode;
+import com.tripgather.repository.TripRepository;
+import com.tripgather.repository.ItineraryRepository;
+import com.tripgather.security.SecurityService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class TripService {
+
+    private final TripRepository tripRepository;
+    private final ItineraryRepository itineraryRepository;
+    private final SecurityService securityService;
+    private final PackingService packingService; // 자동 템플릿 세팅을 위한 서비스 주입
+    private final ProfanityFilterService profanityFilterService;
+
+    @Transactional
+    public TripResponse createTrip(TripRequest request) {
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 제목을 입력해주세요.");
+        }
+        if (request.getTitle().trim().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 제목은 100자 이하이어야 합니다.");
+        }
+        if (request.getDestination() != null && request.getDestination().trim().length() > 100) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 목적지는 100자 이하이어야 합니다.");
+        }
+        if (request.getCountry() != null && request.getCountry().trim().length() > 50) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "국가명은 50자 이하이어야 합니다.");
+        }
+        profanityFilterService.validateText(request.getTitle());
+
+        User owner = securityService.getCurrentUser();
+        Trip trip = Trip.of(request.getTitle(), request.getDestination(), request.getCountry(), owner);
+        if (request.getStartDate() != null && request.getEndDate() != null && request.getStartDate().isAfter(request.getEndDate())) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
+        }
+        trip.setStartDate(request.getStartDate());
+        trip.setEndDate(request.getEndDate());
+        trip.setBgImageUrl(request.getBgImageUrl());
+        if (request.getStatus() != null) {
+            trip.setStatus(TripStatus.valueOf(request.getStatus()));
+        }
+
+        // 1:1 일정 설정 (복제된 일정 ID가 전달된 경우 해당 일정 바인딩, 없으면 새 빈 일정 생성)
+        if (request.getItineraryId() != null) {
+            Itinerary existing = itineraryRepository.findById(request.getItineraryId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "지정된 일정을 찾을 수 없습니다."));
+            existing.setOwnerEmail(owner.getEmail());
+            existing.setStartDate(request.getStartDate());
+            existing.setEndDate(request.getEndDate());
+            existing.setLocation(request.getDestination());
+            trip.setItinerary(existing);
+        } else {
+            Itinerary blankItinerary = Itinerary.builder()
+                    .title(request.getTitle() + " 일정표")
+                    .description(request.getTitle() + " 여행의 고유 일정표입니다.")
+                    .location(request.getDestination())
+                    .startDate(request.getStartDate())
+                    .endDate(request.getEndDate())
+                    .ownerEmail(owner.getEmail())
+                    .author(owner.getName())
+                    .authorEmail(owner.getEmail())
+                    .publicStatus(false)
+                    .routePoints(new java.util.ArrayList<>())
+                    .build();
+            Itinerary savedItinerary = itineraryRepository.save(blankItinerary);
+            trip.setItinerary(savedItinerary);
+        }
+
+        Trip saved = tripRepository.save(trip);
+        
+        // 텅 빈 화면(Empty State) 이탈 방지: 기본 필수 준비물 세트 자동 세팅
+        packingService.initDefaultItems(saved.getId());
+        
+        return TripResponse.from(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TripResponse> getMyTrips() {
+        String email = securityService.getCurrentUserEmail();
+        if (email == null || email.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "유저 이메일 정보가 올바르지 않습니다.");
+        }
+        return tripRepository.findByOwnerEmailOrderByCreatedAtDesc(email)
+                .stream()
+                .map(TripResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TripResponse getTrip(Long tripId) {
+        // Trip 은 공유 개념이 없는 개인 자원이므로 조회도 소유자만 가능하다.
+        Trip trip = findOwnedTrip(tripId);
+        return TripResponse.from(trip);
+    }
+
+    @Transactional
+    public TripResponse updateTrip(Long tripId, TripRequest request) {
+        Trip trip = findOwnedTrip(tripId);
+        if (request.getTitle() != null) {
+            if (request.getTitle().trim().isEmpty()) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 제목은 공백일 수 없습니다.");
+            }
+            if (request.getTitle().trim().length() > 100) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 제목은 100자 이하이어야 합니다.");
+            }
+            profanityFilterService.validateText(request.getTitle());
+            trip.setTitle(request.getTitle().trim());
+            if (trip.getItinerary() != null) {
+                trip.getItinerary().setTitle(request.getTitle().trim() + " 일정표");
+            }
+        }
+        if (request.getDestination() != null) {
+            if (request.getDestination().trim().length() > 100) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 목적지는 100자 이하이어야 합니다.");
+            }
+            trip.setDestination(request.getDestination());
+            if (trip.getItinerary() != null) {
+                trip.getItinerary().setLocation(request.getDestination());
+            }
+        }
+        if (request.getCountry() != null) {
+            if (request.getCountry().trim().length() > 50) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "국가명은 50자 이하이어야 합니다.");
+            }
+            trip.setCountry(request.getCountry());
+        }
+        java.time.LocalDate newStart = request.getStartDate() != null ? request.getStartDate() : trip.getStartDate();
+        java.time.LocalDate newEnd = request.getEndDate() != null ? request.getEndDate() : trip.getEndDate();
+        if (newStart != null && newEnd != null && newStart.isAfter(newEnd)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "종료일은 시작일보다 빠를 수 없습니다.");
+        }
+        if (request.getStartDate() != null) {
+            trip.setStartDate(request.getStartDate());
+            if (trip.getItinerary() != null) {
+                trip.getItinerary().setStartDate(request.getStartDate());
+            }
+        }
+        if (request.getEndDate() != null) {
+            trip.setEndDate(request.getEndDate());
+            if (trip.getItinerary() != null) {
+                trip.getItinerary().setEndDate(request.getEndDate());
+            }
+        }
+        if (request.getBgImageUrl() != null) trip.setBgImageUrl(request.getBgImageUrl());
+        if (request.getStatus() != null) trip.setStatus(TripStatus.valueOf(request.getStatus()));
+        return TripResponse.from(tripRepository.save(trip));
+    }
+
+    @Transactional
+    public void deleteTrip(Long tripId) {
+        Trip trip = findOwnedTrip(tripId);
+        tripRepository.delete(trip);
+    }
+
+    // --- 추천 코스 ---
+
+    @Transactional(readOnly = true)
+    public List<ItineraryResponse> getRecommendedItineraries(Long tripId) {
+        Trip trip = findOwnedTrip(tripId);
+        String destination = trip.getDestination();
+        if (destination == null || destination.isBlank()) return List.of();
+
+        return itineraryRepository
+                .findByPublicStatusTrueAndDeletedFalseAndLocationContainingOrderByCreatedAtDesc(destination)
+                .stream()
+                .map(ItineraryResponse::from)
+                .toList();
+    }
+
+    // --- Helper ---
+
+    private Trip findTripById(Long tripId) {
+        if (tripId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 ID가 올바르지 않습니다.");
+        }
+        return tripRepository.findById(tripId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행을 찾을 수 없습니다."));
+    }
+
+    private Trip findOwnedTrip(Long tripId) {
+        Trip trip = findTripById(tripId);
+        String email = securityService.getCurrentUserEmail();
+        if (!trip.getOwner().getEmail().equals(email)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "본인의 여행만 관리할 수 있습니다.");
+        }
+        return trip;
+    }
+}

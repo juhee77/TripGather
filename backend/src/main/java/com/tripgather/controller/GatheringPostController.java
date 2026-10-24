@@ -1,0 +1,162 @@
+package com.tripgather.controller;
+
+import jakarta.validation.Valid;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+import com.tripgather.domain.Gathering;
+import com.tripgather.domain.GatheringPost;
+import com.tripgather.domain.User;
+import com.tripgather.repository.GatheringPostRepository;
+import com.tripgather.repository.GatheringRepository;
+import com.tripgather.repository.UserRepository;
+import com.tripgather.repository.GatheringMemberRepository;
+import com.tripgather.domain.MemberStatus;
+import com.tripgather.exception.CustomException;
+import com.tripgather.exception.ErrorCode;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.security.Principal;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api/gatherings")
+@RequiredArgsConstructor
+public class GatheringPostController {
+
+    private final GatheringPostRepository postRepository;
+    private final com.tripgather.usecase.GatheringUseCase gatheringService;
+    private final com.tripgather.usecase.GatheringMemberUseCase gatheringMemberService;
+    private final UserRepository userRepository;
+    private final com.tripgather.service.ProfanityFilterService profanityFilterService;
+
+    @GetMapping("/{gatheringId}/posts")
+    public ResponseEntity<List<PostResponse>> getPosts(@PathVariable Long gatheringId, Principal principal) {
+        if (gatheringId == null) throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        Gathering gathering = gatheringService.getGathering(gatheringId);
+        
+        String email = (principal != null) ? principal.getName() : null;
+        boolean isMember = gatheringMemberService.isAuthorizedMember(gatheringId, email);
+
+        // If gallery is private and user is not a member, hide everything
+        if (!gathering.isGalleryPublic() && !isMember) {
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+        }
+
+        List<GatheringPost> posts = postRepository.findByGatheringOrderByCreatedAtDesc(gathering);
+        
+        List<PostResponse> responses = posts.stream()
+                .filter(post -> isMember || post.isPublic())
+                .map(PostResponse::from)
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(responses);
+    }
+
+    @PostMapping("/{gatheringId}/posts")
+    public ResponseEntity<PostResponse> createPost(
+            @PathVariable Long gatheringId,
+            @Valid @RequestBody PostRequest request,
+            Principal principal) {
+        
+        if (gatheringId == null) throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "게시글 내용을 입력해주세요.");
+        }
+        
+        profanityFilterService.validateText(request.getContent());
+
+        if (!gatheringMemberService.isAuthorizedMember(gatheringId, principal.getName())) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "승인된 크루원만 접근 가능합니다.");
+        }
+            
+        User user = userRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        Gathering gathering = gatheringService.getGathering(gatheringId);
+
+        GatheringPost post = GatheringPost.builder()
+                .author(user)
+                .gathering(gathering)
+                .content(request.getContent())
+                .imageUrl(request.getImageUrl())
+                .isPublic(request.isPublic())
+                .build();
+
+        GatheringPost saved = postRepository.save(post);
+        return ResponseEntity.ok(PostResponse.from(saved));
+    }
+
+    @DeleteMapping("/{gatheringId}/posts/{postId}")
+    public ResponseEntity<Void> deletePost(
+            @PathVariable Long gatheringId,
+            @PathVariable Long postId,
+            Principal principal) {
+        
+        if (gatheringId == null || postId == null) throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID 또는 게시글 ID가 올바르지 않습니다.");
+        if (principal == null) throw new CustomException(ErrorCode.UNAUTHORIZED_ACCESS);
+
+        GatheringPost post = postRepository.findById(postId)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_INPUT_VALUE, "게시글을 찾을 수 없습니다."));
+
+        if (post.getGathering() != null && !post.getGathering().getId().equals(gatheringId)) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "해당 모임의 게시글이 아닙니다.");
+        }
+
+        if (!post.getAuthor().getEmail().equals(principal.getName())) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "본인의 게시글만 삭제할 수 있습니다.");
+        }
+
+        postRepository.delete(post);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PostRequest {
+        @NotBlank(message = "게시글 내용은 비워둘 수 없습니다.")
+        @Size(max = 2000, message = "게시글은 2000자 이내여야 합니다.")
+        private String content;
+
+        @Size(max = 500, message = "이미지 주소는 500자 이내여야 합니다.")
+        private String imageUrl;
+
+        private boolean isPublic;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PostResponse {
+        private Long id;
+        private String authorName;
+        private String authorImageUrl;
+        private String content;
+        private String imageUrl;
+        private boolean isPublic;
+        private String createdAt;
+
+        public static PostResponse from(GatheringPost post) {
+            return PostResponse.builder()
+                    .id(post.getId())
+                    .authorName(post.getAuthor().getName())
+                    .authorImageUrl(post.getAuthor().getProfileImageUrl())
+                    .content(post.getContent())
+                    .imageUrl(post.getImageUrl())
+                    .isPublic(post.isPublic())
+                    .createdAt(post.getCreatedAt() != null ? post.getCreatedAt().toString() : "")
+                    .build();
+        }
+    }
+}

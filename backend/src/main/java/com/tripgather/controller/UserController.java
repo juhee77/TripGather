@@ -1,0 +1,73 @@
+package com.tripgather.controller;
+
+import jakarta.validation.Valid;
+
+import com.tripgather.domain.User;
+import com.tripgather.dto.UserResponse;
+import com.tripgather.usecase.UserUseCase;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+public class UserController {
+
+    private final UserUseCase userService;
+
+    /**
+     * 현재 로그인한 유저 정보. 인증 미구현 시 기본 유저(id=1) 반환.
+     */
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getMyProfile() {
+        try {
+            return ResponseEntity.ok(UserResponse.from(userService.getCurrentUser()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(401).build();
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
+        return ResponseEntity.ok(UserResponse.from(userService.getById(id)));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers().stream()
+                .map(UserResponse::from)
+                .collect(java.util.stream.Collectors.toList()));
+    }
+
+    @PostMapping
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody com.tripgather.dto.UserRequest request) {
+        return ResponseEntity.ok(UserResponse.from(userService.createUser(request.toEntity())));
+    }
+
+    /**
+     * 프로필 수정. 본인 계정만 수정할 수 있다.
+     */
+    @PatchMapping("/{id}")
+    public ResponseEntity<UserResponse> updateProfile(@PathVariable Long id, @Valid @RequestBody com.tripgather.dto.UserRequest request) {
+        User currentUser = userService.getCurrentUser();
+        if (!currentUser.getId().equals(id)) {
+            throw new com.tripgather.exception.CustomException(
+                    com.tripgather.exception.ErrorCode.FORBIDDEN_ACTION);
+        }
+        return ResponseEntity.ok(UserResponse.from(userService.updateProfile(id, request.toEntity())));
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withdrawMyProfile() {
+        try {
+            User currentUser = userService.getCurrentUser();
+            userService.deactivateUser(currentUser.getId());
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(401).build();
+        }
+    }
+}

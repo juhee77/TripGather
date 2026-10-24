@@ -1,0 +1,81 @@
+package com.tripgather.service;
+
+import com.tripgather.domain.ChatMessage;
+import com.tripgather.domain.Gathering;
+import com.tripgather.domain.User;
+import com.tripgather.repository.ChatMessageRepository;
+import com.tripgather.repository.GatheringRepository;
+import com.tripgather.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.tripgather.exception.CustomException;
+import com.tripgather.exception.ErrorCode;
+import com.tripgather.usecase.ChatUseCase;
+
+import org.springframework.data.domain.PageRequest;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class ChatServiceImpl implements ChatUseCase {
+
+    private final ChatMessageRepository chatMessageRepository;
+    private final GatheringRepository gatheringRepository;
+    private final UserRepository userRepository;
+
+    @Transactional
+    public com.tripgather.dto.ChatMessageResponse saveMessage(Long gatheringId, String email, String content) {
+        if (gatheringId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
+        if (email == null || email.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "발신자 이메일이 올바르지 않습니다.");
+        }
+        if (content == null || content.trim().isEmpty()) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "채팅 내용을 입력해주세요.");
+        }
+        if (content.trim().length() > 1000) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "채팅 내용은 1000자 이내여야 합니다.");
+        }
+
+        Gathering gathering = gatheringRepository.findById(gatheringId)
+                .orElseThrow(() -> new CustomException(ErrorCode.GATHERING_NOT_FOUND));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        ChatMessage message = ChatMessage.of(content.trim(), user, gathering);
+
+        com.tripgather.domain.ChatMessage saved = chatMessageRepository.save(message);
+        return com.tripgather.dto.ChatMessageResponse.from(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.tripgather.dto.ChatMessageResponse> getChatHistory(Long gatheringId) {
+        return getChatHistory(gatheringId, null, DEFAULT_PAGE_SIZE);
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.tripgather.dto.ChatMessageResponse> getChatHistory(Long gatheringId, Long beforeId, int size) {
+        if (gatheringId == null) {
+            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "모임 ID가 올바르지 않습니다.");
+        }
+        int pageSize = Math.min(size <= 0 ? DEFAULT_PAGE_SIZE : size, MAX_PAGE_SIZE);
+        PageRequest page = PageRequest.of(0, pageSize);
+
+        // 최신순으로 한 페이지를 읽은 뒤, 화면 표시 순서(오래된 -> 최신)로 뒤집어 반환한다.
+        List<ChatMessage> messages = (beforeId == null)
+                ? chatMessageRepository.findLatestByGatheringId(gatheringId, page)
+                : chatMessageRepository.findOlderByGatheringId(gatheringId, beforeId, page);
+
+        List<ChatMessage> ascending = new ArrayList<>(messages);
+        Collections.reverse(ascending);
+
+        return ascending.stream()
+                .map(com.tripgather.dto.ChatMessageResponse::from)
+                .toList();
+    }
+}

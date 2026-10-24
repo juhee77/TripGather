@@ -1,0 +1,1112 @@
+package com.tripgather.service;
+
+import com.tripgather.domain.Gathering;
+import com.tripgather.domain.GatheringMember;
+import com.tripgather.domain.GatheringStatus;
+import com.tripgather.domain.MemberStatus;
+import com.tripgather.domain.User;
+import com.tripgather.domain.Itinerary;
+import java.util.List;
+import com.tripgather.exception.CustomException;
+import com.tripgather.exception.ErrorCode;
+import com.tripgather.repository.GatheringMemberRepository;
+import com.tripgather.repository.GatheringRepository;
+import com.tripgather.repository.UserRepository;
+import com.tripgather.security.SecurityService;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
+import java.util.ArrayList;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class GatheringMemberServiceTest {
+
+    @Mock
+    private GatheringRepository gatheringRepository;
+    @Mock
+    private GatheringMemberRepository gatheringMemberRepository;
+    @Mock
+    private SecurityService securityService;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private NotificationService notificationService;
+    @Mock
+    private com.tripgather.repository.StampRepository stampRepository;
+    @Mock
+    private PointService pointService;
+
+    @InjectMocks
+    private GatheringMemberService gatheringMemberService;
+
+    @Test
+    @DisplayName("모임 참가 신청 성공")
+    void joinGathering_Success() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(5).members(new ArrayList<>()).build();
+
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUser()).willReturn(guest);
+        given(gatheringRepository.save(any())).willReturn(gathering);
+
+        // when
+        Gathering result = gatheringMemberService.joinGathering(10L);
+
+        // then
+        assertThat(result.getMembers()).hasSize(1);
+        assertThat(result.getMembers().get(0).getStatus()).isEqualTo(MemberStatus.PENDING);
+        verify(gatheringMemberRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("호스트가 본인 모임에 참가 신청 시 예외 발생")
+    void joinGathering_HostCannotJoinOwn_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).members(new ArrayList<>()).build();
+
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUser()).willReturn(host);
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.joinGathering(10L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
+    }
+    
+    @Test
+    @DisplayName("멤버 승인 성공")
+    void approveMember_Success() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(5).members(new ArrayList<>()).build();
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(guest).status(MemberStatus.PENDING).build();
+        gathering.getMembers().add(member);
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 2L)).willReturn(Optional.of(member));
+
+        // when
+        gatheringMemberService.approveMember(10L, 2L);
+
+        // then
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.APPROVED);
+        assertThat(gathering.getCurrentJoining()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("정원이 가득 찬 상태에서 멤버 승인 시 예외 발생")
+    void approveMember_WhenCapacityFull_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest1 = User.builder().id(2L).email("guest1@test.com").build();
+        User guest2 = User.builder().id(3L).email("guest2@test.com").build();
+
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(1).members(new ArrayList<>()).build();
+        GatheringMember member1 = GatheringMember.builder().gathering(gathering).user(guest1).status(MemberStatus.APPROVED).build();
+        GatheringMember member2 = GatheringMember.builder().gathering(gathering).user(guest2).status(MemberStatus.PENDING).build();
+        gathering.getMembers().add(member1);
+        gathering.getMembers().add(member2);
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.countByGatheringIdAndStatus(10L, MemberStatus.APPROVED)).willReturn(1L);
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 3L)).willReturn(Optional.of(member2));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.approveMember(10L, 3L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    @DisplayName("이미 승인된 멤버 재승인 시 예외 발생")
+    void approveMember_AlreadyApproved_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(5).members(new ArrayList<>()).build();
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(guest).status(MemberStatus.APPROVED).build();
+        gathering.getMembers().add(member);
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 2L)).willReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.approveMember(10L, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("이미 승인된 모임 멤버입니다.");
+    }
+
+    @Test
+    @DisplayName("이미 거절된 신청 재거절 시 예외 발생")
+    void rejectMember_AlreadyRejected_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+
+        Gathering gathering = Gathering.builder().id(10L).host(host).members(new ArrayList<>()).build();
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(guest).status(MemberStatus.REJECTED).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 2L)).willReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.rejectMember(10L, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("이미 거절된 신청입니다.");
+    }
+
+    @Test
+    @DisplayName("가입 신청 목록 조회 성공")
+    void getJoinedGatherings_Success() {
+        // given
+        User user = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).title("Test Gathering").build();
+        given(securityService.getCurrentUserEmail()).willReturn("guest@test.com");
+        given(gatheringRepository.findJoinedGatherings("guest@test.com")).willReturn(List.of(gathering));
+
+        // when
+        List<Gathering> result = gatheringMemberService.getJoinedGatherings();
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTitle()).isEqualTo("Test Gathering");
+    }
+
+    @Test
+    @DisplayName("이미 참가 신청한 멤버가 다시 참가 신청 시 새로운 멤버 생성 없이 기존 정보 그대로 반환")
+    void joinGathering_AlreadyApplied_DoesNothing() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(5).members(new ArrayList<>()).build();
+        GatheringMember existingMember = GatheringMember.builder().gathering(gathering).user(guest).status(MemberStatus.PENDING).build();
+        gathering.getMembers().add(existingMember);
+
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUser()).willReturn(guest);
+        given(gatheringRepository.save(any())).willReturn(gathering);
+
+        // when
+        Gathering result = gatheringMemberService.joinGathering(10L);
+
+        // then
+        assertThat(result.getMembers()).hasSize(1);
+        verify(gatheringMemberRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("정원 초과인 모임에 참가 신청 시 예외 발생")
+    void joinGathering_Full_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(0).members(new ArrayList<>()).build();
+
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUser()).willReturn(guest);
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.joinGathering(10L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    @DisplayName("호스트가 아닌 유저가 멤버 승인 시도 시 예외 발생")
+    void approveMember_NotHost_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("not-host@test.com");
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.approveMember(10L, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FORBIDDEN_ACTION);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 멤버 승인 시도 시 예외 발생")
+    void approveMember_MemberNotFound_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 99L)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.approveMember(10L, 99L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_REQUEST_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("호스트 본인을 승인 시도 시 예외 발생")
+    void approveMember_HostThemselves_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(host).status(MemberStatus.PENDING).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 1L)).willReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.approveMember(10L, 1L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.SELF_ACTION_NOT_ALLOWED);
+    }
+
+    @Test
+    @DisplayName("멤버 승인 후 정원이 가득 찬 경우 모임 상태가 CLOSED로 전환")
+    void approveMember_ClosedWhenFull() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(1).status(GatheringStatus.OPEN).members(new ArrayList<>()).build();
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(guest).status(MemberStatus.PENDING).build();
+        gathering.getMembers().add(member);
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 2L)).willReturn(Optional.of(member));
+
+        // when
+        gatheringMemberService.approveMember(10L, 2L);
+
+        // then
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.APPROVED);
+        assertThat(gathering.getStatus()).isEqualTo(GatheringStatus.CLOSED);
+    }
+
+    @Test
+    @DisplayName("멤버 거절 성공")
+    void rejectMember_Success() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).members(new ArrayList<>()).build();
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(guest).status(MemberStatus.PENDING).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 2L)).willReturn(Optional.of(member));
+
+        // when
+        gatheringMemberService.rejectMember(10L, 2L);
+
+        // then
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.REJECTED);
+    }
+
+    @Test
+    @DisplayName("호스트가 아닌 사람이 멤버 거절 시 예외 발생")
+    void rejectMember_NotHost_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("not-host@test.com");
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.rejectMember(10L, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FORBIDDEN_ACTION);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 가입 신청 거절 시 예외 발생")
+    void rejectMember_MemberNotFound_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 99L)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.rejectMember(10L, 99L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.MEMBER_REQUEST_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("호스트가 자기 자신을 거절 시 예외 발생")
+    void rejectMember_HostThemselves_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(host).status(MemberStatus.PENDING).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 1L)).willReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.rejectMember(10L, 1L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.SELF_ACTION_NOT_ALLOWED);
+    }
+
+    @Test
+    @DisplayName("승인된 멤버 모임 탈퇴 성공 및 정원 상황에 따른 모임 오픈 복구")
+    void leaveGathering_Success_ApprovedMember() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(2).status(GatheringStatus.CLOSED).build();
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(guest).status(MemberStatus.APPROVED).build();
+
+        given(securityService.getCurrentUser()).willReturn(guest);
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 2L)).willReturn(Optional.of(member));
+        given(gatheringMemberRepository.countByGatheringIdAndStatus(10L, MemberStatus.APPROVED)).willReturn(1L);
+
+        // when
+        gatheringMemberService.leaveGathering(10L);
+
+        // then
+        verify(gatheringMemberRepository).delete(member);
+        assertThat(gathering.getStatus()).isEqualTo(GatheringStatus.OPEN);
+        assertThat(gathering.getCurrentJoining()).isEqualTo(1);
+        verify(gatheringRepository).save(gathering);
+    }
+
+    @Test
+    @DisplayName("대기 중인 멤버 모임 탈퇴 성공")
+    void leaveGathering_Success_PendingMember() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(2).status(GatheringStatus.OPEN).build();
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(guest).status(MemberStatus.PENDING).build();
+
+        given(securityService.getCurrentUser()).willReturn(guest);
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 2L)).willReturn(Optional.of(member));
+
+        // when
+        gatheringMemberService.leaveGathering(10L);
+
+        // then
+        verify(gatheringMemberRepository).delete(member);
+        verify(gatheringRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("모임 멤버가 아닌 사람이 탈퇴 시도 시 예외 발생")
+    void leaveGathering_NotMember_ThrowsException() {
+        // given
+        User stranger = User.builder().id(3L).email("stranger@test.com").build();
+        given(securityService.getCurrentUser()).willReturn(stranger);
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 3L)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.leaveGathering(10L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FORBIDDEN_ACTION);
+    }
+
+    @Test
+    @DisplayName("호스트가 탈퇴 시도 시 예외 발생")
+    void leaveGathering_HostCannotLeave_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(host).status(MemberStatus.APPROVED).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(10L, 1L)).willReturn(Optional.of(member));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.leaveGathering(10L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FORBIDDEN_ACTION);
+    }
+
+    @Test
+    @DisplayName("초대 멤버 등록 성공")
+    void inviteMember_Success() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(5).currentJoining(1).members(new ArrayList<>()).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(userRepository.findById(2L)).willReturn(Optional.of(guest));
+
+        // when
+        gatheringMemberService.inviteMember(10L, 2L);
+
+        // then
+        assertThat(gathering.getMembers()).hasSize(1);
+        assertThat(gathering.getMembers().get(0).getStatus()).isEqualTo(MemberStatus.APPROVED);
+        assertThat(gathering.getCurrentJoining()).isEqualTo(1); // approved filter count
+        verify(gatheringMemberRepository).save(any());
+        verify(gatheringRepository).save(gathering);
+    }
+
+    @Test
+    @DisplayName("호스트가 아닌 사람이 초대 시 예외 발생")
+    void inviteMember_NotHost_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("not-host@test.com");
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.inviteMember(10L, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FORBIDDEN_ACTION);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 유저 초대 시 예외 발생")
+    void inviteMember_UserNotFound_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(userRepository.findById(99L)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.inviteMember(10L, 99L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("이미 멤버로 가입된 유저 초대 시 예외 발생")
+    void inviteMember_AlreadyMember_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).members(new ArrayList<>()).build();
+        GatheringMember member = GatheringMember.builder().gathering(gathering).user(guest).status(MemberStatus.APPROVED).build();
+        gathering.getMembers().add(member);
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(userRepository.findById(2L)).willReturn(Optional.of(guest));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.inviteMember(10L, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    @DisplayName("정원 초과 모임에 초대 시 예외 발생")
+    void inviteMember_Full_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(1).currentJoining(1).members(new ArrayList<>()).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(userRepository.findById(2L)).willReturn(Optional.of(guest));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.inviteMember(10L, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    @DisplayName("초대 완료 후 정원이 가득 찬 경우 모임 상태 CLOSED로 전환")
+    void inviteMember_ClosedWhenFull() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email("guest@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(1).currentJoining(0).members(new ArrayList<>()).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(userRepository.findById(2L)).willReturn(Optional.of(guest));
+
+        // when
+        gatheringMemberService.inviteMember(10L, 2L);
+
+        // then
+        assertThat(gathering.getStatus()).isEqualTo(GatheringStatus.CLOSED);
+        verify(gatheringRepository).save(gathering);
+    }
+
+    @Test
+    @DisplayName("멤버 권한 확인 - 익명 로그인인 경우 false 반환")
+    void isAuthorizedMember_AnonymousUser_ReturnsFalse() {
+        // when & then
+        assertThat(gatheringMemberService.isAuthorizedMember(10L, null)).isFalse();
+        assertThat(gatheringMemberService.isAuthorizedMember(10L, "")).isFalse();
+        assertThat(gatheringMemberService.isAuthorizedMember(10L, "anonymousUser")).isFalse();
+    }
+
+    @Test
+    @DisplayName("멤버 권한 확인 - 모임 정보 미발견 시 false 반환")
+    void isAuthorizedMember_GatheringNotFound_ReturnsFalse() {
+        // given
+        given(gatheringRepository.findById(99L)).willReturn(Optional.empty());
+
+        // when & then
+        assertThat(gatheringMemberService.isAuthorizedMember(99L, "user@test.com")).isFalse();
+    }
+
+    @Test
+    @DisplayName("멤버 권한 확인 - 호스트인 경우 true 반환")
+    void isAuthorizedMember_Host_ReturnsTrue() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+
+        // when & then
+        assertThat(gatheringMemberService.isAuthorizedMember(10L, "host@test.com")).isTrue();
+    }
+
+    @Test
+    @DisplayName("멤버 권한 확인 - 호스트가 없지만 연결된 여행 일정 작성자인 경우 true 반환")
+    void isAuthorizedMember_HostNull_ItineraryAuthor_ReturnsTrue() {
+        // given
+        Itinerary itinerary = Itinerary.builder().id(1L).authorEmail("itinerary-author@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(null).linkedItinerary(itinerary).build();
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+
+        // when & then
+        assertThat(gatheringMemberService.isAuthorizedMember(10L, "itinerary-author@test.com")).isTrue();
+    }
+
+    @Test
+    @DisplayName("멤버 권한 확인 - 승인된 멤버인 경우 true 반환")
+    void isAuthorizedMember_ApprovedMember_ReturnsTrue() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(10L, "guest@test.com", MemberStatus.APPROVED)).willReturn(true);
+
+        // when & then
+        assertThat(gatheringMemberService.isAuthorizedMember(10L, "guest@test.com")).isTrue();
+    }
+
+    @Test
+    @DisplayName("멤버 권한 확인 - 승인되지 않은 유저인 경우 false 반환")
+    void isAuthorizedMember_NotApprovedMember_ReturnsFalse() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(10L, "guest@test.com", MemberStatus.APPROVED)).willReturn(false);
+
+        // when & then
+        assertThat(gatheringMemberService.isAuthorizedMember(10L, "guest@test.com")).isFalse();
+    }
+
+    @Test
+    @DisplayName("모임 참가 신청 시 정원이 가득 찬 경우 예외 발생")
+    void joinGathering_CapacityFull_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest1 = User.builder().id(2L).email("guest1@test.com").build();
+        User guest2 = User.builder().id(3L).email("guest2@test.com").build();
+
+        Gathering gathering = Gathering.builder().id(10L).host(host).maxJoining(1).members(new ArrayList<>()).build();
+        GatheringMember member1 = GatheringMember.builder().gathering(gathering).user(guest1).status(MemberStatus.APPROVED).build();
+        gathering.getMembers().add(member1);
+
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.countByGatheringIdAndStatus(10L, MemberStatus.APPROVED)).willReturn(1L);
+        given(securityService.getCurrentUser()).willReturn(guest2);
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.joinGathering(10L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 정원이 초과되었습니다.");
+    }
+
+    @Test
+    @DisplayName("모임 멤버 초대 시 호스트 본인을 초대 시도할 경우 예외 발생")
+    void inviteMember_HostSelfInvite_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.inviteMember(10L, 1L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("호스트 본인을 초대할 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("스탠바이 체크인 시 만남 장소 위경도가 미등록된 경우 예외 발생")
+    void checkinStandbyGathering_MissingLocation_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("만남 장소 위치 정보가 등록되어 있지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("모임 멤버 초대 시 존재하지 않는 모임 ID 전달 시 예외 발생")
+    void inviteMember_GatheringNotFound_ThrowsException() {
+        // given
+        given(gatheringRepository.findById(99L)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.inviteMember(99L, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("Invalid gathering ID");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID로 모임 탈퇴 시도 시 예외 발생")
+    void leaveGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.leaveGathering(null))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID 또는 유저 ID로 멤버 초대 시 예외 발생")
+    void inviteMember_NullGatheringIdOrUserId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.inviteMember(null, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("초대 정보(모임 ID/유저 ID)가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID 또는 유저 ID로 멤버 거절 시 예외 발생")
+    void rejectMember_NullGatheringIdOrUserId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.rejectMember(null, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("거절 처리 정보(모임 ID/유저 ID)가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID 또는 유저 ID로 멤버 승인 시 예외 발생")
+    void approveMember_NullGatheringIdOrUserId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.approveMember(null, 2L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("승인 처리 정보(모임 ID/유저 ID)가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID로 참여 신청 시 예외 발생")
+    void joinGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.joinGathering(null))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID로 스탠바이 체크인 시도 시 예외 발생")
+    void checkinStandbyGathering_NullGatheringId_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(null, 37.5, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("null 모임 ID로 멤버 권한 확인 시 false 반환")
+    void isAuthorizedMember_NullGatheringId_ReturnsFalse() {
+        // when
+        boolean result = gatheringMemberService.isAuthorizedMember(null, "user@test.com");
+
+        // then
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("스탠바이 체크인 성공 - 호스트에게 50포인트와 스탬프 지급")
+    void checkinStandbyGathering_Host_Success() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).title("한강 모임").host(host)
+                .lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(stampRepository.existsByUserIdAndGatheringId(1L, 10L)).willReturn(false);
+
+        // when
+        gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false);
+
+        // then
+        verify(pointService).addPoints(1L, 50, 1, "[한강 모임] 스탠바이 체크인",
+                StampGrant.forGathering(10L, null, null));
+    }
+
+    @Test
+    @DisplayName("스탠바이 체크인 시 승인된 멤버도 체크인 가능")
+    void checkinStandbyGathering_ApprovedMember_Success() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User member = User.builder().id(2L).email("member@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).title("한강 모임").host(host)
+                .lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(member);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(
+                10L, "member@test.com", MemberStatus.APPROVED)).willReturn(true);
+        given(stampRepository.existsByUserIdAndGatheringId(2L, 10L)).willReturn(false);
+
+        // when
+        gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false);
+
+        // then
+        verify(pointService).addPoints(eq(2L), eq(50), eq(1), any(), any());
+    }
+
+    @Test
+    @DisplayName("승인되지 않은 유저의 스탠바이 체크인 시 예외 발생")
+    void checkinStandbyGathering_NotApproved_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User stranger = User.builder().id(3L).email("stranger@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(stranger);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.existsByGatheringIdAndUserEmailAndStatus(
+                10L, "stranger@test.com", MemberStatus.APPROVED)).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("모임에 승인된 멤버만 체크인할 수 있습니다.");
+        verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any());
+    }
+
+    @Test
+    @DisplayName("일정이 연결된 모임은 스탠바이 체크인 불가")
+    void checkinStandbyGathering_LinkedItinerary_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host)
+                .linkedItinerary(Itinerary.builder().id(1L).build()).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("일정이 연결된 모임은 여정 완료로 처리해야 합니다.");
+    }
+
+    @Test
+    @DisplayName("만남 장소에서 100m 넘게 떨어져 있으면 체크인 불가")
+    void checkinStandbyGathering_TooFar_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+
+        // when & then (약 1.1km 떨어진 좌표)
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.51, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("만남 장소와 거리가 너무 멉니다");
+    }
+
+    @Test
+    @DisplayName("force 옵션이 켜져 있으면 위치 검증을 건너뛰고 체크인")
+    void checkinStandbyGathering_Force_SkipsLocationCheck() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).title("한강 모임").host(host).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(stampRepository.existsByUserIdAndGatheringId(1L, 10L)).willReturn(false);
+
+        // when
+        gatheringMemberService.checkinStandbyGathering(10L, null, null, true);
+
+        // then
+        verify(pointService).addPoints(eq(1L), eq(50), eq(1), any(), any());
+    }
+
+    @Test
+    @DisplayName("위경도를 보내지 않으면 거리 검증 없이 체크인")
+    void checkinStandbyGathering_NoCoordinates_SkipsDistanceCheck() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).title("한강 모임").host(host)
+                .lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(stampRepository.existsByUserIdAndGatheringId(1L, 10L)).willReturn(false);
+
+        // when
+        gatheringMemberService.checkinStandbyGathering(10L, null, null, false);
+
+        // then
+        verify(pointService).addPoints(eq(1L), eq(50), eq(1), any(), any());
+    }
+
+    @Test
+    @DisplayName("이미 체크인한 모임에 다시 체크인 시 예외 발생")
+    void checkinStandbyGathering_AlreadyCheckedIn_ThrowsException() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        Gathering gathering = Gathering.builder().id(10L).host(host).lat(37.5).lng(127.0).build();
+
+        given(securityService.getCurrentUser()).willReturn(host);
+        given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        given(stampRepository.existsByUserIdAndGatheringId(1L, 10L)).willReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("이미 체크인을 완료하여 보상을 받았습니다.");
+        verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any());
+    }
+
+    @Test
+    @DisplayName("참가 신청 알림은 모임 제목과 신청자 이름이 비어 있어도 대체 문구로 전송")
+    void joinGathering_NullTitleAndName_UsesFallbackInNotification() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User guest = User.builder().id(2L).email(null).name(null).build();
+        Gathering gathering = Gathering.builder().id(10L).title(null).host(host)
+                .maxJoining(5).members(new ArrayList<>()).build();
+
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUser()).willReturn(guest);
+
+        // when
+        gatheringMemberService.joinGathering(10L);
+
+        // then
+        org.mockito.ArgumentCaptor<Object> dataCaptor = org.mockito.ArgumentCaptor.forClass(Object.class);
+        verify(notificationService).send(eq("host@test.com"), eq("gathering-requested"), dataCaptor.capture());
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> data = (java.util.Map<String, Object>) dataCaptor.getValue();
+        assertThat(data.get("gatheringTitle")).isEqualTo("제목 없음");
+        assertThat(data.get("applicantName")).isEqualTo("알 수 없음");
+    }
+
+    @Test
+    @DisplayName("호스트에게 이메일이 없으면 참가 신청 알림을 보내지 않음")
+    void joinGathering_HostWithoutEmail_SkipsNotification() {
+        // given
+        User host = User.builder().id(1L).email(null).build();
+        User guest = User.builder().id(2L).email("guest@test.com").name("게스트").build();
+        Gathering gathering = Gathering.builder().id(10L).title("한강 모임").host(host)
+                .maxJoining(5).members(new ArrayList<>()).build();
+
+        given(gatheringRepository.findByIdWithPessimisticLock(10L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUser()).willReturn(guest);
+
+        // when
+        gatheringMemberService.joinGathering(10L);
+
+        // then
+        verify(notificationService, never()).send(any(), any(), any());
+    }
+
+    // ---- 정원 기준: 거절/탈퇴는 자리를 차지하지 않는다 ----
+
+    @Test
+    @DisplayName("거절·탈퇴한 멤버는 정원을 차지하지 않는다")
+    void joinGathering_RejectedAndLeftDoNotConsumeCapacity() {
+        // given: 정원 2명인데 거절 3명 + 탈퇴 2명이 쌓여 있고 승인된 크루는 0명
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User applicant = User.builder().id(9L).email("new@test.com").build();
+        Gathering gathering = Gathering.builder()
+                .id(1L).host(host).maxJoining(2).members(new ArrayList<>()).build();
+        for (long i = 2; i <= 6; i++) {
+            gathering.getMembers().add(GatheringMember.builder()
+                    .gathering(gathering)
+                    .user(User.builder().id(i).email("u" + i + "@test.com").build())
+                    .status(i <= 4 ? MemberStatus.REJECTED : MemberStatus.LEFT)
+                    .build());
+        }
+        given(gatheringRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.countByGatheringIdAndStatus(1L, MemberStatus.APPROVED)).willReturn(0L);
+        given(securityService.getCurrentUser()).willReturn(applicant);
+
+        // when: 승인된 크루가 없으므로 신청할 수 있어야 한다
+        gatheringMemberService.joinGathering(1L);
+
+        // then
+        verify(gatheringMemberRepository).save(org.mockito.ArgumentMatchers.any(GatheringMember.class));
+    }
+
+    @Test
+    @DisplayName("신청 시 정원 검사를 위해 모임 행을 잠그고 읽는다")
+    void joinGathering_LocksGatheringRow() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User applicant = User.builder().id(9L).email("new@test.com").build();
+        Gathering gathering = Gathering.builder()
+                .id(1L).host(host).maxJoining(5).members(new ArrayList<>()).build();
+        given(gatheringRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.of(gathering));
+        given(securityService.getCurrentUser()).willReturn(applicant);
+
+        // when
+        gatheringMemberService.joinGathering(1L);
+
+        // then: 잠그지 않으면 두 신청이 같은 승인자 수를 읽고 둘 다 통과한다
+        verify(gatheringRepository).findByIdWithPessimisticLock(1L);
+    }
+
+    @Test
+    @DisplayName("승인 시에도 모임 행을 잠그고 정원을 집계 쿼리로 센다")
+    void approveMember_LocksRowAndCountsInSql() {
+        // given
+        User host = User.builder().id(1L).email("host@test.com").build();
+        User crew = User.builder().id(2L).email("crew@test.com").build();
+        Gathering gathering = Gathering.builder()
+                .id(1L).host(host).maxJoining(5).members(new ArrayList<>()).build();
+        GatheringMember member = GatheringMember.builder()
+                .id(10L).gathering(gathering).user(crew).status(MemberStatus.PENDING).build();
+
+        given(securityService.getCurrentUserEmail()).willReturn("host@test.com");
+        given(gatheringRepository.findById(1L)).willReturn(Optional.of(gathering));
+        given(gatheringRepository.findByIdWithPessimisticLock(1L)).willReturn(Optional.of(gathering));
+        given(gatheringMemberRepository.findByGatheringIdAndUserId(1L, 2L)).willReturn(Optional.of(member));
+        given(gatheringMemberRepository.countByGatheringIdAndStatus(1L, MemberStatus.APPROVED)).willReturn(1L);
+
+        // when
+        gatheringMemberService.approveMember(1L, 2L);
+
+        // then: 승인자 1명 + 이번 승인 = 2명
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.APPROVED);
+        assertThat(gathering.getCurrentJoining()).isEqualTo(2);
+        verify(gatheringRepository).findByIdWithPessimisticLock(1L);
+        verify(gatheringMemberRepository).countByGatheringIdAndStatus(1L, MemberStatus.APPROVED);
+    }
+
+    @org.junit.jupiter.api.Nested
+    @DisplayName("정기편 회차별 체크인")
+    class RecurringCheckin {
+
+        private final java.time.LocalDate today = java.time.LocalDate.now();
+        private final User host = User.builder().id(1L).email("host@test.com").build();
+
+        private Gathering weeklyOn(java.time.DayOfWeek day) {
+            return Gathering.builder()
+                    .id(10L).title("한강 러닝").host(host)
+                    .lat(37.5).lng(127.0)
+                    .recurrenceRule(com.tripgather.domain.RecurrenceRule.WEEKLY)
+                    .recurrenceDayOfWeek(day)
+                    .build();
+        }
+
+        private void givenHostAt(Gathering gathering) {
+            given(securityService.getCurrentUser()).willReturn(host);
+            given(gatheringRepository.findById(10L)).willReturn(Optional.of(gathering));
+        }
+
+        @Test
+        @DisplayName("지난 회차에 스탬프가 있어도 이번 회차는 체크인된다")
+        void pastOccurrenceDoesNotBlockThisWeek() {
+            // 예전에는 "이 모임에 스탬프가 있는가" 만 보고 막아서,
+            // 정기편에 첫 주 체크인하면 둘째 주부터 영영 막혔다.
+            givenHostAt(weeklyOn(today.getDayOfWeek()));
+            lenient().when(stampRepository.existsByUserIdAndGatheringId(1L, 10L)).thenReturn(true);
+            given(stampRepository.existsByUserIdAndGatheringIdAndOccurrenceDate(1L, 10L, today))
+                    .willReturn(false);
+
+            gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false);
+
+            // 이미지는 비워 둔다. 화면이 기본 도장을 그린다.
+            verify(pointService).addPoints(eq(1L), eq(50), eq(1), any(),
+                    eq(StampGrant.forGathering(10L, today, null)));
+        }
+
+        @Test
+        @DisplayName("같은 회차를 두 번 찍을 수는 없다")
+        void sameOccurrenceTwiceIsRejected() {
+            givenHostAt(weeklyOn(today.getDayOfWeek()));
+            given(stampRepository.existsByUserIdAndGatheringIdAndOccurrenceDate(1L, 10L, today))
+                    .willReturn(true);
+
+            assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("이번 회차")
+                    .hasMessageContaining(today.toString());
+            verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any());
+        }
+
+        @Test
+        @DisplayName("회차가 아닌 날에는 다음 회차를 알려주며 막는다")
+        void nonOccurrenceDayIsRejectedWithNextDate() {
+            // 오늘이 아닌 요일로 반복하는 모임
+            Gathering gathering = weeklyOn(today.plusDays(1).getDayOfWeek());
+            givenHostAt(gathering);
+
+            assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("오늘은 이 정기 모임의 회차가 아닙니다")
+                    .hasMessageContaining(today.plusDays(1).toString());
+            verify(pointService, never()).addPoints(any(), anyInt(), anyInt(), any(), any());
+        }
+
+        @Test
+        @DisplayName("종료된 정기편은 남은 회차가 없다고 알린다")
+        void endedSeriesSaysNoMoreOccurrences() {
+            Gathering gathering = weeklyOn(today.plusDays(1).getDayOfWeek());
+            gathering.setRecurrenceUntil(today.minusDays(1));
+            givenHostAt(gathering);
+
+            assertThatThrownBy(() -> gatheringMemberService.checkinStandbyGathering(10L, 37.5, 127.0, false))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("예정된 회차가 없습니다");
+        }
+    }
+}

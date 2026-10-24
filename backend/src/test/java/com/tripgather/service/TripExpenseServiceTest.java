@@ -1,0 +1,532 @@
+package com.tripgather.service;
+
+import com.tripgather.domain.Trip;
+import com.tripgather.domain.TripExpense;
+import com.tripgather.domain.User;
+import com.tripgather.dto.TripExpenseRequest;
+import com.tripgather.dto.TripExpenseResponse;
+import com.tripgather.dto.TripSettlementResponse;
+import com.tripgather.repository.TripExpenseRepository;
+import com.tripgather.repository.TripRepository;
+import com.tripgather.repository.UserRepository;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+@ExtendWith(MockitoExtension.class)
+class TripExpenseServiceTest {
+
+    @Mock
+    private TripExpenseRepository tripExpenseRepository;
+
+    @Mock
+    private TripRepository tripRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private ProfanityFilterService profanityFilterService;
+
+    @Mock
+    private TripAccessGuard tripAccessGuard;
+
+    @InjectMocks
+    private TripExpenseService tripExpenseService;
+
+    @Test
+    @DisplayName("지출 내역 등록 성공")
+    void addExpense_Success() {
+        // given
+        String email = "test@example.com";
+        User user = User.builder().id(1L).email(email).name("Hong").build();
+        Trip trip = Trip.builder().id(10L).title("Jeju Trip").build();
+
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .tripId(10L)
+                .title("Black Pork Dinner")
+                .amount(new BigDecimal("90000"))
+                .category("식비")
+                .build();
+
+        TripExpense savedExpense = TripExpense.builder()
+                .id(100L)
+                .trip(trip)
+                .payer(user)
+                .title("Black Pork Dinner")
+                .amount(new BigDecimal("90000"))
+                .category("식비")
+                .build();
+
+        given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+        given(tripRepository.findById(10L)).willReturn(Optional.of(trip));
+        given(tripExpenseRepository.save(any(TripExpense.class))).willReturn(savedExpense);
+
+        // when
+        TripExpenseResponse response = tripExpenseService.addExpense(email, request);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.getTitle()).isEqualTo("Black Pork Dinner");
+        assertThat(response.getAmount()).isEqualByComparingTo(new BigDecimal("90000"));
+        assertThat(response.getPayerName()).isEqualTo("Hong");
+    }
+
+    @Test
+    @DisplayName("N빵 정산 계산 성공")
+    void calculateSettlement_Success() {
+        // given
+        Long tripId = 10L;
+        given(tripRepository.existsById(tripId)).willReturn(true);
+        User user1 = User.builder().id(1L).name("User 1").build();
+        User user2 = User.builder().id(2L).name("User 2").build();
+
+        TripExpense e1 = TripExpense.builder().id(1L).payer(user1).amount(new BigDecimal("60000")).build();
+        TripExpense e2 = TripExpense.builder().id(2L).payer(user2).amount(new BigDecimal("30000")).build();
+
+        given(tripExpenseRepository.findByTripIdOrderByExpenseDateDesc(tripId)).willReturn(List.of(e1, e2));
+
+        // when (총 90,000원, 3명 정산 -> 1인당 30,000원)
+        TripSettlementResponse response = tripExpenseService.calculateSettlement(tripId, 3);
+
+        // then
+        assertThat(response.getTotalAmount()).isEqualByComparingTo(new BigDecimal("90000"));
+        assertThat(response.getPerPersonAmount()).isEqualByComparingTo(new BigDecimal("30000"));
+        assertThat(response.getPayerSummaries()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("지출 내역이 비어 있을 때 정산 결과 0원 반환")
+    void calculateSettlement_EmptyExpenses_ReturnsZeroSettlement() {
+        // given
+        Long tripId = 10L;
+        given(tripRepository.existsById(tripId)).willReturn(true);
+        given(tripExpenseRepository.findByTripIdOrderByExpenseDateDesc(tripId)).willReturn(List.of());
+
+        // when
+        TripSettlementResponse response = tripExpenseService.calculateSettlement(tripId, 2);
+
+        // then
+        assertThat(response.getTotalAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(response.getPerPersonAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(response.getPayerSummaries()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 여행 ID로 정산 계산 시 예외 발생")
+    void calculateSettlement_TripNotFound_ThrowsException() {
+        // given
+        Long tripId = 99L;
+        given(tripRepository.existsById(tripId)).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.calculateSettlement(tripId, 2))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("지출 내역 등록 시 항목명에 비속어 포함 시 예외 발생")
+    void addExpense_ProfanityTitle_ThrowsException() {
+        // given
+        String email = "test@example.com";
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .tripId(10L)
+                .title("개새끼 식당 식사")
+                .amount(new BigDecimal("50000"))
+                .build();
+
+        org.mockito.BDDMockito.willThrow(new com.tripgather.exception.CustomException(com.tripgather.exception.ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText("개새끼 식당 식사");
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense(email, request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("지출 내역 삭제 성공 - 작성자 본인")
+    void deleteExpense_Success() {
+        // given
+        Long expenseId = 100L;
+        String email = "owner@test.com";
+        User user = User.builder().id(1L).email(email).build();
+        TripExpense expense = TripExpense.builder().id(expenseId).payer(user).build();
+
+        given(tripExpenseRepository.findById(expenseId)).willReturn(Optional.of(expense));
+
+        // when
+        tripExpenseService.deleteExpense(expenseId, email);
+
+        // then
+        verify(tripExpenseRepository).delete(expense);
+    }
+
+    @Test
+    @DisplayName("지출 내역 삭제 실패 - 타인 작성 지출 삭제 시 예외 발생")
+    void deleteExpense_AccessDenied_ThrowsException() {
+        // given
+        Long expenseId = 100L;
+        String ownerEmail = "owner@test.com";
+        String attackerEmail = "attacker@test.com";
+        User user = User.builder().id(1L).email(ownerEmail).build();
+        TripExpense expense = TripExpense.builder().id(expenseId).payer(user).build();
+
+        given(tripExpenseRepository.findById(expenseId)).willReturn(Optional.of(expense));
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                tripExpenseService.deleteExpense(expenseId, attackerEmail))
+                .isInstanceOf(com.tripgather.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("지출 내역 등록 시 0원 이하 금액 제출 시 예외 발생")
+    void addExpense_ZeroAmount_ThrowsException() {
+        // given
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .tripId(1L)
+                .title("테스트 지출")
+                .amount(java.math.BigDecimal.ZERO)
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense("user@test.com", request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 금액은 0원보다 커야 합니다.");
+    }
+
+    @Test
+    @DisplayName("지출 내역 수정 시 0원 이하 금액 제출 시 예외 발생")
+    void updateExpense_ZeroAmount_ThrowsException() {
+        // given
+        Long expenseId = 10L;
+        String email = "owner@test.com";
+        User user = User.builder().id(1L).email(email).build();
+        TripExpense expense = TripExpense.builder().id(expenseId).payer(user).build();
+
+        given(tripExpenseRepository.findById(expenseId)).willReturn(Optional.of(expense));
+
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .amount(java.math.BigDecimal.ZERO)
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.updateExpense(expenseId, email, request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 금액은 0원보다 커야 합니다.");
+    }
+
+    @Test
+    @DisplayName("여행별 지출 목록 조회 성공")
+    void getExpensesByTrip_Success() {
+        // given
+        Long tripId = 10L;
+        given(tripRepository.existsById(tripId)).willReturn(true);
+        given(tripExpenseRepository.findByTripIdOrderByExpenseDateDesc(tripId)).willReturn(List.of());
+
+        // when
+        List<TripExpenseResponse> result = tripExpenseService.getExpensesByTrip(tripId);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 여행 ID로 지출 목록 조회 시 예외 발생")
+    void getExpensesByTrip_TripNotFound_ThrowsException() {
+        // given
+        Long tripId = 99L;
+        given(tripRepository.existsById(tripId)).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.getExpensesByTrip(tripId))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("N빵 정산 계산 시 0명 이하의 인원 전달 시 예외 발생")
+    void calculateSettlement_InvalidMemberCount_ThrowsException() {
+        // given
+        Long tripId = 10L;
+        given(tripRepository.existsById(tripId)).willReturn(true);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.calculateSettlement(tripId, 0))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("정산 인원은 최소 1명 이상이어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("지출 내역 수정 성공 테스트")
+    void updateExpense_Success() {
+        // given
+        Long expenseId = 10L;
+        String email = "owner@test.com";
+        User user = User.builder().id(1L).email(email).name("Hong").build();
+        Trip trip = Trip.builder().id(100L).title("Jeju").build();
+        TripExpense expense = TripExpense.builder().id(expenseId).payer(user).trip(trip).amount(new BigDecimal("50000")).title("점심").build();
+
+        given(tripExpenseRepository.findById(expenseId)).willReturn(Optional.of(expense));
+        given(tripExpenseRepository.save(any(TripExpense.class))).willReturn(expense);
+
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .title("저녁 식사")
+                .amount(new BigDecimal("70000"))
+                .category("식비")
+                .build();
+
+        // when
+        TripExpenseResponse response = tripExpenseService.updateExpense(expenseId, email, request);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(response.getTitle()).isEqualTo("저녁 식사");
+        assertThat(response.getAmount()).isEqualByComparingTo(new BigDecimal("70000"));
+    }
+
+    @Test
+    @DisplayName("지출 내역 등록 시 0원 이하 금액 지정 시 예외 발생")
+    void addExpense_InvalidAmount_ThrowsException() {
+        // given
+        String email = "test@example.com";
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .tripId(10L)
+                .title("Zero Expense")
+                .amount(new BigDecimal("0"))
+                .build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense(email, request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 금액은 0원보다 커야 합니다.");
+    }
+
+    @Test
+    @DisplayName("지출 내역 수정 시 null 지출 ID 전달 시 예외 발생")
+    void updateExpense_NullExpenseIdOrEmail_ThrowsException() {
+        // given
+        TripExpenseRequest request = TripExpenseRequest.builder().title("수정").build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.updateExpense(null, "user@test.com", request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 ID 또는 유저 정보가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("지출 내역 삭제 시 null 지출 ID 전달 시 예외 발생")
+    void deleteExpense_NullExpenseIdOrEmail_ThrowsException() {
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.deleteExpense(null, "user@test.com"))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 ID 또는 유저 정보가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("N빵 정산 계산 시 존재하지 않는 여행 ID 전달 시 예외 발생")
+    void calculateSettlement_NonExistingTrip_ThrowsException() {
+        // given
+        Long tripId = 999L;
+        given(tripRepository.existsById(tripId)).willReturn(false);
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.calculateSettlement(tripId, 3))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("여행을 찾을 수 없습니다: 999");
+    }
+
+    @Test
+    @DisplayName("지출 내역 등록 시 null 또는 공백 유저 이메일 전달 시 예외 발생")
+    void addExpense_NullUserEmail_ThrowsException() {
+        // given
+        TripExpenseRequest request = TripExpenseRequest.builder().tripId(10L).title("저녁").amount(new BigDecimal("10000")).build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense("   ", request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("유저 이메일 정보가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("지출 내역 등록 시 지출 제목이 null 또는 공백인 경우 예외 발생")
+    void addExpense_NullTitle_ThrowsException() {
+        // given
+        TripExpenseRequest request = TripExpenseRequest.builder().tripId(10L).title("   ").amount(new BigDecimal("10000")).build();
+
+        // when & then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense("user@test.com", request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 제목을 입력해주세요.");
+    }
+
+    @Test
+    @DisplayName("지출 등록 시 제목 100자 또는 메모 500자 초과 시 예외 발생")
+    void addExpense_ExceedTitleOrMemoLength_ThrowsException() {
+        String longTitle = "A".repeat(101);
+        TripExpenseRequest reqTitle = TripExpenseRequest.builder().tripId(10L).title(longTitle).amount(new BigDecimal("10000")).build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense("user@test.com", reqTitle))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 제목은 100자 이내여야 합니다.");
+
+        String longMemo = "B".repeat(501);
+        TripExpenseRequest reqMemo = TripExpenseRequest.builder().tripId(10L).title("식사").memo(longMemo).amount(new BigDecimal("10000")).build();
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> tripExpenseService.addExpense("user@test.com", reqMemo))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 메모는 500자 이내여야 합니다.");
+    }
+
+    @DisplayName("지출 등록 시 금액이 null이면 예외 발생")
+    void addExpense_NullAmount_ThrowsException() {
+        // given
+        TripExpenseRequest request = TripExpenseRequest.builder().tripId(1L).title("숙소비").build();
+
+        // when & then
+        assertThatThrownBy(() -> tripExpenseService.addExpense("user@test.com", request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 금액은 0원보다 커야 합니다.");
+    }
+
+    @Test
+    @DisplayName("지출 등록 시 항목명/메모가 없으면 비속어 검사를 건너뛰고 카테고리는 기타로 저장")
+    void addExpense_NullTitleAndMemo_UsesDefaultCategory() {
+        // given
+        User user = User.builder().id(1L).email("user@test.com").build();
+        Trip trip = Trip.builder().id(1L).title("제주 여행").build();
+        // 지출 제목은 필수 검증이 추가되어 없으면 먼저 막힌다. 이 테스트의 관심사는
+        // '메모가 없을 때 비속어 검사를 건너뛰고 카테고리 기본값이 들어가는가' 이므로 제목만 채운다.
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .tripId(1L).title("저녁 식사").amount(new BigDecimal("10000")).build();
+
+        given(userRepository.findByEmail("user@test.com")).willReturn(Optional.of(user));
+        given(tripRepository.findById(1L)).willReturn(Optional.of(trip));
+        given(tripExpenseRepository.save(any(TripExpense.class)))
+                .willAnswer(inv -> inv.getArgument(0));
+
+        ArgumentCaptor<TripExpense> captor = ArgumentCaptor.forClass(TripExpense.class);
+
+        // when
+        tripExpenseService.addExpense("user@test.com", request);
+
+        // then
+        verify(tripExpenseRepository).save(captor.capture());
+        assertThat(captor.getValue().getCategory()).isEqualTo("기타");
+        // 메모는 비어 있으므로 메모에 대한 비속어 검사는 일어나지 않는다.
+        verify(profanityFilterService, never()).validateText(org.mockito.ArgumentMatchers.isNull());
+    }
+
+    @Test
+    @DisplayName("지출 등록 시 메모에 비속어가 있으면 예외 발생")
+    void addExpense_ProfanityMemo_ThrowsException() {
+        // given
+        TripExpenseRequest request = TripExpenseRequest.builder()
+                .tripId(1L).title("저녁 식사").amount(new BigDecimal("10000")).memo("개새끼 바가지").build();
+        // 제목도 비속어 검사를 거치므로(메모보다 먼저) 함께 스텁해 둔다.
+        org.mockito.BDDMockito.willDoNothing().given(profanityFilterService).validateText("저녁 식사");
+        org.mockito.BDDMockito.willThrow(new com.tripgather.exception.CustomException(
+                        com.tripgather.exception.ErrorCode.INVALID_INPUT_VALUE, "부적절한 단어가 포함되어 있습니다."))
+                .given(profanityFilterService).validateText("개새끼 바가지");
+
+        // when & then
+        assertThatThrownBy(() -> tripExpenseService.addExpense("user@test.com", request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("지출 삭제 시 유저 이메일이 null이거나 공백이면 예외 발생")
+    void deleteExpense_NullOrBlankEmail_ThrowsException() {
+        // when & then
+        assertThatThrownBy(() -> tripExpenseService.deleteExpense(1L, null))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 ID 또는 유저 정보가 올바르지 않습니다.");
+        assertThatThrownBy(() -> tripExpenseService.deleteExpense(1L, "   "))
+                .isInstanceOf(com.tripgather.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 지출 ID로 삭제 시 예외 발생")
+    void deleteExpense_NotFound_ThrowsException() {
+        // given
+        given(tripExpenseRepository.findById(99L)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> tripExpenseService.deleteExpense(99L, "user@test.com"))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 내역을 찾을 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("지출 수정 시 유저 이메일이 null이거나 공백이면 예외 발생")
+    void updateExpense_NullOrBlankEmail_ThrowsException() {
+        // given
+        TripExpenseRequest request = TripExpenseRequest.builder().amount(new BigDecimal("10000")).build();
+
+        // when & then
+        assertThatThrownBy(() -> tripExpenseService.updateExpense(1L, null, request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class);
+        assertThatThrownBy(() -> tripExpenseService.updateExpense(1L, "   ", request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class);
+    }
+
+    @Test
+    @DisplayName("타인이 등록한 지출 수정 시 예외 발생")
+    void updateExpense_NotPayer_ThrowsException() {
+        // given
+        User payer = User.builder().id(1L).email("payer@test.com").build();
+        TripExpense expense = TripExpense.builder().id(1L).payer(payer)
+                .amount(new BigDecimal("10000")).build();
+        given(tripExpenseRepository.findById(1L)).willReturn(Optional.of(expense));
+
+        TripExpenseRequest request = TripExpenseRequest.builder().amount(new BigDecimal("20000")).build();
+
+        // when & then
+        assertThatThrownBy(() -> tripExpenseService.updateExpense(1L, "stranger@test.com", request))
+                .isInstanceOf(com.tripgather.exception.CustomException.class)
+                .hasMessageContaining("지출 등록자만 수정할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("지출 수정 시 금액만 전달하면 나머지 항목은 기존 값을 유지")
+    void updateExpense_OnlyAmount_KeepsOtherFields() {
+        // given
+        User payer = User.builder().id(1L).email("payer@test.com").build();
+        java.time.LocalDateTime originalDate = java.time.LocalDateTime.of(2026, 8, 1, 12, 0);
+        Trip trip = Trip.builder().id(1L).title("제주 여행").build();
+        TripExpense expense = TripExpense.builder()
+                .id(1L).trip(trip).payer(payer).title("기존 항목").memo("기존 메모")
+                .category("숙소").amount(new BigDecimal("10000")).expenseDate(originalDate).build();
+        given(tripExpenseRepository.findById(1L)).willReturn(Optional.of(expense));
+        given(tripExpenseRepository.save(any(TripExpense.class))).willAnswer(inv -> inv.getArgument(0));
+
+        TripExpenseRequest request = TripExpenseRequest.builder().amount(new BigDecimal("20000")).build();
+
+        // when
+        TripExpenseResponse response = tripExpenseService.updateExpense(1L, "payer@test.com", request);
+
+        // then
+        assertThat(response.getAmount()).isEqualByComparingTo(new BigDecimal("20000"));
+        assertThat(expense.getTitle()).isEqualTo("기존 항목");
+        assertThat(expense.getMemo()).isEqualTo("기존 메모");
+        assertThat(expense.getCategory()).isEqualTo("숙소");
+        assertThat(expense.getExpenseDate()).isEqualTo(originalDate);
+        verify(profanityFilterService, never()).validateText(any());
+    }
+}

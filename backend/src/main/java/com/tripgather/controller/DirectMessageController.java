@@ -1,0 +1,101 @@
+package com.tripgather.controller;
+
+import com.tripgather.domain.DirectMessage;
+import com.tripgather.domain.User;
+import com.tripgather.repository.UserRepository;
+import com.tripgather.dto.DMResponse;
+import com.tripgather.usecase.DirectMessageUseCase;
+import com.tripgather.service.NotificationService;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
+import java.util.List;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/dm")
+@lombok.extern.slf4j.Slf4j
+public class DirectMessageController {
+
+    private final DirectMessageUseCase dmService;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
+
+    @MessageMapping("/dm/send")
+    public void sendDM(@org.springframework.messaging.handler.annotation.Payload DMRequest request, java.security.Principal principal) {
+        // 발신자는 반드시 STOMP 세션의 인증 주체에서만 얻는다.
+        // (클라이언트가 보낸 senderEmail 을 신뢰하면 타인 사칭이 가능하다)
+        if (principal == null) {
+            log.warn("[DM] Rejected unauthenticated message to {}", request.getReceiverEmail());
+            return;
+        }
+        String senderEmail = principal.getName();
+        log.debug("[DM] Sending from {} to {}", senderEmail, request.getReceiverEmail());
+
+
+        // Use the DTO directly from the service
+        DMResponse response = dmService.sendDM(senderEmail, request.getReceiverEmail(), request.getContent());
+
+        // 발신자와 수신자 모두에게 메시지 전송 (실시간 반영)
+        messagingTemplate.convertAndSend("/topic/dm/" + response.getReceiverEmail(), response);
+        messagingTemplate.convertAndSend("/topic/dm/" + response.getSenderEmail(), response);
+
+        // 실시간 알림 전송 (SSE)
+        notificationService.send(response.getReceiverEmail(), "dm-received", response);
+    }
+
+    /**
+     * 1:1 대화 내역. 기본은 최신 50건이며, before 커서로 과거 메시지를 이어서 읽는다.
+     */
+    @GetMapping("/history/{otherUserEmail}")
+    public List<DMResponse> getChatHistory(@PathVariable String otherUserEmail,
+                                           @RequestParam(required = false) Long before,
+                                           @RequestParam(defaultValue = "50") int size,
+                                           Principal principal) {
+        String myEmail = principal.getName();
+        return dmService.getChatHistory(myEmail, otherUserEmail, before, size).stream()
+                .map(DMResponse::from)
+                .toList();
+    }
+
+    @GetMapping("/partners")
+    public List<com.tripgather.dto.UserResponse> getMyChatPartners(Principal principal) {
+        String myEmail = principal.getName();
+        return dmService.getChatPartners(myEmail).stream()
+                .map(com.tripgather.dto.UserResponse::from)
+                .toList();
+    }
+
+    @PutMapping("/read/{otherUserEmail}")
+    public void markAsRead(@PathVariable String otherUserEmail, Principal principal) {
+        String myEmail = principal.getName();
+        dmService.markMessagesAsRead(myEmail, otherUserEmail);
+        
+        // 상대방(메시지 발신자)에게 내가 읽었음을 알림
+        messagingTemplate.convertAndSend("/topic/dm/read/" + otherUserEmail, new ReadNotification(myEmail));
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ReadNotification {
+        private String readerEmail;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DMRequest {
+        /** 클라이언트 호환용 필드. 서버는 이 값을 신뢰하지 않고 인증 주체를 사용한다. */
+        private String senderEmail;
+        private String receiverEmail;
+        private String content;
+    }
+}
