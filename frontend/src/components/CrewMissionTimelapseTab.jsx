@@ -252,8 +252,20 @@ const CrewMissionTimelapseTab = ({ gathering, currentUser, onGoToGallery }) => {
         'satellite',
         'plane'
       );
-      await saveToGallery(blob, `tripgather-crew-map-${Date.now()}.png`);
-      notify('🖼️ 크루 합동 보딩패스 포스터(PNG)를 저장했습니다.');
+      if (blob) {
+        if (generatedMedia?.url) URL.revokeObjectURL(generatedMedia.url);
+        const url = URL.createObjectURL(blob);
+        setGeneratedMedia({
+          url,
+          blob,
+          ext: 'png',
+          width: 540,
+          height: 540,
+          frames: 1
+        });
+        await saveToGallery(blob, `tripgather-crew-map-${Date.now()}.png`);
+        notify('🖼️ 크루 합동 보딩패스 포스터(PNG)를 생성 및 저장했습니다.');
+      }
     } finally {
       setRendering(false);
     }

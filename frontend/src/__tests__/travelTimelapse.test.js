@@ -165,5 +165,12 @@ describe('boardingPassGifRenderer 타임랩스 플래너 단위 테스트 (#28)'
     expect(storyMp4Plan.video).toBe(true);
     expect(storyMp4Plan.outW).toBe(Math.round(GIF_LAYOUTS.story.GW * 0.75 / 2) * 2);
     expect(storyMp4Plan.follow).toBe(false);
+
+    // 피날레 프레임(isFinale: true)은 사진 팝업 카드가 지도를 가리지 않도록 cardAlpha === 0 이어야 함
+    const finaleFrames = squarePlan.plan.filter((f) => f.isFinale);
+    expect(finaleFrames.length).toBeGreaterThan(0);
+    finaleFrames.forEach((f) => {
+      expect(f.cardAlpha).toBe(0);
+    });
   });
 });

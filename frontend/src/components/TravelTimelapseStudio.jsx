@@ -683,7 +683,7 @@ const TravelTimelapseStudio = ({ itinerary, tripTitle, canEdit = false, onItiner
     }
   };
 
-  // 동선 요약 이미지(PNG) 저장
+  // 동선 요약 이미지(PNG) 저장 및 미리보기 표시
   const handleDownloadMapPng = async () => {
     if (placedSpots.length < 1) return;
     setRendering(true);
@@ -691,8 +691,19 @@ const TravelTimelapseStudio = ({ itinerary, tripTitle, canEdit = false, onItiner
     try {
       const title = tripTitle || itinerary?.title || '내 여행 보딩패스';
       const blob = await exportBoardingMapPng(placedSpots, { title }, mapStyle, transportKey);
-      await saveToGallery(blob, `tripgather-boarding-map-${Date.now()}.png`);
-      showToast('🖼️ 보딩패스 동선 포스터(PNG)를 저장했습니다.');
+      if (blob) {
+        if (generatedMedia?.url) URL.revokeObjectURL(generatedMedia.url);
+        const url = URL.createObjectURL(blob);
+        setGeneratedMedia({
+          url,
+          blob,
+          ext: 'png',
+          width: 540,
+          height: 540
+        });
+        await saveToGallery(blob, `tripgather-boarding-map-${Date.now()}.png`);
+        showToast('🖼️ 보딩패스 동선 요약 포스터(PNG)를 생성 및 저장했습니다.');
+      }
     } finally {
       setRendering(false);
     }
@@ -1350,10 +1361,10 @@ const TravelTimelapseStudio = ({ itinerary, tripTitle, canEdit = false, onItiner
               ✈️ 완성된 보딩패스 타임랩스 미리보기
             </div>
             {generatedMedia ? (
-              generatedMedia.ext === 'gif' ? (
+              generatedMedia.ext === 'gif' || generatedMedia.ext === 'png' ? (
                 <img
                   src={generatedMedia.url}
-                  alt="보딩패스 타임랩스 GIF"
+                  alt="보딩패스 타임랩스 및 동선 포스터"
                   className="tl-preview-media"
                 />
               ) : (

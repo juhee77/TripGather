@@ -309,7 +309,7 @@ export function planTravelGif(spots, format = 'square', options = {}) {
     }
   }
 
-  // 피날레 스탬프 홀드 프레임 (isFinale: true)
+  // 피날레 스탬프 홀드 프레임 (isFinale: true — 사진 카드 없이 전체 이동 동선 + 스탬프만 깔끔하게 노출)
   const lastIdx = Math.max(0, spots.length - 1);
   pushHold(
     {
@@ -317,11 +317,11 @@ export function planTravelGif(spots, format = 'square', options = {}) {
       segIdx: lastIdx,
       segT: 0,
       activeIdx: lastIdx,
-      cardAlpha: 1,
+      cardAlpha: 0,
       isFinale: true
     },
     finaleHoldFrames,
-    1050
+    1150
   );
 
   let outW = Math.round(L.GW * Q.scale);
@@ -407,7 +407,18 @@ async function renderBoardingFrame(ctx, L, state, spots, meta, styleKey, transpo
     MAP_H,
     styleKey
   );
-  const pts = spots.map((s) => toScreen(s.lat, s.lng));
+  const rawPts = spots.map((s) => toScreen(s.lat, s.lng));
+  // 출발지·도착지가 동일 좌표(예: 제주국제공항 도착 & 귀가)일 때 핀 번호가 완전히 겹치지 않도록 미세 오프셋 적용
+  const pts = rawPts.map((p, i) => {
+    let dupCount = 0;
+    for (let j = 0; j < i; j++) {
+      if (Math.hypot(p.x - rawPts[j].x, p.y - rawPts[j].y) < 10) {
+        dupCount++;
+      }
+    }
+    if (dupCount === 0) return p;
+    return { x: p.x + dupCount * 16, y: p.y - dupCount * 8 };
+  });
 
   ctx.save();
   ctx.beginPath();
@@ -462,8 +473,8 @@ async function renderBoardingFrame(ctx, L, state, spots, meta, styleKey, transpo
 
   // 경유지 게이트 핀 마커 (Boarding Gate Badge)
   pts.forEach((p, i) => {
-    const visited = i <= state.segIdx || (i === state.segIdx + 1 && state.segT > 0.85);
-    const r = i === state.activeIdx ? 15 : 12;
+    const visited = state.isFinale || i <= state.segIdx || (i === state.segIdx + 1 && state.segT > 0.85);
+    const r = state.isFinale ? 13 : i === state.activeIdx ? 15 : 12;
     ctx.save();
     ctx.beginPath();
     ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
@@ -481,8 +492,8 @@ async function renderBoardingFrame(ctx, L, state, spots, meta, styleKey, transpo
     ctx.restore();
   });
 
-  // 이동 아이콘 (비행기 / 자동차 / 도보)
-  if (pts.length > 0) {
+  // 이동 아이콘 (비행기 / 자동차 / 도보 — 피날레에서는 핀 번호를 가리지 않도록 생략)
+  if (!state.isFinale && pts.length > 0) {
     let tx = pts[state.segIdx].x;
     let ty = pts[state.segIdx].y;
     if (state.segIdx < pts.length - 1 && state.segT > 0) {
@@ -503,8 +514,8 @@ async function renderBoardingFrame(ctx, L, state, spots, meta, styleKey, transpo
     ctx.restore();
   }
 
-  // 활성 지점 폴라로이드 티켓 팝업 카드
-  if (state.cardAlpha > 0 && spots[state.activeIdx]) {
+  // 활성 지점 폴라로이드 티켓 팝업 카드 (피날레/요약 포스터에서는 지도를 가리지 않도록 표시하지 않음)
+  if (!state.isFinale && state.cardAlpha > 0 && spots[state.activeIdx]) {
     const idx = state.activeIdx;
     const spot = spots[idx];
     const p = pts[idx];
@@ -567,33 +578,33 @@ async function renderBoardingFrame(ctx, L, state, spots, meta, styleKey, transpo
     ctx.restore();
   }
 
-  // 피날레 여권 도장 (Passport Stamp Finale Overlay)
+  // 피날레 여권 도장 (Passport Stamp Finale Overlay — 동선을 가리지 않는 우측 하단 모서리 스탬프)
   if (state.isFinale) {
     ctx.save();
-    ctx.translate(GW - 112, MAP_Y + MAP_H - 76);
-    ctx.rotate(-0.22);
-    ctx.strokeStyle = 'rgba(255, 92, 0, 0.92)';
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
-    ctx.lineWidth = 3.5;
-    roundRect(ctx, -78, -32, 156, 64, 10);
+    ctx.translate(GW - 96, MAP_Y + MAP_H - 48);
+    ctx.rotate(-0.18);
+    ctx.strokeStyle = 'rgba(255, 92, 0, 0.95)';
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.76)';
+    ctx.lineWidth = 3;
+    roundRect(ctx, -74, -28, 148, 56, 10);
     ctx.fill();
     ctx.stroke();
 
     ctx.setLineDash([4, 3]);
-    ctx.lineWidth = 1.5;
-    roundRect(ctx, -72, -26, 144, 52, 7);
+    ctx.lineWidth = 1.4;
+    roundRect(ctx, -68, -22, 136, 44, 7);
     ctx.stroke();
     ctx.setLineDash([]);
 
     ctx.fillStyle = '#FF5C00';
-    ctx.font = '900 15px "Pretendard Variable", sans-serif';
+    ctx.font = '900 14px "Pretendard Variable", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('★ STAMPED ★', 0, -8);
+    ctx.fillText('★ STAMPED ★', 0, -7);
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '700 10px "Pretendard Variable", sans-serif';
-    ctx.fillText(`TRIPGATHER · ${todayKey()}`, 0, 12);
+    ctx.font = '700 9.5px "Pretendard Variable", sans-serif';
+    ctx.fillText(`TRIPGATHER · ${todayKey()}`, 0, 10);
     ctx.restore();
   }
 
@@ -647,6 +658,53 @@ async function renderBoardingFrame(ctx, L, state, spots, meta, styleKey, transpo
   ctx.beginPath();
   ctx.arc(GW, CAPTION_Y, 8, Math.PI / 2, (Math.PI * 3) / 2);
   ctx.fill();
+
+  if (state.isFinale) {
+    // 피날레 및 요약 포스터 하단: 마지막 사진 1장 반복 대신 전체 이동 동선 코스 요약 + 여권 스탬프 완료 배지 표시
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    ctx.fillStyle = '#FF5C00';
+    ctx.font = '800 11px "Pretendard Variable", sans-serif';
+    ctx.fillText(
+      `★ ALL ${spots.length} GATES COMPLETED  ·  TOTAL ${(meta?.totalKm || 0).toFixed(1)} km  ·  ${todayKey()}`,
+      18,
+      CAPTION_Y + 22
+    );
+
+    const routeSummaryStr = spots.map((s, idx) => `${idx + 1}. ${s.name}`).join('  →  ');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '800 14px "Pretendard Variable", sans-serif';
+    ctx.fillText(trimText(ctx, routeSummaryStr, GW - 36), 18, CAPTION_Y + 46);
+
+    // 하단 게이트 완주 스텝 바 (1 .. N 게이트 스탬프 칩)
+    const chipStartY = CAPTION_Y + 66;
+    const maxChips = Math.min(spots.length, 6);
+    const chipGap = 8;
+    const availW = GW - 36;
+    const chipW = Math.min(86, Math.floor((availW - chipGap * (maxChips - 1)) / Math.max(1, maxChips)));
+    const chipH = Math.max(22, CAPTION_H - 76);
+
+    for (let i = 0; i < maxChips; i++) {
+      const cx = 18 + i * (chipW + chipGap);
+      ctx.fillStyle = 'rgba(255, 92, 0, 0.16)';
+      roundRect(ctx, cx, chipStartY, chipW, chipH, 7);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 92, 0, 0.65)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#FFF7ED';
+      ctx.font = '700 10px "Pretendard Variable", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        trimText(ctx, `#${i + 1} ${spots[i].name}`, chipW - 10),
+        cx + chipW / 2,
+        chipStartY + chipH / 2 + 0.5
+      );
+    }
+    return;
+  }
 
   const cur = spots[state.activeIdx] || spots[0];
   if (!cur) return;
@@ -901,7 +959,7 @@ export async function exportBoardingMapPng(spots, meta = {}, styleKey = 'satelli
       segIdx: lastIdx,
       segT: 0,
       activeIdx: lastIdx,
-      cardAlpha: 1,
+      cardAlpha: 0,
       isFinale: true
     },
     spots,
