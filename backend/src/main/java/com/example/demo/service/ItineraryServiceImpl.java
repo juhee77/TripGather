@@ -207,12 +207,28 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         return itineraryRepository.save(itinerary);
     }
 
+    private void validateOwnershipIfPresent(Itinerary itinerary, String requesterEmail) {
+        if (itinerary == null || requesterEmail == null || requesterEmail.trim().isEmpty()) {
+            return;
+        }
+        String owner = itinerary.getOwnerEmail();
+        String author = itinerary.getAuthorEmail();
+        if (owner == null && author == null) {
+            return;
+        }
+        boolean isOwner = requesterEmail.equals(owner) || requesterEmail.equals(author);
+        if (!isOwner) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "본인의 여정만 수정하거나 관리할 수 있습니다.");
+        }
+    }
+
     @Transactional
     public Itinerary updateItinerary(Long id, Itinerary update) {
         if (id == null || update == null) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여정 ID 또는 수정 정보가 올바르지 않습니다.");
         }
         Itinerary itinerary = getById(id);
+        validateOwnershipIfPresent(itinerary, securityService.isAnonymous() ? null : securityService.getCurrentUserEmail());
         
         if (update.getStartDate() != null && update.getEndDate() != null) {
             if (update.getEndDate().isBefore(update.getStartDate())) {
@@ -240,8 +256,11 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
             profanityFilterService.validateText(update.getDescription());
             itinerary.setDescription(update.getDescription());
         }
-        if (update.getLocation() != null && update.getLocation().length() > 200) {
-            throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 위치/장소는 200자 이하이어야 합니다.");
+        if (update.getLocation() != null) {
+            if (update.getLocation().length() > 200) {
+                throw new CustomException(ErrorCode.INVALID_INPUT_VALUE, "여행 위치/장소는 200자 이하이어야 합니다.");
+            }
+            itinerary.setLocation(update.getLocation().trim());
         }
         if (update.getBgImageUrl() != null) {
             itinerary.setBgImageUrl(update.getBgImageUrl());
@@ -249,9 +268,15 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         if (update.getTimelapseUrl() != null) {
             itinerary.setTimelapseUrl(update.getTimelapseUrl());
         }
-        itinerary.setStampImageUrl(update.getStampImageUrl());
-        itinerary.setStartDate(update.getStartDate());
-        itinerary.setEndDate(update.getEndDate());
+        if (update.getStampImageUrl() != null) {
+            itinerary.setStampImageUrl(update.getStampImageUrl());
+        }
+        if (update.getStartDate() != null) {
+            itinerary.setStartDate(update.getStartDate());
+        }
+        if (update.getEndDate() != null) {
+            itinerary.setEndDate(update.getEndDate());
+        }
         itinerary.setPublicStatus(update.isPublicStatus());
         
         // RoutePoints 업데이트 로직
@@ -299,6 +324,8 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
         if (!itineraryRepository.existsById(id)) {
             throw new CustomException(ErrorCode.ITINERARY_NOT_FOUND, "여정을 찾을 수 없습니다.");
         }
+        itineraryRepository.findById(id).ifPresent(itinerary ->
+                validateOwnershipIfPresent(itinerary, securityService.isAnonymous() ? null : securityService.getCurrentUserEmail()));
         itineraryRepository.softDeleteById(id);
     }
 
@@ -368,6 +395,7 @@ public class ItineraryServiceImpl implements ItineraryUseCase {
     @Transactional
     public com.example.demo.domain.RoutePoint toggleRoutePointCompletion(Long itineraryId, Long pointId, String userEmail) {
         Itinerary itinerary = getById(itineraryId);
+        validateOwnershipIfPresent(itinerary, userEmail);
         com.example.demo.domain.RoutePoint point = itinerary.getRoutePoints().stream()
                 .filter(p -> p.getId().equals(pointId))
                 .findFirst()

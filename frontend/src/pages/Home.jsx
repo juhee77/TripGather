@@ -152,7 +152,7 @@ const Home = () => {
             <Search size={18} />
           </button>
           <button 
-            title="내가 호스트인 모임만 보기 (작업 예정)"
+            title="내가 호스트인 모임만 보기"
             onClick={() => setShowOnlyHosted(!showOnlyHosted)}
             className="icon-circle" 
             style={{ 
@@ -351,7 +351,25 @@ const Home = () => {
               [...Array(3)].map((_, idx) => (
                 <div key={`skeleton-${idx}`} className="ticket-skeleton" style={{ animationDelay: `${idx * 0.15}s` }} />
               ))
-            ) : (
+            ) : (() => {
+              const filteredPublicItineraries = publicItineraries.filter(it => {
+                const regionKey = selectedRegion === '전체' ? '' : selectedRegion.replace(/도$/, '');
+                const matchesRegion = selectedRegion === '전체'
+                  || (it.location && (it.location.includes(selectedRegion) || (regionKey && it.location.includes(regionKey))))
+                  || (it.title && (it.title.includes(selectedRegion) || (regionKey && it.title.includes(regionKey))))
+                  || (it.description && (it.description.includes(selectedRegion) || (regionKey && it.description.includes(regionKey))));
+                const q = (searchQuery || '').trim().toLowerCase();
+                const matchesQuery = !q
+                  || (it.title || '').toLowerCase().includes(q)
+                  || (it.description || '').toLowerCase().includes(q)
+                  || (it.location || '').toLowerCase().includes(q);
+                return matchesRegion && matchesQuery;
+              });
+              const matchingGatheringsCount = gatherings.filter(
+                g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))
+              ).length;
+
+              return (
               <>
                 {discoverFilter !== '코스' && gatherings.filter(g => {
                   // The QueryDSL backend already handles location, searchQuery, and availableOnly.
@@ -421,7 +439,7 @@ const Home = () => {
                 )}
 
                 {/* 공개 코스 — 다른 여행자들이 공개한 여정 */}
-                {discoverFilter !== '모임' && publicItineraries.map((it, idx) => (
+                {discoverFilter !== '모임' && filteredPublicItineraries.map((it, idx) => (
                   <div key={`it-${it.id}`} className="animate-fade" style={{ animationDelay: `${idx * 0.06}s` }}>
                     <TicketCard
                       itinerary={it}
@@ -431,7 +449,7 @@ const Home = () => {
                   </div>
                 ))}
 
-                {discoverFilter === '코스' && !itinerariesLoading && publicItineraries.length === 0 && (
+                {discoverFilter === '코스' && !itinerariesLoading && filteredPublicItineraries.length === 0 && (
                   <Card glass={false} animate={true} style={{
                     textAlign: 'center', padding: '60px 24px',
                     border: '1px dashed var(--border-color)', background: 'var(--surface)'
@@ -448,7 +466,7 @@ const Home = () => {
                 )}
 
                 {/* Empty State */}
-                {discoverFilter !== '코스' && gatherings.filter(g => selectedRegion === '전체' || (g.location && g.location.includes(selectedRegion))).length === 0 && (
+                {discoverFilter !== '코스' && matchingGatheringsCount === 0 && (discoverFilter === '모임' || filteredPublicItineraries.length === 0) && (
                   <Card 
                     glass={false}
                     animate={true}
@@ -477,7 +495,8 @@ const Home = () => {
                   </Card>
                 )}
               </>
-            )}
+              );
+            })()}
           </div>
         )}
 

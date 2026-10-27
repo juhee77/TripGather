@@ -1048,5 +1048,70 @@ class ItineraryServiceImplTest {
         assertThat(merged.getRoutePoints().get(0).getPhotoUrl()).isEqualTo("/uploads/seongsan.jpg");
         assertThat(merged.getRoutePoints().get(0).getTakenAt()).isEqualTo(shotTime);
     }
+
+    @Test
+    @DisplayName("여정 수정 시 장소(location)가 정상 저장되고 부분 수정 시 기존 일정/스탬프가 보존된다")
+    void updateItinerary_SavesLocationAndPreservesExistingFields() {
+        java.time.LocalDate start = java.time.LocalDate.of(2026, 11, 1);
+        java.time.LocalDate end = java.time.LocalDate.of(2026, 11, 3);
+        Itinerary existing = Itinerary.builder()
+                .id(1L)
+                .title("기존 여정")
+                .location("서울")
+                .stampImageUrl("/uploads/stamp.png")
+                .startDate(start)
+                .endDate(end)
+                .ownerEmail("owner@test.com")
+                .routePoints(new ArrayList<>())
+                .build();
+
+        Itinerary partialUpdate = Itinerary.builder()
+                .title("수정된 여정")
+                .location("  제주도 서귀포  ")
+                .publicStatus(true)
+                .build();
+
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(existing));
+        given(itineraryRepository.save(any(Itinerary.class))).willAnswer(i -> i.getArgument(0));
+
+        Itinerary updated = itineraryService.updateItinerary(1L, partialUpdate);
+
+        assertThat(updated.getLocation()).isEqualTo("제주도 서귀포");
+        assertThat(updated.getStampImageUrl()).isEqualTo("/uploads/stamp.png");
+        assertThat(updated.getStartDate()).isEqualTo(start);
+        assertThat(updated.getEndDate()).isEqualTo(end);
+    }
+
+    @Test
+    @DisplayName("타인 소유 여정 수정·삭제·체크인 시도 시 FORBIDDEN_ACTION 예외가 발생한다")
+    void modifyOrToggleItinerary_NonOwner_ThrowsForbidden() {
+        com.example.demo.domain.RoutePoint point = point(10L, "해운대", 1, 1);
+        Itinerary existing = Itinerary.builder()
+                .id(1L)
+                .title("소유자 여정")
+                .ownerEmail("owner@test.com")
+                .authorEmail("owner@test.com")
+                .routePoints(new ArrayList<>(java.util.List.of(point)))
+                .build();
+
+        given(itineraryRepository.findById(1L)).willReturn(Optional.of(existing));
+        given(itineraryRepository.existsById(1L)).willReturn(true);
+        given(securityService.isAnonymous()).willReturn(false);
+        given(securityService.getCurrentUserEmail()).willReturn("intruder@test.com");
+
+        Itinerary updateAttempt = Itinerary.builder().title("변조된 제목").build();
+
+        assertThatThrownBy(() -> itineraryService.updateItinerary(1L, updateAttempt))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("본인의 여정만");
+
+        assertThatThrownBy(() -> itineraryService.deleteItinerary(1L))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("본인의 여정만");
+
+        assertThatThrownBy(() -> itineraryService.toggleRoutePointCompletion(1L, 10L, "intruder@test.com"))
+                .isInstanceOf(CustomException.class)
+                .hasMessageContaining("본인의 여정만");
+    }
 }
 

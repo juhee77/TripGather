@@ -16,6 +16,7 @@ const TripHubPage = () => {
   const [itinerary, setItinerary] = useState(null);
   const [activeTab, setActiveTab] = useState('일정');
   const [loading, setLoading] = useState(true);
+  const [errorStatus, setErrorStatus] = useState(null);
 
   useEffect(() => {
     fetchTripAndItinerary();
@@ -23,6 +24,7 @@ const TripHubPage = () => {
 
   const fetchTripAndItinerary = async () => {
     try {
+      setErrorStatus(null);
       const tripRes = await authFetch(`/api/trips/${id}`);
       if (tripRes.ok) {
         const tripData = await tripRes.json();
@@ -33,9 +35,12 @@ const TripHubPage = () => {
             setItinerary(await itineraryRes.json());
           }
         }
+      } else {
+        setErrorStatus(tripRes.status);
       }
     } catch (err) {
       console.error(err);
+      setErrorStatus(500);
     } finally {
       setLoading(false);
     }
@@ -43,10 +48,32 @@ const TripHubPage = () => {
 
   const handleTogglePoint = async (pointIndex) => {
     if (!itinerary) return;
-    const newPoints = [...(itinerary.routePoints || [])];
-    newPoints[pointIndex].isCompleted = !newPoints[pointIndex].isCompleted;
-    const updatedItinerary = { ...itinerary, routePoints: newPoints };
+    const sourcePoints = itinerary.routePoints || [];
+    const targetPoint = sourcePoints[pointIndex];
+    if (!targetPoint) return;
+
     try {
+      if (targetPoint.id != null) {
+        const res = await authFetch(`/api/itineraries/${itinerary.id}/points/${targetPoint.id}/toggle`, {
+          method: 'PATCH',
+        });
+        if (res.ok) {
+          const updatedPoint = await res.json();
+          const nextCompleted = updatedPoint.isCompleted ?? updatedPoint.completed ?? !targetPoint.isCompleted;
+          setItinerary((prev) => ({
+            ...prev,
+            routePoints: (prev?.routePoints || []).map((pt, idx) =>
+              idx === pointIndex ? { ...pt, isCompleted: nextCompleted } : pt
+            ),
+          }));
+        }
+        return;
+      }
+
+      const newPoints = sourcePoints.map((pt, idx) =>
+        idx === pointIndex ? { ...pt, isCompleted: !pt.isCompleted } : pt
+      );
+      const updatedItinerary = { ...itinerary, routePoints: newPoints };
       const res = await authFetch(`/api/itineraries/${itinerary.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -60,8 +87,52 @@ const TripHubPage = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (!trip) return <div>여행 정보를 찾을 수 없습니다.</div>;
+  if (loading) return <div style={{ padding: '40px 20px', textAlign: 'center', fontWeight: 700, color: 'var(--text-secondary)' }}>여행 정보를 불러오는 중...</div>;
+  if (!trip) {
+    return (
+      <div style={{ background: 'var(--bg-lite)', minHeight: '100vh', paddingBottom: '100px' }}>
+        <header className="glass page-header" style={{
+          position: 'sticky', top: 0, zIndex: 100, padding: '20px',
+          display: 'flex', alignItems: 'center', gap: '12px',
+          borderBottom: '1px solid var(--border-color)',
+          background: 'rgba(255,255,255,0.9)'
+        }}>
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="뒤로 가기"
+            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            <ArrowLeft size={24} color="var(--text-primary)" />
+          </button>
+          <div>
+            <span className="label-orange">TRIP HUB</span>
+            <h1 className="heading-l" style={{ marginTop: '2px' }}>여행 허브 안내</h1>
+          </div>
+        </header>
+        <div style={{ padding: '48px 20px', textAlign: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '24px', padding: '32px 24px', border: '1px solid var(--border-color)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '8px' }}>
+              {errorStatus === 403 ? '참여 중인 여행만 열람할 수 있습니다.' : '여행 정보를 찾을 수 없습니다.'}
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
+              {errorStatus === 403
+                ? '이 여행 허브는 승인된 동행 멤버에게만 공개되어 있습니다.'
+                : '삭제되었거나 존재하지 않는 여행 경로입니다.'}
+            </p>
+            <button
+              onClick={() => navigate('/gather')}
+              style={{
+                padding: '12px 24px', borderRadius: '14px', border: 'none',
+                background: 'var(--text-primary)', color: 'white', fontWeight: 800, cursor: 'pointer'
+              }}
+            >
+              홈으로 이동
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const TABS = [
     { id: '일정', icon: <List size={18} /> },
