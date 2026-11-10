@@ -78,17 +78,24 @@ class UserControllerTest {
 
     @Test
     @WithMockUser
-    @DisplayName("전체 유저 목록 조회 성공")
-    void getAllUsers_Success() throws Exception {
-        // given
-        User user1 = User.builder().id(1L).name("User 1").email("u1@ex.com").build();
-        User user2 = User.builder().id(2L).name("User 2").email("u2@ex.com").build();
-        given(userService.getAllUsers()).willReturn(List.of(user1, user2));
+    @DisplayName("단건 프로필 조회는 이메일과 권한을 내보내지 않는다")
+    void getUser_DoesNotExposeEmailOrRole() throws Exception {
+        // 이 엔드포인트는 호스트·크루 표시를 위해 비회원에게도 열려 있다.
+        // 예전에는 전체 UserResponse 를 그대로 돌려줘 이메일과 role, 보유 포인트까지 나갔다.
+        User other = User.builder()
+                .id(7L).name("다른 사람").email("other@ex.com")
+                .role("ROLE_ADMIN").points(5000).bio("안녕하세요")
+                .build();
+        given(userService.getById(7L)).willReturn(other);
 
-        // when & then
-        mockMvc.perform(get("/api/users"))
+        mockMvc.perform(get("/api/users/7"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$.id").value(7))
+                .andExpect(jsonPath("$.name").value("다른 사람"))
+                .andExpect(jsonPath("$.bio").value("안녕하세요"))
+                .andExpect(jsonPath("$.email").doesNotExist())
+                .andExpect(jsonPath("$.role").doesNotExist())
+                .andExpect(jsonPath("$.points").doesNotExist());
     }
 
     @Test

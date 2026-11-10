@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -30,16 +29,13 @@ public class UserController {
         }
     }
 
+    /**
+     * 단건 프로필. 호스트·크루를 표시하려고 비회원에게도 열어 둔 자리라
+     * 이메일과 권한이 빠진 공개용 범위만 돌려준다.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
-        return ResponseEntity.ok(UserResponse.from(userService.getById(id)));
-    }
-
-    @GetMapping
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers().stream()
-                .map(UserResponse::from)
-                .collect(java.util.stream.Collectors.toList()));
+        return ResponseEntity.ok(UserResponse.publicView(userService.getById(id)));
     }
 
     @PostMapping

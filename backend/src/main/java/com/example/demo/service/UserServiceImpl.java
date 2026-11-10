@@ -43,10 +43,6 @@ public class UserServiceImpl implements UserUseCase {
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found in database: " + email));
     }
 
-    @Transactional(readOnly = true)
-    public java.util.List<User> getAllUsers() {
-        return userRepository.findAll();
-    }
 
     @Transactional
     public User updateProfile(Long id, User update) {
