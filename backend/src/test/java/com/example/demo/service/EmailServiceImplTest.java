@@ -56,9 +56,39 @@ class EmailServiceImplTest {
     }
 
     @Test
-    @DisplayName("비밀번호 재설정 이메일 발송 테스트 (미구현)")
-    void sendPasswordResetEmail_NotImplemented() {
-        // when & then
+    @DisplayName("비밀번호 재설정 이메일 발송 성공")
+    void sendPasswordResetEmail_Success() {
         assertDoesNotThrow(() -> emailService.sendPasswordResetEmail("user@example.com", "token"));
+        verify(mailSender).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    @DisplayName("메일 발송이 실패해도 예외를 밖으로 던지지 않는다")
+    void sendFailureDoesNotPropagate() {
+        // 가입·재설정은 토큰을 저장한 뒤 메일을 보낸다. 여기서 예외가 올라가면
+        // 사용자는 500 을 받고 토큰만 발급된 어정쩡한 상태가 된다.
+        // 로컬은 SMTP 자격증명이 placeholder 라 늘 실패하므로 자체 가입을 시험할 수도 없었다.
+        org.springframework.test.util.ReflectionTestUtils.setField(
+                emailService, "backendUrl", "https://api.tripgather.com");
+        org.mockito.Mockito.doThrow(new org.springframework.mail.MailSendException("smtp down"))
+                .when(mailSender).send(any(SimpleMailMessage.class));
+
+        assertDoesNotThrow(() -> emailService.sendVerificationEmail("user@example.com", "tok"));
+    }
+
+    @Test
+    @DisplayName("재설정 메일은 프론트엔드 재설정 화면으로 링크를 보낸다")
+    void sendPasswordResetEmail_LinksToFrontendResetPage() {
+        // 새 비밀번호를 입력받아야 하므로 백엔드가 아니라 사람이 보는 화면으로 보내야 한다.
+        org.springframework.test.util.ReflectionTestUtils.setField(
+                emailService, "frontendUrl", "https://tripgather.com");
+
+        emailService.sendPasswordResetEmail("user@example.com", "tok-123");
+
+        org.mockito.ArgumentCaptor<SimpleMailMessage> captor =
+                org.mockito.ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender).send(captor.capture());
+        assertThat(captor.getValue().getText())
+                .contains("https://tripgather.com/reset-password?token=tok-123");
     }
 }

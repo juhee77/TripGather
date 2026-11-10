@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthViewModel } from '../viewmodels/useAuthViewModel';
 import { API_BASE } from '../api/client';
 import FormInput from '../components/UI/FormInput';
@@ -98,6 +99,18 @@ function LoginPage() {
           >
             {isLogin ? '로그인' : '가입하기'}
           </PrimaryButton>
+
+          {isLogin && (
+            <Link
+              to="/forgot-password"
+              style={{
+                display: 'block', textAlign: 'center', marginTop: '16px',
+                fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)'
+              }}
+            >
+              비밀번호를 잊으셨나요?
+            </Link>
+          )}
         </form>
 
         <div className="sns-login-divider">

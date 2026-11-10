@@ -65,6 +65,17 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "verification_token")
     private String verificationToken;
 
+    /** 비밀번호 재설정 토큰. 사용하거나 만료되면 비운다. */
+    private String resetToken;
+
+    /**
+     * 재설정 토큰 만료 시각.
+     *
+     * 가입 인증 토큰과 달리 반드시 만료를 둔다. 이 토큰은 비밀번호를 바꿀 수 있어서,
+     * 메일 한 통이 유출되면 계정이 영구히 열리기 때문이다.
+     */
+    private java.time.LocalDateTime resetTokenExpiresAt;
+
 
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
