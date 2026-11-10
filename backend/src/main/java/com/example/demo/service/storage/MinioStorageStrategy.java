@@ -54,16 +54,25 @@ public class MinioStorageStrategy implements StorageStrategy {
                             .contentType(file.getContentType())
                             .build()
             );
-            return String.format("%s/%s/%s", endpoint, bucket, uniqueFileName);
+            return objectUrlPrefix() + uniqueFileName;
         } catch (Exception e) {
             throw new RuntimeException("MinIO 파일 업로드 실패: " + e.getMessage(), e);
         }
     }
 
     @Override
+    public boolean isManaged(String fileUrl) {
+        return fileUrl != null && fileUrl.startsWith(objectUrlPrefix());
+    }
+
+    @Override
     public void deleteFile(String fileUrl) {
+        if (!isManaged(fileUrl)) {
+            // 이 버킷이 담고 있는 객체가 아니다. 외부 주소나 data URI 는 지울 것이 없다.
+            return;
+        }
         try {
-            String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+            String fileName = fileUrl.substring(objectUrlPrefix().length());
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
                             .bucket(bucket)
@@ -73,5 +82,9 @@ public class MinioStorageStrategy implements StorageStrategy {
         } catch (Exception e) {
             throw new RuntimeException("MinIO 파일 삭제 실패: " + e.getMessage(), e);
         }
+    }
+
+    private String objectUrlPrefix() {
+        return String.format("%s/%s/", endpoint, bucket);
     }
 }

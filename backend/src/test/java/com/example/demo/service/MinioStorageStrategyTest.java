@@ -106,4 +106,37 @@ class MinioStorageStrategyTest {
         assertDoesNotThrow(() -> minioStorageStrategy.init());
         verify(minioClient, org.mockito.Mockito.never()).makeBucket(any(MakeBucketArgs.class));
     }
+
+    @Test
+    @DisplayName("이 버킷의 객체 주소만 관리 대상으로 본다")
+    void isManaged_OnlyOwnBucketObjects() {
+        assertThat(minioStorageStrategy.isManaged(endpoint + "/" + bucket + "/a.png")).isTrue();
+        assertThat(minioStorageStrategy.isManaged(endpoint + "/other-bucket/a.png")).isFalse();
+        assertThat(minioStorageStrategy.isManaged("https://cdn.example.com/a.png")).isFalse();
+        assertThat(minioStorageStrategy.isManaged("data:image/png;base64,AAAA")).isFalse();
+        assertThat(minioStorageStrategy.isManaged(null)).isFalse();
+    }
+
+    @Test
+    @DisplayName("다른 저장소의 주소는 삭제를 시도하지 않는다")
+    void deleteFile_ForeignUrl_SkipsRemoveObject() throws Exception {
+        // when
+        minioStorageStrategy.deleteFile("https://cdn.example.com/a.png");
+
+        // then
+        verify(minioClient, org.mockito.Mockito.never()).removeObject(any(RemoveObjectArgs.class));
+    }
+
+    @Test
+    @DisplayName("객체 이름에 슬래시가 섞여 있어도 접두사만 걷어낸다")
+    void deleteFile_UsesPrefixNotLastSegment() throws Exception {
+        // when
+        minioStorageStrategy.deleteFile(endpoint + "/" + bucket + "/2026/11/a.png");
+
+        // then
+        org.mockito.ArgumentCaptor<RemoveObjectArgs> captor =
+                org.mockito.ArgumentCaptor.forClass(RemoveObjectArgs.class);
+        verify(minioClient).removeObject(captor.capture());
+        assertThat(captor.getValue().object()).isEqualTo("2026/11/a.png");
+    }
 }

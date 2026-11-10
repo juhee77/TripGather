@@ -36,6 +36,9 @@ class TripReviewServiceTest {
     @Mock
     private TripAccessGuard tripAccessGuard;
 
+    @Mock
+    private FileService fileService;
+
     @InjectMocks
     private TripReviewService tripReviewService;
 
@@ -393,5 +396,48 @@ class TripReviewServiceTest {
                 tripReviewService.getReviewSummary(null))
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("여행 ID가 올바르지 않습니다.");
+    }
+
+    @Test
+    @DisplayName("리뷰를 지우면 첨부한 사진도 저장소에서 지운다")
+    void deleteReview_AlsoDeletesAttachedImages() {
+        // given
+        Long reviewId = 11L;
+        User author = User.builder().id(1L).email("author@test.com").name("Reviewer").build();
+        Trip trip = Trip.builder().id(1L).build();
+        TripReview review = TripReview.of(trip, author, "후기", 4, "관광지");
+        review.setImageUrls("/uploads/a.png,/uploads/b.png");
+        given(tripReviewRepository.findById(reviewId)).willReturn(java.util.Optional.of(review));
+        given(securityService.getCurrentUserEmail()).willReturn("author@test.com");
+
+        // when
+        tripReviewService.deleteReview(reviewId);
+
+        // then
+        org.mockito.Mockito.verify(fileService).deleteAllAfterCommit("/uploads/a.png,/uploads/b.png");
+    }
+
+    @Test
+    @DisplayName("리뷰 수정 시 교체되어 빠진 사진만 지우고 남은 사진은 건드리지 않는다")
+    void updateReview_DeletesOnlyRemovedImages() {
+        // given
+        Long reviewId = 12L;
+        User author = User.builder().id(1L).email("author@test.com").name("Reviewer").build();
+        Trip trip = Trip.builder().id(1L).build();
+        TripReview review = TripReview.of(trip, author, "이전 내용", 3, "관광지");
+        review.setImageUrls("/uploads/keep.png,/uploads/drop.png");
+        given(tripReviewRepository.findById(reviewId)).willReturn(java.util.Optional.of(review));
+        given(securityService.getCurrentUserEmail()).willReturn("author@test.com");
+        given(tripReviewRepository.save(org.mockito.ArgumentMatchers.any(TripReview.class)))
+                .willAnswer(i -> i.getArgument(0));
+
+        // when
+        tripReviewService.updateReview(reviewId, "수정된 내용", 4, "숙소",
+                "/uploads/keep.png,/uploads/new.png");
+
+        // then
+        org.mockito.Mockito.verify(fileService).deleteAfterCommit("/uploads/drop.png");
+        org.mockito.Mockito.verify(fileService, org.mockito.Mockito.never())
+                .deleteAfterCommit("/uploads/keep.png");
     }
 }

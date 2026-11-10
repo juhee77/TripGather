@@ -36,6 +36,7 @@ public class GatheringPostController {
     private final com.example.demo.usecase.GatheringMemberUseCase gatheringMemberService;
     private final UserRepository userRepository;
     private final com.example.demo.service.ProfanityFilterService profanityFilterService;
+    private final com.example.demo.service.FileService fileService;
 
     @GetMapping("/{gatheringId}/posts")
     public ResponseEntity<List<PostResponse>> getPosts(@PathVariable Long gatheringId, Principal principal) {
@@ -115,7 +116,10 @@ public class GatheringPostController {
             throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "본인의 게시글만 삭제할 수 있습니다.");
         }
 
+        String imageUrl = post.getImageUrl();
         postRepository.delete(post);
+        // 게시글이 사라지면 올린 사진도 참조하는 곳이 없다. 저장소에 남겨 둘 이유가 없다.
+        fileService.deleteAfterCommit(imageUrl);
         return ResponseEntity.noContent().build();
     }
 
