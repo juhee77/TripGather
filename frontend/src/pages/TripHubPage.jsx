@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, List, Map, Globe, CheckSquare, Star, Plus, Film } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, List, Map, Globe, CheckSquare, Star, Plus, Film, Wallet } from 'lucide-react';
 import { authFetch } from '../api/client';
 import PackingList from '../components/PackingList';
 import TranslatorWidget from '../components/TranslatorWidget';
 import ReviewSection from '../components/ReviewSection';
+import TripExpenseTab from '../components/TripExpenseTab';
 import TravelTimelapseStudio from '../components/TravelTimelapseStudio';
 import OpenRouteMap from '../components/OpenRouteMap';
 import { getRecommendedSpotsForRegion } from '../utils/openMapService';
@@ -140,6 +141,7 @@ const TripHubPage = () => {
     { id: '추천', icon: <Map size={18} /> },
     { id: '번역', icon: <Globe size={18} /> },
     { id: '준비물', icon: <CheckSquare size={18} /> },
+    { id: '경비', icon: <Wallet size={18} /> },
     { id: '리뷰', icon: <Star size={18} /> }
   ];
 
@@ -471,6 +473,7 @@ const TripHubPage = () => {
         })()}
         {activeTab === '번역' && <TranslatorWidget country={trip.country} />}
         {activeTab === '준비물' && <PackingList tripId={trip.id} />}
+        {activeTab === '경비' && <TripExpenseTab tripId={trip.id} />}
         {activeTab === '리뷰' && <ReviewSection tripId={trip.id} />}
       </div>
     </div>
