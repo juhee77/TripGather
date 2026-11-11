@@ -136,19 +136,6 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("전체 유저 조회 성공")
-    void getAllUsers_Success() {
-        // given
-        given(userRepository.findAll()).willReturn(java.util.List.of(testUser));
-
-        // when
-        java.util.List<User> result = userService.getAllUsers();
-
-        // then
-        assertThat(result).hasSize(1);
-    }
-
-    @Test
     @DisplayName("유저 생성 성공")
     void createUser_Success() {
         // given

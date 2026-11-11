@@ -85,9 +85,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/gatherings/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/itineraries/**").permitAll()
                 .requestMatchers("/api/users/me").authenticated()
-                // 전체 회원 목록은 이메일이 포함되므로 비회원에게 공개하지 않는다.
-                .requestMatchers(HttpMethod.GET, "/api/users").authenticated()
-                // 단건 프로필(호스트/크루 표시용)만 공개
+                // 단건 프로필(호스트/크루 표시용)만 공개한다.
+                // 응답은 UserResponse.publicView 라 이메일과 권한이 빠져 있다.
                 .requestMatchers(HttpMethod.GET, "/api/users/*").permitAll()
                 // WebSocket (핸드셰이크 허용)
                 .requestMatchers("/ws-stomp/**").permitAll()
