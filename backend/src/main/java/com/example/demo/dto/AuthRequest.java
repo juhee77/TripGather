@@ -22,6 +22,25 @@ public class AuthRequest {
         private String password;
     }
 
+    /** 비밀번호 재설정 메일을 요청할 때 보내는 본문. */
+    @Data
+    public static class PasswordResetRequest {
+        @NotBlank(message = "이메일은 필수입니다.")
+        @Email(message = "이메일 형식이 올바르지 않습니다.")
+        private String email;
+    }
+
+    /** 메일로 받은 토큰과 새 비밀번호를 보내는 본문. */
+    @Data
+    public static class PasswordResetConfirm {
+        @NotBlank(message = "토큰은 필수입니다.")
+        private String token;
+
+        @NotBlank(message = "새 비밀번호는 필수입니다.")
+        @Size(min = 8, max = 64, message = "비밀번호는 8자 이상 64자 이하여야 합니다.")
+        private String newPassword;
+    }
+
     /**
      * 로그인은 기존 계정을 상대하므로 형식만 보고 길이는 보지 않는다.
      * 여기에 길이 제한을 걸면 규칙을 강화한 뒤 기존 사용자가 로그인하지 못한다.

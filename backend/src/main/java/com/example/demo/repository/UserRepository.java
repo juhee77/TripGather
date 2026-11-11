@@ -19,6 +19,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByProviderAndProviderId(String provider, String providerId);
     Optional<User> findByVerificationToken(String verificationToken);
 
+    Optional<User> findByResetToken(String resetToken);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdWithPessimisticLock(@Param("id") Long id);

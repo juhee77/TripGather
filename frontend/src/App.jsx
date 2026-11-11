@@ -8,6 +8,8 @@ import MapPage from './pages/MapPage';
 import ChatPage from './pages/ChatPage';
 import MyPage from './pages/MyPage';
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 import GatheringDetailPage from './pages/GatheringDetailPage';
 import CreateGatheringPage from './pages/CreateGatheringPage';
@@ -36,6 +38,8 @@ function AppContent() {
       <Routes>
         <Route path="/login" element={isAuthenticated ? <Navigate to="/gather" replace /> : <LoginPage />} />
         <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         
         <Route path="/" element={<Navigate to="/gather" replace />} />
         <Route path="/gather" element={<PrivateRoute><Home /></PrivateRoute>} />

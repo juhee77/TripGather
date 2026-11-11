@@ -101,4 +101,52 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("mock-token"));
     }
+
+    @Test
+    @DisplayName("재설정 메일 요청은 가입 여부와 무관하게 204 로 답한다")
+    void requestPasswordReset_AlwaysNoContent() throws Exception {
+        // 응답이 갈리면 그것만으로 특정 이메일의 가입 여부를 알아내는 수단이 된다.
+        mockMvc.perform(post("/api/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("email", "nobody@test.com"))))
+                .andExpect(status().isNoContent());
+
+        verify(authService).requestPasswordReset("nobody@test.com");
+    }
+
+    @Test
+    @DisplayName("이메일 형식이 아니면 재설정 요청을 받지 않는다")
+    void requestPasswordReset_MalformedEmail_Rejected() throws Exception {
+        mockMvc.perform(post("/api/auth/password-reset/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("email", "not-an-email"))))
+                .andExpect(status().isBadRequest());
+
+        verify(authService, org.mockito.Mockito.never()).requestPasswordReset(org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    @DisplayName("토큰과 새 비밀번호로 재설정을 확정한다")
+    void confirmPasswordReset_Success() throws Exception {
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("token", "tok-123", "newPassword", "newpassword1"))))
+                .andExpect(status().isNoContent());
+
+        verify(authService).confirmPasswordReset("tok-123", "newpassword1");
+    }
+
+    @Test
+    @DisplayName("너무 짧은 새 비밀번호는 받지 않는다")
+    void confirmPasswordReset_ShortPassword_Rejected() throws Exception {
+        mockMvc.perform(post("/api/auth/password-reset/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("token", "tok-123", "newPassword", "123"))))
+                .andExpect(status().isBadRequest());
+
+        verify(authService, org.mockito.Mockito.never())
+                .confirmPasswordReset(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+    }
 }

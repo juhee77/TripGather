@@ -286,4 +286,94 @@ class AuthServiceTest {
         assertThrows(CustomException.class, () -> authService.verifyEmail(null));
         assertThrows(CustomException.class, () -> authService.verifyEmail("   "));
     }
+
+    @org.junit.jupiter.api.Nested
+    @DisplayName("비밀번호 재설정")
+    class PasswordReset {
+
+        private User localUser(String token, java.time.LocalDateTime expiresAt) {
+            return User.builder()
+                    .id(1L).email("user@test.com").provider("local")
+                    .password("old-encoded")
+                    .resetToken(token).resetTokenExpiresAt(expiresAt)
+                    .build();
+        }
+
+        @Test
+        @DisplayName("가입되지 않은 이메일도 성공으로 답한다 — 가입 여부가 드러나면 안 된다")
+        void unknownEmailStillSucceeds() {
+            given(userRepository.findByEmail("nobody@test.com")).willReturn(Optional.empty());
+
+            authService.requestPasswordReset("nobody@test.com");
+
+            verify(emailService, org.mockito.Mockito.never())
+                    .sendPasswordResetEmail(anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("SNS 로 가입한 계정에는 재설정 메일을 보내지 않는다")
+        void socialAccountGetsNoResetMail() {
+            // 카카오·네이버 계정은 비밀번호 자체가 없다.
+            User social = User.builder().id(2L).email("kakao@test.com").provider("kakao").build();
+            given(userRepository.findByEmail("kakao@test.com")).willReturn(Optional.of(social));
+
+            authService.requestPasswordReset("kakao@test.com");
+
+            verify(emailService, org.mockito.Mockito.never())
+                    .sendPasswordResetEmail(anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("자체 가입 계정에는 만료 시각을 담은 토큰을 발급하고 메일을 보낸다")
+        void localAccountGetsTokenAndMail() {
+            User user = localUser(null, null);
+            given(userRepository.findByEmail("user@test.com")).willReturn(Optional.of(user));
+
+            authService.requestPasswordReset("user@test.com");
+
+            assertThat(user.getResetToken()).isNotBlank();
+            assertThat(user.getResetTokenExpiresAt()).isAfter(java.time.LocalDateTime.now());
+            verify(emailService).sendPasswordResetEmail("user@test.com", user.getResetToken());
+        }
+
+        @Test
+        @DisplayName("유효한 토큰이면 비밀번호를 바꾸고 토큰을 비운다")
+        void validTokenChangesPasswordAndClearsToken() {
+            User user = localUser("tok-123", java.time.LocalDateTime.now().plusMinutes(10));
+            given(userRepository.findByResetToken("tok-123")).willReturn(Optional.of(user));
+            given(passwordEncoder.encode("newpassword1")).willReturn("new-encoded");
+
+            authService.confirmPasswordReset("tok-123", "newpassword1");
+
+            assertThat(user.getPassword()).isEqualTo("new-encoded");
+            // 한 번 쓴 링크는 다시 통하지 않아야 한다
+            assertThat(user.getResetToken()).isNull();
+            assertThat(user.getResetTokenExpiresAt()).isNull();
+        }
+
+        @Test
+        @DisplayName("만료된 토큰은 거부하고, 그 토큰을 비워 다시 쓰이지 않게 한다")
+        void expiredTokenIsRejectedAndCleared() {
+            User user = localUser("tok-old", java.time.LocalDateTime.now().minusMinutes(1));
+            given(userRepository.findByResetToken("tok-old")).willReturn(Optional.of(user));
+
+            org.assertj.core.api.Assertions
+                    .assertThatThrownBy(() -> authService.confirmPasswordReset("tok-old", "newpassword1"))
+                    .isInstanceOf(CustomException.class)
+                    .hasMessageContaining("만료");
+
+            assertThat(user.getPassword()).isEqualTo("old-encoded");
+            assertThat(user.getResetToken()).isNull();
+        }
+
+        @Test
+        @DisplayName("없는 토큰은 거부한다")
+        void unknownTokenIsRejected() {
+            given(userRepository.findByResetToken("nope")).willReturn(Optional.empty());
+
+            org.assertj.core.api.Assertions
+                    .assertThatThrownBy(() -> authService.confirmPasswordReset("nope", "newpassword1"))
+                    .isInstanceOf(CustomException.class);
+        }
+    }
 }
