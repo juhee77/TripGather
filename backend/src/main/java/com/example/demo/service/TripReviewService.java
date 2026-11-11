@@ -13,7 +13,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +28,7 @@ public class TripReviewService {
     private final PointService pointService;
     private final ProfanityFilterService profanityFilterService;
     private final TripAccessGuard tripAccessGuard;
+    private final FileService fileService;
 
     @Transactional
     public TripReviewResponse createReview(Long tripId, String content, int rating, String category, String imageUrls) {
@@ -97,7 +101,10 @@ public class TripReviewService {
         if (!review.getAuthor().getEmail().equals(email)) {
             throw new CustomException(ErrorCode.FORBIDDEN_ACTION, "본인의 리뷰만 삭제할 수 있습니다.");
         }
+        String imageUrls = review.getImageUrls();
         tripReviewRepository.delete(review);
+        // 리뷰가 사라지면 첨부한 사진도 참조하는 곳이 없다.
+        fileService.deleteAllAfterCommit(imageUrls);
     }
 
     @Transactional
@@ -127,9 +134,14 @@ public class TripReviewService {
         review.setContent(content.trim());
         review.setRating(rating);
         if (category != null) review.setCategory(category.trim());
+        // 교체되어 더 이상 참조되지 않는 사진만 골라 지운다. 그대로 남은 사진은 건드리지 않는다.
+        Set<String> removed = splitUrls(review.getImageUrls());
+        removed.removeAll(splitUrls(imageUrls));
         review.setImageUrls(imageUrls);
 
-        return TripReviewResponse.from(tripReviewRepository.save(review));
+        TripReviewResponse response = TripReviewResponse.from(tripReviewRepository.save(review));
+        removed.forEach(fileService::deleteAfterCommit);
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -150,5 +162,15 @@ public class TripReviewService {
                 .totalReviews(totalReviews)
                 .averageRating(Math.round(avgRating * 10.0) / 10.0)
                 .build();
+    }
+
+    private Set<String> splitUrls(String commaSeparated) {
+        if (commaSeparated == null || commaSeparated.isBlank()) {
+            return new LinkedHashSet<>();
+        }
+        return Arrays.stream(commaSeparated.split(","))
+                .map(String::trim)
+                .filter(url -> !url.isEmpty())
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
     }
 }

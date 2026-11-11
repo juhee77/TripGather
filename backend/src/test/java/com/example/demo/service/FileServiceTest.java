@@ -8,7 +8,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -134,5 +138,85 @@ class FileServiceTest {
         assertThatThrownBy(() -> fileService.storeFile(emptyFile))
                 .isInstanceOf(com.example.demo.exception.CustomException.class)
                 .hasMessageContaining("업로드할 파일이 올바르지 않거나 비어 있습니다.");
+    }
+
+    @Test
+    @DisplayName("트랜잭션 밖에서는 관리 중인 파일을 곧바로 지운다")
+    void deleteAfterCommit_NoTransaction_DeletesImmediately() {
+        // given
+        given(storageStrategy.isManaged("/uploads/a.png")).willReturn(true);
+
+        // when
+        fileService.deleteAfterCommit("/uploads/a.png");
+
+        // then
+        verify(storageStrategy, times(1)).deleteFile("/uploads/a.png");
+    }
+
+    @Test
+    @DisplayName("저장소가 관리하지 않는 주소는 삭제를 시도하지 않는다")
+    void deleteAfterCommit_Unmanaged_SkipsStorage() {
+        // given
+        given(storageStrategy.isManaged("https://cdn.example.com/a.png")).willReturn(false);
+
+        // when
+        fileService.deleteAfterCommit("https://cdn.example.com/a.png");
+        fileService.deleteAfterCommit(null);
+        fileService.deleteAfterCommit("  ");
+
+        // then
+        verify(storageStrategy, never()).deleteFile(any(String.class));
+    }
+
+    @Test
+    @DisplayName("트랜잭션 안에서는 커밋된 뒤에야 파일을 지운다")
+    void deleteAfterCommit_InTransaction_WaitsForCommit() {
+        // given
+        given(storageStrategy.isManaged("/uploads/a.png")).willReturn(true);
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            // when
+            fileService.deleteAfterCommit("/uploads/a.png");
+
+            // then — 아직 커밋되지 않았으므로 파일은 남아 있어야 한다.
+            verify(storageStrategy, never()).deleteFile(any(String.class));
+
+            List<TransactionSynchronization> synchronizations =
+                    TransactionSynchronizationManager.getSynchronizations();
+            assertThat(synchronizations).hasSize(1);
+            synchronizations.get(0).afterCommit();
+
+            verify(storageStrategy, times(1)).deleteFile("/uploads/a.png");
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    @DisplayName("커밋 뒤 삭제가 실패해도 예외를 전파하지 않는다")
+    void deleteAfterCommit_StorageFails_DoesNotThrow() {
+        // given
+        given(storageStrategy.isManaged("/uploads/a.png")).willReturn(true);
+        willThrow(new RuntimeException("disk gone")).given(storageStrategy).deleteFile("/uploads/a.png");
+
+        // when & then — 게시글 삭제가 저장소 장애로 되돌려지면 안 된다.
+        assertDoesNotThrow(() -> fileService.deleteAfterCommit("/uploads/a.png"));
+    }
+
+    @Test
+    @DisplayName("쉼표로 이어진 주소 목록을 하나씩 삭제한다")
+    void deleteAllAfterCommit_SplitsUrls() {
+        // given
+        given(storageStrategy.isManaged("/uploads/a.png")).willReturn(true);
+        given(storageStrategy.isManaged("/uploads/b.png")).willReturn(true);
+
+        // when
+        fileService.deleteAllAfterCommit("/uploads/a.png, /uploads/b.png");
+        fileService.deleteAllAfterCommit(null);
+        fileService.deleteAllAfterCommit("");
+
+        // then
+        verify(storageStrategy, times(1)).deleteFile("/uploads/a.png");
+        verify(storageStrategy, times(1)).deleteFile("/uploads/b.png");
     }
 }

@@ -47,6 +47,8 @@ class GatheringPostControllerTest {
     private UserRepository userRepository;
     @Mock
     private ProfanityFilterService profanityFilterService;
+    @Mock
+    private com.example.demo.service.FileService fileService;
 
     @InjectMocks
     private GatheringPostController gatheringPostController;
@@ -113,6 +115,29 @@ class GatheringPostControllerTest {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/gatherings/10/posts/100")
                 .principal(principal))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("게시글을 지우면 딸려 있던 사진도 저장소에서 지운다")
+    void deletePost_AlsoDeletesUploadedImage() throws Exception {
+        // given
+        GatheringPost post = GatheringPost.builder()
+                .id(101L)
+                .author(user)
+                .gathering(gathering)
+                .content("사진이 붙은 이야기")
+                .imageUrl("/uploads/photo.png")
+                .build();
+
+        given(postRepository.findById(101L)).willReturn(Optional.of(post));
+
+        // when
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/gatherings/10/posts/101")
+                .principal(principal))
+                .andExpect(status().isNoContent());
+
+        // then
+        org.mockito.Mockito.verify(fileService).deleteAfterCommit("/uploads/photo.png");
     }
 
     @Test

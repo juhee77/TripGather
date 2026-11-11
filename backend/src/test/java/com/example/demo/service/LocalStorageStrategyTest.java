@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.config.StorageProperties;
 import com.example.demo.service.storage.LocalStorageStrategy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -31,9 +31,8 @@ class LocalStorageStrategyTest {
 
     @BeforeEach
     void setUp() {
-        localStorageStrategy = new LocalStorageStrategy();
-        // 실제 프로젝트 디렉토리(.storage)를 건드리지 않도록 임시 디렉토리로 대체한다.
-        ReflectionTestUtils.setField(localStorageStrategy, "storageLocation", tempDir);
+        // 실제 업로드 디렉토리를 건드리지 않도록 임시 디렉토리를 설정값으로 넘긴다.
+        localStorageStrategy = new LocalStorageStrategy(new StorageProperties(tempDir.toString()));
     }
 
     @AfterEach
@@ -116,5 +115,37 @@ class LocalStorageStrategyTest {
     @DisplayName("존재하지 않는 파일 삭제는 예외 없이 통과한다")
     void deleteFile_NotExists_DoesNotThrow() {
         assertDoesNotThrow(() -> localStorageStrategy.deleteFile("/uploads/missing.png"));
+    }
+
+    @Test
+    @DisplayName("우리가 저장하지 않은 주소는 관리 대상이 아니며 삭제를 시도하지 않는다")
+    void deleteFile_UnmanagedUrl_SkipsSilently() throws IOException {
+        // given — 외부 주소와 같은 이름의 파일이 업로드 디렉토리에 있어도 지워지면 안 된다.
+        Files.writeString(tempDir.resolve("outside.png"), "data");
+
+        // when
+        assertThat(localStorageStrategy.isManaged("https://cdn.example.com/outside.png")).isFalse();
+        assertThat(localStorageStrategy.isManaged("data:image/png;base64,AAAA")).isFalse();
+        assertDoesNotThrow(() -> localStorageStrategy.deleteFile("https://cdn.example.com/outside.png"));
+
+        // then
+        assertThat(Files.exists(tempDir.resolve("outside.png"))).isTrue();
+    }
+
+    @Test
+    @DisplayName("업로드 디렉토리를 벗어나려는 주소는 삭제하지 않는다")
+    void deleteFile_PathTraversal_Rejected() throws IOException {
+        // given
+        Path outside = tempDir.getParent().resolve("victim-" + System.nanoTime() + ".txt");
+        Files.writeString(outside, "secret");
+        try {
+            // when
+            localStorageStrategy.deleteFile("/uploads/../" + outside.getFileName());
+
+            // then
+            assertThat(Files.exists(outside)).isTrue();
+        } finally {
+            Files.deleteIfExists(outside);
+        }
     }
 }
